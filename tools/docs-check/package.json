@@ -1,0 +1,10 @@
+{
+  "name": "@whz/docs-check",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Compares the docs with the repo: links, backticked paths, the task queue, the research index, decision ids and npm script names.",
+  "type": "module",
+  "scripts": {
+    "check": "node cli.mjs && node --test \"test/*.test.mjs\""
+  }
+}

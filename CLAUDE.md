@@ -30,6 +30,9 @@ Read in this order: [docs/DECISIONS.md](docs/DECISIONS.md) → [tasks/README.md]
 - **`tasks/` is the only work queue.** Rules are in [tasks/README.md](tasks/README.md). Owner calls are
   never decided by a session. The loop that works through the queue is the `/implement-tasks`
   skill; its state between iterations is [docs/progress.md](docs/progress.md).
+- **If the docs and the code disagree, the code wins, and the doc is fixed in the same commit.**
+  The gate compares the docs with the repo (links, backticked paths, the queue, the research
+  index, decision ids, npm script names): [docs/docs-check.md](docs/docs-check.md).
 - **Everything runs locally in Docker. Install nothing on the host:** no Node or Python upgrades, no
   global npm/brew tools. Claude Code itself runs on the host. A genuine exception (e.g. Xcode for
   iOS builds) is an owner call.

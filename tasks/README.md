@@ -65,7 +65,8 @@ is the loop that works through this queue. In a Claude Code session in this repo
 
 The order is the priority: a session takes the first note whose gate is open and whose
 dependencies are done. The studio MVP and the art spikes (#1–#14, D22) go first; the rest of the
-studio and the engine follow (D23).
+studio and the engine follow (D23). The gate checks this table against the notes in `tasks/`,
+and every note against the format above ([docs/docs-check.md](../docs/docs-check.md)).
 
 | # | Note | Gate | Depends on |
 |---|---|---|---|
@@ -80,7 +81,6 @@ studio and the engine follow (D23).
 | 12 | [Voxel sprite baker](2026-10-02-voxel-sprite-baker.md) | none | #5 |
 | 13 | [Art spike 2D (variants A + B)](2026-10-02-art-spike-2d.md) | none | #10, #9 |
 | 14 | [Art spike voxel (variant C)](2026-10-02-art-spike-voxel.md) | none | #12, #13 |
-| 15 | [Repo docs check](2026-10-02-repo-docs-check.md) | none | #1 |
 | 16 | [Sim core: deterministic tick kernel](2026-10-02-sim-core.md) | none | #4 |
 | 17 | [Game package format](2026-10-02-game-package-format.md) | none | #16 |
 | 18 | [Player: game loop, host API, test protocol](2026-10-02-player-loop-test-protocol.md) | none | #17, #6 |
@@ -106,7 +106,7 @@ studio and the engine follow (D23).
 
 | Track | Notes |
 |---|---|
-| Infrastructure | #15 docs check (#1 Docker is done: [docs/dev-environment.md](../docs/dev-environment.md); #2 the implement-tasks skill is done: [Running the queue](#running-the-queue); #3 skill intake is done: [security/skill-intake/README.md](../security/skill-intake/README.md)) |
+| Infrastructure | all done: #1 Docker ([docs/dev-environment.md](../docs/dev-environment.md)), #2 the implement-tasks skill ([Running the queue](#running-the-queue)), #3 skill intake ([security/skill-intake/README.md](../security/skill-intake/README.md)), #15 docs check ([docs/docs-check.md](../docs/docs-check.md)) |
 | Graphics from code | #5 render CLI, #12 voxel baker, #21 FX emitters, #13 + #14 art spikes (#4 asset kit is done: [packages/asset-kit/README.md](../packages/asset-kit/README.md), [packages/det/README.md](../packages/det/README.md)) |
 | Engine | #6 sprite core, #16 sim core, #17 game package, #18 player + test protocol, #19 text and UI, #20 input, #22 tilemap, #23 saves, #32 conformance |
 | Audio | #24 synth core, #25 runtime audio, #29 studio audio |

@@ -149,6 +149,9 @@ The tools' checks are plain `node --test`:
   evidence, baselines), the pins of the scanner image, and tests of the scan command against a
   stand-in `docker`. The scanner itself runs on the host's Docker, not in the gate
   ([security/skill-intake/README.md](../security/skill-intake/README.md)).
+- `@whz/docs-check`: the docs against the repo (links, backticked paths, the task queue, the
+  research index, decision ids, npm script names) and the tests of that tool. See
+  [docs-check.md](docs-check.md).
 - `@whz/lint`: proves the determinism lint fires (see below).
 
 The TypeScript packages (`packages/*`) and the asset programs (`assets/`) are checked as

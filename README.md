@@ -27,4 +27,5 @@ Two game types:
 | [packages/asset-kit/](packages/asset-kit/README.md) | The library asset programs are written with: `defineAsset`, `IndexedBuffer`, palettes, stamps, the output hash |
 | [packages/det/](packages/det/README.md) | The determinism kit: seeded integer RNG, hashes, integer trig and easing, test vectors for ports |
 | `assets/` | Asset programs (one folder each, e.g. `assets/examples/blinking-dot/gen.ts`) and palettes (`assets/palettes/example.json`) |
+| [docs/docs-check.md](docs/docs-check.md) | The check that keeps links, paths, the queue and ids in the docs true |
 | [CLAUDE.md](CLAUDE.md) | Working rules for Claude Code sessions in this repo |

@@ -42,7 +42,7 @@ numbers, every cited link) is in the research reports, each of which ends with i
 |---|---|---|
 | Graphics reference list + voxel game plan | Vellum `projects/grafika-reference/index.md`, `plan-voxel-hra.md` | D14, `research/voxels.md` |
 | Analyses 01–04 (sakura-crossing, Threejs-Punk, voxel-musou, NMS/LNF) | Vellum `projects/grafika-reference/analyzy/01–04` | `research/ref-*.md` (deep versions) |
-| Task doctrine (one note = one task = one commit) | `~/projects/game/godot/alpha-frontier/tasks/README.md`, `.claude/commands/do-task.md` | D8, `tasks/README.md` |
+| Task doctrine (one note = one task = one commit) | `~/projects/game/godot/alpha-frontier/tasks/README.md`, `~/projects/game/godot/alpha-frontier/.claude/commands/do-task.md` | D8, `tasks/README.md` |
 | `implement-tasks` skill (tasks/-driven) | `~/projects/nodejs/pixelforge-mcp/.claude/skills/implement-tasks/` | task `implement-tasks-skill` |
 | `implement-spec` skill (Linear-driven sibling) | `~/projects/nodejs/lustitel/.claude/skills/` | task `implement-tasks-skill` |
 | `code-pixel-game` skill (graphics from code, built from Gloop's Escape + our research) | `~/.claude/skills/code-pixel-game/` | asset work; art spikes. Its WZ profile defers to our CLAUDE.md and `asset-kit` |
