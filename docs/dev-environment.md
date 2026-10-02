@@ -134,13 +134,17 @@ While working on one package:
 
 A filtered run is for iterating. Only the full `./dev npm run check` is the gate.
 
-Today the gate holds two checks, both plain `node --test` with no dependencies:
+Today the gate holds these checks, all plain `node --test` with no dependencies:
 
 - `@whz/check`: tests of the aggregator itself (a failing check fails the gate, and so on).
 - `@whz/dev-env`: the smoke test of the environment (runs in the container, Node is the pinned
   24.x, runs as the host user, bind-mount files belong to the host user, `node_modules` and the
   npm cache are volumes, dependencies are in sync), the `compose.yaml` lint and the tests of the
   dependency sync.
+- `@whz/task-queue`: the queue reader of the `implement-tasks` skill
+  (`./dev node tools/task-queue/cli.mjs`: which note is next, which wait for the owner), plus
+  checks that keep the skill's text tied to the repo (its links, the files and commands it names,
+  the shape of `docs/progress.md`).
 
 ## Several checkouts at once (git worktrees)
 

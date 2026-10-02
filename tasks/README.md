@@ -22,6 +22,22 @@ Same doctrine as the owner's alpha-frontier project (D8).
   diff, adopt it and deliver the rest.
 - **The studio may create notes** (D8): e.g. a rejected asset becomes a note. It follows this format.
 
+## Running the queue
+
+The `implement-tasks` skill ([.claude/skills/implement-tasks/](../.claude/skills/implement-tasks/SKILL.md))
+is the loop that works through this queue. In a Claude Code session in this repo:
+
+| Command | What it does |
+|---|---|
+| `/implement-tasks` | Takes the next note (the first row whose gate is open and whose dependencies are done), delivers it whole, runs the gate in Docker and commits with the note deleted. Then it reports and stops. |
+| `/implement-tasks <note>` | The same for one note: `#12`, a file name or a topic (`sim-core`). A gated note is not started. |
+| `/loop <interval> /implement-tasks` | Unattended, e.g. `/loop 45m /implement-tasks`: one note per tick. It ends when the queue is empty or every remaining note waits for the owner, and reports which owner call blocks what. |
+
+- Which note is next, without starting anything: `./dev node tools/task-queue/cli.mjs`.
+- The loop commits locally and never pushes. It never decides an owner call.
+- [docs/progress.md](../docs/progress.md) is the only state it carries from one iteration to the
+  next: what is in flight, what failed and must not be retried, what waits for the owner.
+
 ## Note format
 
 ```markdown
@@ -54,7 +70,6 @@ studio and the engine follow (D23).
 | # | Note | Gate | Depends on |
 |---|---|---|---|
 | 0 | [Owner calls](2026-10-02-owner-calls.md) | owner answers | none |
-| 2 | [implement-tasks skill for this repo](2026-10-02-implement-tasks-skill.md) | none | #1 (gate command) |
 | 3 | [Skill intake tooling (skillspector in Docker)](2026-10-02-skill-intake-tooling.md) | none | #1 |
 | 4 | [Asset kit core + determinism kit](2026-10-02-asset-kit-core.md) | none | #1 |
 | 5 | [Asset render CLI: bake, review sheets, lints](2026-10-02-asset-render-cli.md) | none | #4 |
@@ -93,7 +108,7 @@ studio and the engine follow (D23).
 
 | Track | Notes |
 |---|---|
-| Infrastructure | #2 implement-tasks skill, #3 skill intake, #15 docs check (#1 Docker is done: [docs/dev-environment.md](../docs/dev-environment.md)) |
+| Infrastructure | #3 skill intake, #15 docs check (#1 Docker is done: [docs/dev-environment.md](../docs/dev-environment.md); #2 the implement-tasks skill is done: [Running the queue](#running-the-queue)) |
 | Graphics from code | #4 asset kit, #5 render CLI, #12 voxel baker, #21 FX emitters, #13 + #14 art spikes |
 | Engine | #6 sprite core, #16 sim core, #17 game package, #18 player + test protocol, #19 text and UI, #20 input, #22 tilemap, #23 saves, #32 conformance |
 | Audio | #24 synth core, #25 runtime audio, #29 studio audio |

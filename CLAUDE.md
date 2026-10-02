@@ -28,7 +28,8 @@ Read in this order: [docs/DECISIONS.md](docs/DECISIONS.md) → [tasks/README.md]
   owner agreed to in chat. Your own ideas go to the owner as proposals (options + recommendation),
   never straight into `docs/DECISIONS.md` or a new queue of tasks.
 - **`tasks/` is the only work queue.** Rules are in [tasks/README.md](tasks/README.md). Owner calls are
-  never decided by a session.
+  never decided by a session. The loop that works through the queue is the `/implement-tasks`
+  skill; its state between iterations is [docs/progress.md](docs/progress.md).
 - **Everything runs locally in Docker. Install nothing on the host:** no Node or Python upgrades, no
   global npm/brew tools. Claude Code itself runs on the host. A genuine exception (e.g. Xcode for
   iOS builds) is an owner call.
