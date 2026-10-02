@@ -10,9 +10,11 @@ Two game types:
    Pocket Academy …). **We start here.**
 2. **Voxel games.** These come later and are also rendered as pixel art.
 
-> **Status (2026-10-02): foundation plus the dev environment.** Agreed decisions, research
-> reports and the work queue for the whole studio and engine are in place. Everything runs in
-> Docker through `./dev`, and the gate is `./dev npm run check`. No engine or studio code yet.
+> **Status (2026-10-02): foundation, the dev environment and the first packages.** Agreed
+> decisions, research reports and the work queue for the whole studio and engine are in place.
+> Everything runs in Docker through `./dev`, and the gate is `./dev npm run check`. The asset kit
+> and the determinism kit exist (`packages/asset-kit`, `packages/det`). No runtime, studio or
+> game code yet.
 
 ## Where things are
 

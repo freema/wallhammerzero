@@ -9,10 +9,9 @@ tool disagree, the tool wins. Format:
 ## Now
 
 - **In flight:** nothing.
-- **Last finished:** `implement-tasks-skill` (2026-10-02): the loop itself, the queue tool and
-  this file.
-- **Next:** #3 `skill-intake-tooling` (then #4 `asset-kit-core` and #15 `repo-docs-check`, which
-  are open too).
+- **Last finished:** `implement-tasks-skill`, `skill-intake-tooling`, `asset-kit-core` and
+  `repo-docs-check` (2026-10-02), built in parallel and integrated on the `implementation` branch.
+- **Next:** #5 `asset-render-cli` (#16 `sim-core` is open too).
 
 ## Blocked on the owner
 
