@@ -1,0 +1,84 @@
+#!/bin/sh
+# ./dev: run a command in the dev container. Everything runs in Docker (D16).
+#
+#   ./dev <cmd> [args...]          docker compose run --rm dev <cmd> [args...]
+#   ./dev -p <port> <cmd> ...      the same, with the port published on 127.0.0.1
+#   ./dev compose <args...>        docker compose <args...> for this checkout
+#
+# The exit code is the command's exit code. Never pipe the gate through grep or tail.
+# Details: docs/dev-environment.md
+set -eu
+
+usage() {
+  sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)
+
+# One Compose project per checkout directory, so two checkouts (git worktrees) never share a
+# node_modules volume: whz-<folder name>-<checksum of the absolute path>.
+base=$(basename -- "$root" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9\n' '-' | cut -c1-24)
+sum=$(printf '%s' "$root" | cksum | cut -d ' ' -f 1)
+export COMPOSE_PROJECT_NAME="whz-${base}-${sum}"
+
+WHZ_ROOT=$root
+WHZ_UID=$(id -u)
+WHZ_GID=$(id -g)
+export WHZ_ROOT WHZ_UID WHZ_GID
+
+compose() {
+  docker compose --project-directory "$root" --file "$root/compose.yaml" "$@"
+}
+
+publish=''
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    -p)
+      [ $# -ge 2 ] || { echo "dev: -p needs a port number" >&2; exit 2; }
+      case "$2" in
+        '' | *[!0-9]*) echo "dev: -p needs a port number, got '$2'" >&2; exit 2 ;;
+      esac
+      publish="$publish --publish 127.0.0.1:$2:$2"
+      shift 2
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *) break ;;
+  esac
+done
+
+if [ $# -eq 0 ]; then
+  usage >&2
+  exit 2
+fi
+
+# The download cache is shared by all checkouts, so Compose must not own it.
+if ! docker volume inspect whz-npm-cache >/dev/null 2>&1; then
+  echo "[dev] first run on this machine: Docker may download the Node image (about 350 MB)" >&2
+  docker volume create --label whz.shared=npm-cache whz-npm-cache >/dev/null
+fi
+
+if [ "$1" = compose ]; then
+  shift
+  compose "$@"
+  exit $?
+fi
+
+# Keep the caller's directory: ./dev from packages/x runs in /work/packages/x.
+here=$(pwd -P)
+case "$here/" in
+  "$root"/*) workdir="/work${here#"$root"}" ;;
+  *) workdir=/work ;;
+esac
+
+# Quiet by default, so the output is the command's output and not "Container ... Created"
+# lines. COMPOSE_PROGRESS=auto ./dev ... shows Compose's progress (an image pull, for one).
+# $publish holds only validated "--publish 127.0.0.1:<digits>:<digits>" words.
+# shellcheck disable=SC2086
+compose --progress "${COMPOSE_PROGRESS:-quiet}" run --rm $publish --workdir "$workdir" dev "$@"

@@ -1,0 +1,10 @@
+{
+  "name": "@whz/check",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The gate: discovers and runs every check in the repo (npm run check).",
+  "type": "module",
+  "scripts": {
+    "check": "node --test"
+  }
+}

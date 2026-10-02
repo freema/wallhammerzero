@@ -1,0 +1,10 @@
+{
+  "name": "@whz/dev-env",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The Docker dev environment: entrypoint, dependency sync, smoke test, compose lint, file-watch probe.",
+  "type": "module",
+  "scripts": {
+    "check": "node --test"
+  }
+}

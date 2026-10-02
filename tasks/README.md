@@ -54,7 +54,6 @@ studio and the engine follow (D23).
 | # | Note | Gate | Depends on |
 |---|---|---|---|
 | 0 | [Owner calls](2026-10-02-owner-calls.md) | owner answers | none |
-| 1 | [Docker dev environment](2026-10-02-docker-dev-environment.md) | none | none |
 | 2 | [implement-tasks skill for this repo](2026-10-02-implement-tasks-skill.md) | none | #1 (gate command) |
 | 3 | [Skill intake tooling (skillspector in Docker)](2026-10-02-skill-intake-tooling.md) | none | #1 |
 | 4 | [Asset kit core + determinism kit](2026-10-02-asset-kit-core.md) | none | #1 |
@@ -94,7 +93,7 @@ studio and the engine follow (D23).
 
 | Track | Notes |
 |---|---|
-| Infrastructure | #1 Docker, #2 implement-tasks skill, #3 skill intake, #15 docs check |
+| Infrastructure | #2 implement-tasks skill, #3 skill intake, #15 docs check (#1 Docker is done: [docs/dev-environment.md](../docs/dev-environment.md)) |
 | Graphics from code | #4 asset kit, #5 render CLI, #12 voxel baker, #21 FX emitters, #13 + #14 art spikes |
 | Engine | #6 sprite core, #16 sim core, #17 game package, #18 player + test protocol, #19 text and UI, #20 input, #22 tilemap, #23 saves, #32 conformance |
 | Audio | #24 synth core, #25 runtime audio, #29 studio audio |

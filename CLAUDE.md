@@ -10,9 +10,11 @@ There are two game types:
 - **Kairosoft-style 2D pixel-art sims**: first.
 - **Voxel games**: later, also rendered as pixel art.
 
-Status: foundation only, no code yet. The queue for the whole studio and engine is in `tasks/`
-(D23): the studio MVP and the art spikes first, then the engine, audio, the rest of the studio
-and the wrappers. The first real game is parked by the owner (D26): don't ask about it.
+Status: the Docker dev environment and the gate exist
+([docs/dev-environment.md](docs/dev-environment.md)); no engine or studio code yet. The queue for
+the whole studio and engine is in `tasks/` (D23): the studio MVP and the art spikes first, then
+the engine, audio, the rest of the studio and the wrappers. The first real game is parked by the
+owner (D26): don't ask about it.
 
 Read in this order: [docs/DECISIONS.md](docs/DECISIONS.md) → [tasks/README.md](tasks/README.md) →
 [research/README.md](research/README.md). Where ideas come from and how others do it:
@@ -57,5 +59,24 @@ Read in this order: [docs/DECISIONS.md](docs/DECISIONS.md) → [tasks/README.md]
 
 ## Verification
 
-Not defined yet. Task `tasks/2026-10-02-docker-dev-environment.md` defines the gate command (run in
-Docker) and fills in this section.
+The gate is one command, run from the repo root:
+
+```sh
+./dev npm run check
+```
+
+- It runs every check of the repo in the Docker dev container and exits 0 only if all passed.
+  A fresh clone or worktree needs nothing else first: `./dev` installs dependencies by itself.
+- **The exit code is the verdict. Never pipe the gate** through `tail` or `grep`; chain with
+  `&&` (`./dev npm run check && git commit ...`).
+- Every command goes through `./dev <cmd>` (Node 24 in Docker); nothing runs on the host's Node.
+  `./dev npm run check -- <package>` runs one check while iterating; only the full run is the
+  gate.
+- A new package joins the gate by having a `check` script in its own `package.json`. The root
+  script is never edited for that.
+- Containers have no GPU, so no headless WebGL there. Check graphics with numbers and hashes from
+  CPU renderers, or in the host browser through Chrome DevTools MCP (`./dev -p 4101 <server>`
+  publishes a port on 127.0.0.1).
+
+Details: [docs/dev-environment.md](docs/dev-environment.md) (the container, worktrees and their
+volumes, ports, the file-watch probe).

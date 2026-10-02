@@ -10,8 +10,9 @@ Two game types:
    Pocket Academy …). **We start here.**
 2. **Voxel games.** These come later and are also rendered as pixel art.
 
-> **Status (2026-10-02): foundation only.** No code yet. Agreed decisions, research reports
-> and the work queue for the whole studio and engine are in place.
+> **Status (2026-10-02): foundation plus the dev environment.** Agreed decisions, research
+> reports and the work queue for the whole studio and engine are in place. Everything runs in
+> Docker through `./dev`, and the gate is `./dev npm run check`. No engine or studio code yet.
 
 ## Where things are
 
@@ -21,4 +22,5 @@ Two game types:
 | [docs/references.md](docs/references.md) | Where the ideas come from and how others do it |
 | [research/README.md](research/README.md) | Deep research reports, security scans and the conclusions that repeat across them |
 | [tasks/README.md](tasks/README.md) | The work queue and its rules |
+| [docs/dev-environment.md](docs/dev-environment.md) | The Docker dev environment, the `./dev` wrapper and the gate |
 | [CLAUDE.md](CLAUDE.md) | Working rules for Claude Code sessions in this repo |

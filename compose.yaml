@@ -1,0 +1,48 @@
+# Wallhammer Zero dev environment (D16: everything runs in Docker, nothing on the host).
+#
+# Always go through ./dev (or `./dev compose ...`): it sets the variables this file requires.
+# Plain `docker compose ...` stops with an error on purpose, because it would use another
+# project name and so another node_modules volume. See docs/dev-environment.md.
+
+# Shared by every Node service. A later service (the studio) starts with `<<: *node-service`.
+x-node-service: &node-service
+  # Node 24 LTS, pinned by version and by the digest of the multi-arch index.
+  image: node:24.21.0-bookworm-slim@sha256:0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6
+  init: true
+  working_dir: /work
+  # Starts as root only to hand the volume roots to the host user, then drops to
+  # WHZ_UID:WHZ_GID and installs dependencies if node_modules is behind package-lock.json.
+  entrypoint: ["/bin/sh", "/work/tools/dev-env/entrypoint.sh"]
+  environment:
+    WHZ_IN_CONTAINER: "1"
+    WHZ_UID: ${WHZ_UID:?run this through ./dev (see docs/dev-environment.md)}
+    WHZ_GID: ${WHZ_GID:?run this through ./dev (see docs/dev-environment.md)}
+    WHZ_SKIP_INSTALL: ${WHZ_SKIP_INSTALL:-0}
+    HOME: /home/dev
+  volumes:
+    - .:/work
+    - node_modules:/work/node_modules
+    - npm_cache:/home/dev/.npm
+
+services:
+  # One-shot commands: `./dev <cmd>` is `docker compose run --rm dev <cmd>`.
+  dev:
+    <<: *node-service
+    # The default bridge: outbound network for npm, and no per-checkout Compose network.
+    network_mode: bridge
+
+  # Port convention for services that listen (the studio is the first one):
+  #   ports:
+  #     - "127.0.0.1:${WHZ_STUDIO_PORT:-4100}:4100"
+  # 127.0.0.1 only, a fixed default, and a WHZ_<SERVICE>_PORT variable to override it.
+  # tools/dev-env/compose-lint.mjs enforces this in the gate.
+
+volumes:
+  # Per checkout: the Compose project name comes from the checkout path (see ./dev).
+  node_modules:
+    labels:
+      whz.checkout: ${WHZ_ROOT:?run this through ./dev (see docs/dev-environment.md)}
+  # One download cache for all checkouts. npm's cache is content-addressed and safe to share.
+  npm_cache:
+    name: whz-npm-cache
+    external: true

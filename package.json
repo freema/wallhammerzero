@@ -1,0 +1,17 @@
+{
+  "name": "wallhammerzero",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Wallhammer Zero: a studio + generator for games written entirely by an AI.",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "workspaces": [
+    "tools/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "check": "node tools/check/run.mjs"
+  }
+}
