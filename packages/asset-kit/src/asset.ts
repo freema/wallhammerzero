@@ -9,6 +9,8 @@
 
 import { MAX_BUFFER_SIZE } from "./buffer.ts";
 import type { IndexedBuffer } from "./buffer.ts";
+import { resolveLintConfig } from "./lint-config.ts";
+import type { LintConfig, ResolvedLintConfig } from "./lint-config.ts";
 import { Palette } from "./palette.ts";
 
 /** Marks an object as an asset made by `defineAsset`. */
@@ -142,6 +144,8 @@ export interface AssetSpec<S extends ParamsSchema> {
   readonly reviewSeeds?: readonly number[];
   /** Names of stamp files next to the generator: `"face"` is stamps/face.txt. */
   readonly stampFiles?: readonly string[];
+  /** Lint thresholds that differ from the defaults of the kind (see src/lint-config.ts). */
+  readonly lint?: LintConfig;
   /** One frame. Pure: the same context always gives the same pixels. */
   render(context: RenderContext<NoInfer<S>>): IndexedBuffer;
 }
@@ -168,6 +172,8 @@ export interface Asset<S extends ParamsSchema = ParamsSchema> {
   readonly stampFiles: readonly string[];
   /** False while an asset with `stampFiles` has not been given their text (see `withStamps`). */
   readonly stampsBound: boolean;
+  /** The lint thresholds: the defaults of the kind with the asset's `lint` field laid over them. */
+  readonly lint: ResolvedLintConfig;
   /** The full, validated params for a choice. Throws on an unknown preset, param or value. */
   resolveParams(choice?: ParamChoice<S>): ParamValues<S>;
   /**
@@ -250,6 +256,7 @@ class DefinedAsset<S extends ParamsSchema> implements Asset<S> {
   readonly reviewSeeds: readonly number[];
   readonly stampFiles: readonly string[];
   readonly stampsBound: boolean;
+  readonly lint: ResolvedLintConfig;
 
   private readonly spec: AssetSpec<S>;
   private readonly program: (context: RenderContext<S>) => IndexedBuffer;
@@ -366,6 +373,11 @@ class DefinedAsset<S extends ParamsSchema> implements Asset<S> {
     this.reviewSeeds = reviewSeeds;
     this.stampFiles = Object.freeze([...stampFiles]);
     this.stampsBound = stampFiles.length === 0 || stamps !== null;
+    try {
+      this.lint = resolveLintConfig(this.meta, spec.palette, spec.lint);
+    } catch (error) {
+      fail((error as Error).message);
+    }
     this.program = spec.render.bind(spec) as (context: RenderContext<S>) => IndexedBuffer;
     this.stamps = Object.freeze({ ...(stamps ?? {}) });
     this.defaults = defaults as ParamValues<S>;

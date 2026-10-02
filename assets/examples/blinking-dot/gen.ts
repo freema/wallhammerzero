@@ -24,6 +24,7 @@ export default defineAsset({
   },
   presets: { small: { diameter: 4 }, big: { diameter: 8 } },
   variantSeeds: [1, 2, 5], // curated: red, teal, gold
+  lint: { maxGroups: 2, margin: 0, unoutlined: ["white"] }, // the sparkle: a second shape, in a corner, no outline
 
   render({ params, seed, frame }) {
     // One random stream per concern: a new stream never changes what another one gives.

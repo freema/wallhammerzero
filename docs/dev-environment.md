@@ -181,7 +181,8 @@ ESLint with typescript-eslint, and Vitest. A package's `check` script chains all
 - **Tests** are the `*.test.ts` files in a package's `test` folder, run by Vitest with no config
   file.
 - **Asset programs** are not a workspace. The root script `check:assets` typechecks `assets/`
-  (`assets/tsconfig.json`) and lints it.
+  (`assets/tsconfig.json`), lints the code with ESLint, and runs the asset lints on every asset
+  (`asset lint --all --no-write`; the rules are in [asset-pipeline.md](asset-pipeline.md#lint)).
 
 ### The determinism lint
 

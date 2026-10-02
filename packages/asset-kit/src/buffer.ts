@@ -388,12 +388,13 @@ export class IndexedBuffer {
   }
 
   /**
-   * The number of orphan pixels: opaque pixels with no pixel of the same index among their
-   * eight neighbours. A lone highlight is one; so is a stray pixel.
+   * The orphan pixels: opaque pixels with no pixel of the same index among their eight
+   * neighbours. A lone highlight is one; so is a stray pixel. Returns their offsets in `data`
+   * (`y * w + x`), in row order.
    */
-  orphanCount(): number {
+  orphanPixels(): number[] {
     const { w, h, data } = this;
-    let count = 0;
+    const found: number[] = [];
     for (let y = 0; y < h; y += 1) {
       for (let x = 0; x < w; x += 1) {
         const color = data[y * w + x] as number;
@@ -410,10 +411,15 @@ export class IndexedBuffer {
             }
           }
         }
-        if (alone) count += 1;
+        if (alone) found.push(y * w + x);
       }
     }
-    return count;
+    return found;
+  }
+
+  /** The number of orphan pixels (see `orphanPixels`). */
+  orphanCount(): number {
+    return this.orphanPixels().length;
   }
 
   /** The box around the opaque pixels, or null for a fully transparent buffer. */

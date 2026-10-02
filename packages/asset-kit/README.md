@@ -29,6 +29,7 @@ export default defineAsset({
   },
   presets: { small: { diameter: 4 }, big: { diameter: 8 } },
   variantSeeds: [1, 2, 5], // curated: red, teal, gold
+  lint: { maxGroups: 2, margin: 0, unoutlined: ["white"] }, // the sparkle: a second shape, in a corner, no outline
 
   render({ params, seed, frame }) {
     // One random stream per concern: a new stream never changes what another one gives.
@@ -65,6 +66,7 @@ export default defineAsset({
 | `params`, `presets` | Knobs: `int` (min, max), `enum` (values) or `bool`, each with a default and a one-line description. Presets are named values over the defaults. |
 | `variantSeeds`, `reviewSeeds` | Curated seeds worth showing, and fixed uncurated seeds (default 1–8) that review sheets always render. Never edit review seeds to hide a bad result. |
 | `stampFiles` | `["face"]` = `stamps/face.txt` next to `gen.ts`; its text arrives as `stamps.face` in `render`. |
+| `lint` | Optional: this asset's thresholds for the numeric lints, where its drawing needs them ([the rules](../../docs/asset-pipeline.md#lint)). |
 | `render(ctx)` | Returns one frame. The kit checks its size and that every index is in the palette. |
 
 **Drawing.** `IndexedBuffer` (0 = transparent): `pset`, `hline`, `vline`, `rect`, `fill`, `line`,
@@ -82,6 +84,6 @@ drawn: a hash over the indices, size, pivot, clip table, facings and palette id 
 `src/output.ts`), never over PNG bytes. Node hosts load a file with `loadAsset(path)` from
 `@whz/asset-kit/node`; the main entry has no I/O and runs unchanged in the browser.
 
-**Checks.** `./dev npm run check` typechecks, lints and tests the kit and every asset. The
-determinism lint (`tools/lint/determinism.js`) rejects clocks, `Math.random` and float `Math`
-in `assets/**`.
+**Commands and checks.** `./dev npm run asset -- bake|review|lint <id>` writes sheets and atlases,
+review images and lint reports: [docs/asset-pipeline.md](../../docs/asset-pipeline.md). `./dev npm run check`
+tests the kit, lints every asset, and rejects clocks, `Math.random` and float `Math` in `assets/**`.

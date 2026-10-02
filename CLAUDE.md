@@ -61,6 +61,11 @@ Read in this order: [docs/DECISIONS.md](docs/DECISIONS.md) → [tasks/README.md]
   numeric checks for timing.
 - Prefer checking state and numbers over screenshots. Run screenshot-heavy checks in a sub-agent
   and get a text verdict back.
+- **For an asset: lint first, then the review sheets, never the raw sprite.**
+  `./dev npm run asset -- lint <id>`, then `./dev npm run asset -- review <id>` and Read the
+  images in `build/review/<id>/`. The measured limits (nothing is seen at 1x, 4x is the minimum,
+  Read resamples images over 2000 px) and how to read each view:
+  [docs/looking-at-images.md](docs/looking-at-images.md).
 
 ## Verification
 
