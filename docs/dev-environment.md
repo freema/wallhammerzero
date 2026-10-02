@@ -134,7 +134,7 @@ While working on one package:
 
 A filtered run is for iterating. Only the full `./dev npm run check` is the gate.
 
-Today the gate holds these checks, all plain `node --test` with no dependencies:
+The tools' checks are plain `node --test`:
 
 - `@whz/check`: tests of the aggregator itself (a failing check fails the gate, and so on).
 - `@whz/dev-env`: the smoke test of the environment (runs in the container, Node is the pinned
@@ -149,6 +149,48 @@ Today the gate holds these checks, all plain `node --test` with no dependencies:
   evidence, baselines), the pins of the scanner image, and tests of the scan command against a
   stand-in `docker`. The scanner itself runs on the host's Docker, not in the gate
   ([security/skill-intake/README.md](../security/skill-intake/README.md)).
+- `@whz/lint`: proves the determinism lint fires (see below).
+
+The TypeScript packages (`packages/*`) and the asset programs (`assets/`) are checked as
+described in the next section.
+
+## TypeScript packages
+
+The toolchain is installed once, as `devDependencies` of the root `package.json`: TypeScript,
+ESLint with typescript-eslint, and Vitest. A package's `check` script chains all three:
+
+```json
+"check": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json && eslint . && vitest run"
+```
+
+- **No build step.** A package exports its TypeScript source (see the `exports` field of
+  `packages/det/package.json`). Node 24 runs it directly, so does Vitest, and a bundler takes it
+  as it is. For that to work the code uses only syntax Node can strip (the compiler option
+  `erasableSyntaxOnly`: no `enum`, no parameter properties), writes the `.ts` extension in
+  imports, and imports JSON `with { type: "json" }`.
+- **[`tsconfig.base.json`](../tsconfig.base.json)** holds the compiler options (strict, no emit).
+  Each package has two configs on top of it. `packages/det/tsconfig.json` covers the source with
+  no ambient types (no Node types, no DOM library), so code that must run in Node and in the
+  browser cannot reach for either. `packages/det/tsconfig.test.json` covers tests and scripts and
+  adds the Node types.
+- **[`eslint.config.js`](../eslint.config.js)** is the one ESLint config. A new package needs no
+  change there unless it joins the determinism lint.
+- **Tests** are the `*.test.ts` files in a package's `test` folder, run by Vitest with no config
+  file.
+- **Asset programs** are not a workspace. The root script `check:assets` typechecks `assets/`
+  (`assets/tsconfig.json`) and lints it.
+
+### The determinism lint
+
+Code that must give the same result on every engine and in a later port may not use clocks,
+unseeded randomness or floating-point `Math`: `Math.random`, `Date`, `performance`,
+`Math.sin/cos/tan/exp/log/pow`, `Math.round`, `Math.sqrt` and every other `Math` member except
+the exact integer helpers, `**`, `parseFloat`, timers, `globalThis` and `node:` imports. The
+replacements are in [`@whz/det`](../packages/det/README.md). The rules and their messages are in
+[`tools/lint/determinism.js`](../tools/lint/determinism.js) (ESLint core rules only), and the
+list of files under them is `DETERMINISTIC` in `eslint.config.js`: today everything in
+`assets/`, `packages/det/src/` and `packages/asset-kit/src/`. Tests and build scripts are exempt.
+A later package (the sim, the synth) joins by adding its source glob to that list.
 
 ## Several checkouts at once (git worktrees)
 

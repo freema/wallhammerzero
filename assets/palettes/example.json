@@ -1,0 +1,30 @@
+{
+  "format": "wz.palette/1",
+  "id": "example",
+  "about": "A small hand-built palette for the kit's example assets and tests. Not a game palette: the art spike brings its own.",
+  "slots": [
+    { "name": "transparent", "rgb": "#000000" },
+    { "name": "ink", "rgb": "#3b2f4a" },
+    { "name": "ink-deep", "rgb": "#231a30" },
+    { "name": "shadow", "rgb": "#1c1626" },
+    { "name": "white", "rgb": "#fdf9f0" },
+    { "name": "red.0", "rgb": "#8f2d4a" },
+    { "name": "red.1", "rgb": "#d9483b" },
+    { "name": "red.2", "rgb": "#ff8c5a" },
+    { "name": "gold.0", "rgb": "#a85b1e" },
+    { "name": "gold.1", "rgb": "#e8a628" },
+    { "name": "gold.2", "rgb": "#ffe07a" },
+    { "name": "teal.0", "rgb": "#1f5e6e" },
+    { "name": "teal.1", "rgb": "#2fa58e" },
+    { "name": "teal.2", "rgb": "#8fe6b0" },
+    { "name": "grey.0", "rgb": "#4a4458" },
+    { "name": "grey.1", "rgb": "#8d8a9c" },
+    { "name": "grey.2", "rgb": "#d6d4dc" }
+  ],
+  "ramps": {
+    "red": ["red.0", "red.1", "red.2"],
+    "gold": ["gold.0", "gold.1", "gold.2"],
+    "teal": ["teal.0", "teal.1", "teal.2"],
+    "grey": ["grey.0", "grey.1", "grey.2", "white"]
+  }
+}

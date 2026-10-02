@@ -24,4 +24,7 @@ Two game types:
 | [security/skill-intake/README.md](security/skill-intake/README.md) | Third-party skill intake: the procedure, the scan command, the registry and the scan evidence |
 | [tasks/README.md](tasks/README.md) | The work queue and its rules |
 | [docs/dev-environment.md](docs/dev-environment.md) | The Docker dev environment, the `./dev` wrapper and the gate |
+| [packages/asset-kit/](packages/asset-kit/README.md) | The library asset programs are written with: `defineAsset`, `IndexedBuffer`, palettes, stamps, the output hash |
+| [packages/det/](packages/det/README.md) | The determinism kit: seeded integer RNG, hashes, integer trig and easing, test vectors for ports |
+| `assets/` | Asset programs (one folder each, e.g. `assets/examples/blinking-dot/gen.ts`) and palettes (`assets/palettes/example.json`) |
 | [CLAUDE.md](CLAUDE.md) | Working rules for Claude Code sessions in this repo |

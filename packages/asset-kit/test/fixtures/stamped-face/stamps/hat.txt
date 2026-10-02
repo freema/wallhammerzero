@@ -1,0 +1,4 @@
+# A hat, drawn tapered: the generator pads it with padRows.
+..hhhh
+.hhhhhh
+HHHHHHHH

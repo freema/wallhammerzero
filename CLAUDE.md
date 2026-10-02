@@ -76,6 +76,10 @@ The gate is one command, run from the repo root:
   gate.
 - A new package joins the gate by having a `check` script in its own `package.json`. The root
   script is never edited for that.
+- Asset programs (`assets/`), `packages/det` and `packages/asset-kit` are under the
+  **determinism lint** (`tools/lint/determinism.js`): no `Math.random`, clocks or float `Math`;
+  use `@whz/det`. The asset contract is in
+  [packages/asset-kit/README.md](packages/asset-kit/README.md).
 - Containers have no GPU, so no headless WebGL there. Check graphics with numbers and hashes from
   CPU renderers, or in the host browser through Chrome DevTools MCP (`./dev -p 4101 <server>`
   publishes a port on 127.0.0.1).

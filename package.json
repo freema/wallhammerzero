@@ -12,6 +12,15 @@
     "packages/*"
   ],
   "scripts": {
-    "check": "node tools/check/run.mjs"
+    "check": "node tools/check/run.mjs",
+    "check:assets": "tsc --noEmit -p assets && eslint assets"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.19.1",
+    "eslint": "^10.11.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.0",
+    "vitest": "^5.0.3"
   }
 }

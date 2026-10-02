@@ -1,0 +1,9 @@
+# An 8 x 8 face. s = skin, S = skin shade, w = eye white, o = ink (pupils, mouth).
+..ssss..
+.ssssss.
+sswsswss
+ssossoss
+ssssssss
+sSssssSs
+.SsooSS.
+..SSSS..

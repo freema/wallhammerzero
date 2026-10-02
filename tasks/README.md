@@ -70,7 +70,6 @@ studio and the engine follow (D23).
 | # | Note | Gate | Depends on |
 |---|---|---|---|
 | 0 | [Owner calls](2026-10-02-owner-calls.md) | owner answers | none |
-| 4 | [Asset kit core + determinism kit](2026-10-02-asset-kit-core.md) | none | #1 |
 | 5 | [Asset render CLI: bake, review sheets, lints](2026-10-02-asset-render-cli.md) | none | #4 |
 | 6 | [Runtime sprite core (WebGL2 + CPU reference)](2026-10-02-runtime-sprite-core.md) | none | #5 |
 | 7 | [Studio skeleton + gallery](2026-10-02-studio-skeleton-gallery.md) | none | #1, #5 |
@@ -108,7 +107,7 @@ studio and the engine follow (D23).
 | Track | Notes |
 |---|---|
 | Infrastructure | #15 docs check (#1 Docker is done: [docs/dev-environment.md](../docs/dev-environment.md); #2 the implement-tasks skill is done: [Running the queue](#running-the-queue); #3 skill intake is done: [security/skill-intake/README.md](../security/skill-intake/README.md)) |
-| Graphics from code | #4 asset kit, #5 render CLI, #12 voxel baker, #21 FX emitters, #13 + #14 art spikes |
+| Graphics from code | #5 render CLI, #12 voxel baker, #21 FX emitters, #13 + #14 art spikes (#4 asset kit is done: [packages/asset-kit/README.md](../packages/asset-kit/README.md), [packages/det/README.md](../packages/det/README.md)) |
 | Engine | #6 sprite core, #16 sim core, #17 game package, #18 player + test protocol, #19 text and UI, #20 input, #22 tilemap, #23 saves, #32 conformance |
 | Audio | #24 synth core, #25 runtime audio, #29 studio audio |
 | Studio | #7 skeleton, #8 live reload, #9 player, #10 verdicts, #11 task from rejection, #26 concept pages, #27 compare, #28 sliders, #29 audio, #30 play and builds, #31 voxel inspector |
