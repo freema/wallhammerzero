@@ -1,0 +1,19 @@
+{
+  "format": "wz.runtime-parity/1",
+  "about": "Pixel hashes (pixelHash of @whz/runtime) of the scenes in dev/scenes.ts, drawn by the CPU backend. Generated: npm run golden -w @whz/runtime.",
+  "scenes": {
+    "frame seed-1 blink.default.0": "c14055fb9aeb392e",
+    "frame seed-1 blink.default.0 mirrored, palette row 1": "5ddda3948ca8c0fc",
+    "frame seed-1 blink.default.1": "9031cc6be478a5e6",
+    "frame seed-1 blink.default.1 mirrored, palette row 1": "709bfbb615f1ab8b",
+    "frame seed-2 blink.default.0": "e95e1a518a752736",
+    "frame seed-2 blink.default.0 mirrored, palette row 1": "583c518e5cea0bbe",
+    "frame seed-2 blink.default.1": "25af0425610bf4e7",
+    "frame seed-2 blink.default.1 mirrored, palette row 1": "39bc138bcc142c0a",
+    "frame seed-5 blink.default.0": "9bccec31d0f2f192",
+    "frame seed-5 blink.default.0 mirrored, palette row 1": "1480b8e7ce3bca60",
+    "frame seed-5 blink.default.1": "d056eb8e68ad3d8f",
+    "frame seed-5 blink.default.1 mirrored, palette row 1": "6c8ac9a370ae12c7",
+    "twenty sprites": "d9a2f797c059bc35"
+  }
+}

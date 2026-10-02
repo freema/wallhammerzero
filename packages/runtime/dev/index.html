@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wallhammer Zero runtime: dev page</title>
+    <link rel="icon" href="data:," />
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 24px;
+        background: #17131f;
+        color: #d6d4dc;
+        font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 15px;
+      }
+      p {
+        margin: 0 0 16px;
+        color: #8d8a9c;
+        max-width: 72ch;
+      }
+      canvas {
+        display: block;
+        /* The checker shows where a rectangle was left transparent. */
+        background: repeating-conic-gradient(#231a30 0% 25%, #2c2340 0% 50%) 0 0 / 16px 16px;
+        outline: 1px solid #3b2f4a;
+      }
+      pre {
+        margin: 16px 0 0;
+        white-space: pre-wrap;
+      }
+      .bad {
+        color: #ff8c5a;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>@whz/runtime dev page</h1>
+    <p>
+      16 previews of the baked example asset in 16 rectangles of one canvas, drawn by one WebGL2 context. Checks run from
+      the console: <code>await __runtime.parity()</code>, <code>__runtime.grid()</code>, <code>__runtime.readNative()</code>.
+    </p>
+    <canvas id="view"></canvas>
+    <pre id="status">loading the bake ...</pre>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

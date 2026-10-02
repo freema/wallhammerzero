@@ -71,7 +71,6 @@ and every note against the format above ([docs/docs-check.md](../docs/docs-check
 | # | Note | Gate | Depends on |
 |---|---|---|---|
 | 0 | [Owner calls](2026-10-02-owner-calls.md) | owner answers | none |
-| 6 | [Runtime sprite core (WebGL2 + CPU reference)](2026-10-02-runtime-sprite-core.md) | none | #5 |
 | 7 | [Studio skeleton + gallery](2026-10-02-studio-skeleton-gallery.md) | none | #1, #5 |
 | 8 | [Studio live reload](2026-10-02-studio-live-reload.md) | none | #7 |
 | 9 | [Studio animation player](2026-10-02-studio-animation-player.md) | none | #8, #6 |
@@ -106,7 +105,7 @@ and every note against the format above ([docs/docs-check.md](../docs/docs-check
 |---|---|
 | Infrastructure | all done: #1 Docker ([docs/dev-environment.md](../docs/dev-environment.md)), #2 the implement-tasks skill ([Running the queue](#running-the-queue)), #3 skill intake ([security/skill-intake/README.md](../security/skill-intake/README.md)), #15 docs check ([docs/docs-check.md](../docs/docs-check.md)) |
 | Graphics from code | #12 voxel baker, #21 FX emitters, #13 + #14 art spikes (#4 asset kit is done: [packages/asset-kit/README.md](../packages/asset-kit/README.md), [packages/det/README.md](../packages/det/README.md); #5 render CLI is done: [docs/asset-pipeline.md](../docs/asset-pipeline.md), [docs/looking-at-images.md](../docs/looking-at-images.md)) |
-| Engine | #6 sprite core, #17 game package, #18 player + test protocol, #19 text and UI, #20 input, #22 tilemap, #23 saves, #32 conformance (#16 sim core is done: [docs/sim.md](../docs/sim.md), [packages/sim/README.md](../packages/sim/README.md)) |
+| Engine | #17 game package, #18 player + test protocol, #19 text and UI, #20 input, #22 tilemap, #23 saves, #32 conformance (#6 sprite core is done: [packages/runtime/README.md](../packages/runtime/README.md); #16 sim core is done: [docs/sim.md](../docs/sim.md), [packages/sim/README.md](../packages/sim/README.md)) |
 | Audio | #24 synth core, #25 runtime audio, #29 studio audio |
 | Studio | #7 skeleton, #8 live reload, #9 player, #10 verdicts, #11 task from rejection, #26 concept pages, #27 compare, #28 sliders, #29 audio, #30 play and builds, #31 voxel inspector |
 | Shipping | #30 web build, #33 desktop, #34 mobile |

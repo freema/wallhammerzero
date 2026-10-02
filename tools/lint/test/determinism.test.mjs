@@ -37,6 +37,8 @@ const UNDER_LINT = [
   "packages/asset-kit/src/extra.ts",
   "packages/sim/src/extra.ts",
   "packages/sim/src/systems/extra.ts",
+  "packages/runtime/src/extra.ts",
+  "packages/runtime/src/webgl/extra.ts",
 ];
 /** Where it does not: tests, scripts and the Node-side loader. */
 const NOT_UNDER_LINT = [
@@ -46,6 +48,9 @@ const NOT_UNDER_LINT = [
   "packages/asset-kit/src/node/extra.ts",
   "packages/sim/test/extra.test.ts",
   "packages/sim/src/node/extra.ts",
+  "packages/runtime/test/extra.test.ts",
+  "packages/runtime/dev/extra.ts",
+  "packages/runtime/src/node/extra.ts",
 ];
 
 test("a fixture asset that calls Math.random() fails ESLint", async () => {
@@ -94,11 +99,13 @@ test("the eslint command exits non-zero on the fixtures and zero on the real ass
 });
 
 test("the example asset and the kits are clean under the lint", async () => {
-  const results = await eslint.lintFiles(["assets", "packages/det/src", "packages/asset-kit/src", "packages/sim/src"]);
+  const results = await eslint.lintFiles(["assets", "packages/det/src", "packages/asset-kit/src", "packages/sim/src", "packages/runtime/src"]);
   assert.ok(results.length >= 10, `only ${results.length} files were linted`);
   assert.ok(results.some((result) => result.filePath.endsWith("assets/examples/blinking-dot/gen.ts")));
   assert.ok(results.some((result) => result.filePath.endsWith("packages/sim/src/kernel.ts")));
   assert.ok(results.some((result) => result.filePath.endsWith("packages/sim/src/systems/counter-shop.ts")));
+  assert.ok(results.some((result) => result.filePath.endsWith("packages/runtime/src/cpu.ts")));
+  assert.ok(results.some((result) => result.filePath.endsWith("packages/runtime/src/webgl/backend.ts")));
   for (const result of results) {
     assert.deepEqual(result.messages, [], result.filePath);
   }

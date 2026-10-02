@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2024", "DOM"]
+  },
+  "include": ["src/webgl", "dev"],
+  "exclude": ["dev/vite.config.ts"]
+}

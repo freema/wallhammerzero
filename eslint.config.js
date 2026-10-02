@@ -18,10 +18,11 @@ const DETERMINISTIC = [
   "packages/det/src/**/*.ts",
   "packages/asset-kit/src/**/*.ts",
   "packages/sim/src/**/*.ts",
+  "packages/runtime/src/**/*.ts",
 ];
 
 /** Node-side entry points of deterministic packages: they load files, they do not draw. */
-const DETERMINISTIC_EXCEPT = ["packages/asset-kit/src/node/**", "packages/sim/src/node/**"];
+const DETERMINISTIC_EXCEPT = ["packages/asset-kit/src/node/**", "packages/sim/src/node/**", "packages/runtime/src/node/**"];
 
 const TYPESCRIPT = ["**/*.ts"];
 

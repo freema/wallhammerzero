@@ -33,3 +33,12 @@ Capacitor (a delegated default the owner can overturn).
 - The owner runs the APK on a real phone and ticks the checklist (manual, recorded in the
   commit message).
 - No key, keystore or secret is written into the repo or the studio cache.
+
+## Follow-up from runtime-sprite-core (2026-10-02)
+The WebGL2 backend of `packages/runtime` was checked for pixel parity with the CPU backend in
+desktop Chrome only (ANGLE on Metal). WKWebView and Android WebView use other GPU stacks. When
+the wrapper runs on a device, run the same comparison inside the WebView: the check scenes of
+`packages/runtime/dev/scenes.ts` drawn by both backends and compared with the golden hashes, as
+`parity()` of the runtime's dev page does (`packages/runtime/README.md`). Record the result in
+`docs/shipping.md` next to the real-device checklist. A mismatch is a bug of the WebGL backend,
+not of the wrapper: it becomes its own note.

@@ -89,6 +89,11 @@ The gate is one command, run from the repo root:
   `Math`; use `@whz/det`. The asset contract is in
   [packages/asset-kit/README.md](packages/asset-kit/README.md); the sim contract (ticks,
   commands, digests, replays) is in [docs/sim.md](docs/sim.md).
+- The renderer is `packages/runtime` (also under the determinism lint): the host passes the time
+  and the rectangle, the runtime has no frame loop, and the CPU backend is the reference for
+  the WebGL2 one. The contract and the browser parity check
+  (`window.__runtime.parity()` on its dev page) are in
+  [packages/runtime/README.md](packages/runtime/README.md).
 - Containers have no GPU, so no headless WebGL there. Check graphics with numbers and hashes from
   CPU renderers, or in the host browser through Chrome DevTools MCP (`./dev -p 4101 <server>`
   publishes a port on 127.0.0.1).

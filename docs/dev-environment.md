@@ -155,7 +155,11 @@ The tools' checks are plain `node --test`:
 - `@whz/lint`: proves the determinism lint fires (see below).
 
 The TypeScript packages (`packages/*`) and the asset programs (`assets/`) are checked as
-described in the next section.
+described in the next section. `@whz/runtime` adds two steps to that: a typecheck of its
+browser code against the DOM library (`packages/runtime/tsconfig.webgl.json`), and a
+`vite build` of its dev page, so a page that no longer bundles fails the gate. Its WebGL
+backend itself is checked in the host browser, not in the gate
+([packages/runtime/README.md](../packages/runtime/README.md#checks)).
 
 ## TypeScript packages
 
@@ -193,8 +197,11 @@ the exact integer helpers, `**`, `parseFloat`, timers, `globalThis` and `node:` 
 replacements are in [`@whz/det`](../packages/det/README.md). The rules and their messages are in
 [`tools/lint/determinism.js`](../tools/lint/determinism.js) (ESLint core rules only), and the
 list of files under them is `DETERMINISTIC` in `eslint.config.js`: today everything in
-`assets/`, `packages/det/src/` and `packages/asset-kit/src/`. Tests and build scripts are exempt.
-A later package (the sim, the synth) joins by adding its source glob to that list.
+`assets/`, `packages/det/src/`, `packages/asset-kit/src/`, `packages/sim/src/` and
+`packages/runtime/src/` (for the runtime the lint is also what keeps frame callbacks and clocks
+out: the host passes the time in). Tests, build scripts and the Node-side entry points
+(`src/node/`) are exempt. A later package (the synth) joins by adding its source glob to that
+list.
 
 ## Several checkouts at once (git worktrees)
 
