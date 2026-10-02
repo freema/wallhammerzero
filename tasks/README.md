@@ -93,6 +93,7 @@ and every note against the format above ([docs/docs-check.md](../docs/docs-check
 | 32 | [Sim conformance on QuickJS](2026-10-02-sim-conformance-quickjs.md) | none | #17 |
 | 33 | [Desktop wrapper](2026-10-02-desktop-wrapper.md) | none | #30, #23 |
 | 34 | [Mobile wrapper](2026-10-02-mobile-wrapper.md) | none (iOS build: OC-B4) | #30, #25, #23 |
+| 35 | [Hardening after the first waves](2026-10-02-hardening-after-first-waves.md) | none | none |
 <!-- queue:end (the studio inserts new rows above this line) -->
 
 ### The queue by track
