@@ -13,8 +13,9 @@ Two game types:
 > **Status (2026-10-02): foundation, the dev environment and the first packages.** Agreed
 > decisions, research reports and the work queue for the whole studio and engine are in place.
 > Everything runs in Docker through `./dev`, and the gate is `./dev npm run check`. The asset kit
-> and the determinism kit exist (`packages/asset-kit`, `packages/det`). No runtime, studio or
-> game code yet.
+> with its `asset` command (bake, review sheets, lints), the determinism kit and the sim core
+> exist (`packages/asset-kit`, `packages/det`, `packages/sim`). No runtime, studio or game code
+> yet.
 
 ## Where things are
 
@@ -30,6 +31,8 @@ Two game types:
 | [packages/det/](packages/det/README.md) | The determinism kit: seeded integer RNG, hashes, integer trig and easing, test vectors for ports |
 | [docs/asset-pipeline.md](docs/asset-pipeline.md) | The `asset` command: bake (indexed PNG sheets + `atlas.json`), review sheets, numeric lints, and the same as library functions |
 | [docs/looking-at-images.md](docs/looking-at-images.md) | How a session looks at pixel art: the review views, the rules, and the vision calibration behind them |
+| [docs/sim.md](docs/sim.md) | The sim contract: ticks, commands, events, ordering, the digest, snapshots and replays |
+| [packages/sim/](packages/sim/README.md) | The sim core: the deterministic tick kernel, the toy `counter-shop` systems and the `sim` replay runner |
 | `assets/` | Asset programs (one folder each, e.g. `assets/examples/blinking-dot/gen.ts`) and palettes (`assets/palettes/example.json`) |
 | [docs/docs-check.md](docs/docs-check.md) | The check that keeps links, paths, the queue and ids in the docs true |
 | [CLAUDE.md](CLAUDE.md) | Working rules for Claude Code sessions in this repo |

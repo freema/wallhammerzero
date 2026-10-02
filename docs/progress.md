@@ -9,9 +9,9 @@ tool disagree, the tool wins. Format:
 ## Now
 
 - **In flight:** nothing.
-- **Last finished:** `implement-tasks-skill`, `skill-intake-tooling`, `asset-kit-core` and
-  `repo-docs-check` (2026-10-02), built in parallel and integrated on the `implementation` branch.
-- **Next:** #5 `asset-render-cli` (#16 `sim-core` is open too).
+- **Last finished:** `asset-render-cli` and `sim-core` (2026-10-02), built in parallel and
+  integrated on the `implementation` branch.
+- **Next:** #6 `runtime-sprite-core` (#7, #12, #17 and #24 are open too).
 
 ## Blocked on the owner
 
