@@ -1,0 +1,96 @@
+families: quadruped, biped, reptile, arthropod, winged, serpent, aquatic, amorphous, plantfolk
+uncurated seeds: 101, 202, 303, 404, 505, 606, 707, 808
+family	seed	traits	frameWxH	bboxWxH	coloursInFrame	paletteSize	walkFrames	repairs	warnings	deterministic
+quadruped	101	canine	66x47	62x41	15	46	6	0	0	True
+quadruped	202	canine	68x58	63x47	14	46	6	0	0	True
+quadruped	303	bovine|horns:ram	72x51	68x46	15	46	5	0	0	True
+quadruped	404	bovine	87x67	82x61	13	45	6	0	0	True
+quadruped	505	cervine|horns:antlers	63x59	54x53	12	46	7	0	0	True
+quadruped	606	cervine|horns:backswept	52x49	46x45	13	46	6	0	0	True
+quadruped	707	ursine	59x57	53x49	12	46	6	0	0	True
+quadruped	808	feline	45x33	41x28	17	45	5	0	0	True
+biped	101	troll	47x66	35x59	14	51	6	0	0	True
+biped	202	dwarf|weapon:hammer|outfit:belt|headgear:helmet	35x58	26x49	27	51	5	0	0	True
+biped	303	goblin|weapon:dagger	38x59	33x52	20	51	5	0	0	True
+biped	404	troll|outfit:belt|headgear:hood|beard	46x62	38x56	26	51	6	0	0	True
+biped	505	imp|horns:curved	38x51	34x44	17	50	5	0	0	True
+biped	606	kobold|weapon:dagger|outfit:belt	38x41	35x33	25	51	4	0	0	True
+biped	707	golem	41x56	33x51	10	51	5	0	0	True
+biped	808	ogre|weapon:hammer|outfit:tunic|beard	46x72	38x58	28	51	6	0	0	True
+reptile	101	tortoise|shell|shell:flat	60x47	58x43	14	46	9	0	0	True
+reptile	202	salamander	73x46	64x39	11	46	4	0	0	True
+reptile	303	tortoise|shell|shell:flat	43x32	41x29	16	46	6	0	0	True
+reptile	404	lizard|back:ridge	74x45	63x39	11	46	4	0	0	True
+reptile	505	crocodile|back:ridge	101x53	89x47	13	46	5	0	0	True
+reptile	606	lizard|horns:nasal|back:spikes	72x42	61x35	14	46	4	0	0	True
+reptile	707	salamander|back:sail	83x50	74x44	10	46	4	0	0	True
+reptile	808	crocodile|back:ridge	95x52	83x46	14	46	5	0	0	True
+arthropod	101	scorpion|pincers	56x50	52x47	16	46	4	0	0	True
+arthropod	202	spider	39x25	34x21	9	45	4	0	0	True
+arthropod	303	spider	43x31	38x28	11	45	4	0	0	True
+arthropod	404	beetle|elytra	41x30	36x26	15	46	4	0	0	True
+arthropod	505	scorpion|pincers	61x62	58x59	14	46	4	0	0	True
+arthropod	606	spider	50x32	44x29	11	46	4	0	0	True
+arthropod	707	mantis|blades	56x37	52x32	12	46	4	0	0	True
+arthropod	808	scorpion|pincers	55x52	52x49	16	46	4	0	0	True
+winged	101	raptor	32x26	29x21	16	46	4	0	0	True
+winged	202	raptor	38x34	36x28	14	46	4	0	0	True
+winged	303	raptor	40x33	37x26	16	46	4	0	0	True
+winged	404	dragonfly	35x41	32x19	16	46	4	0	0	True
+winged	505	dragonfly	32x38	28x17	12	46	4	0	0	True
+winged	606	songbird	28x23	26x20	16	46	4	0	0	True
+winged	707	raptor	36x32	33x29	15	46	4	0	0	True
+winged	808	dragonfly	33x38	26x24	14	46	4	0	0	True
+serpent	101	constrictor	72x38	50x28	14	46	9	0	0	True
+serpent	202	viper	43x23	28x17	11	45	7	0	0	True
+serpent	303	worm	55x31	53x26	12	46	14	0	0	True
+serpent	404	worm	59x33	56x26	10	46	14	0	0	True
+serpent	505	viper|rattle	57x30	51x16	16	46	7	0	0	True
+serpent	606	constrictor	90x47	66x36	13	46	9	0	0	True
+serpent	707	constrictor	84x41	76x23	13	46	8	0	0	True
+serpent	808	constrictor	82x44	46x32	14	46	9	0	0	True
+aquatic	101	puffer	38x47	32x25	21	46	5	0	0	True
+aquatic	202	angler|lure	55x61	46x38	17	46	4	0	0	True
+aquatic	303	reef	40x50	34x28	18	46	4	0	0	True
+aquatic	404	shark	64x63	56x38	11	46	7	0	0	True
+aquatic	505	shark	62x60	50x38	11	46	7	0	0	True
+aquatic	606	shark	62x59	54x34	10	46	7	0	0	True
+aquatic	707	reef	53x59	43x40	18	46	5	0	0	True
+aquatic	808	ray	43x40	41x22	11	46	6	0	0	True
+amorphous	101	slime	25x26	18x17	11	46	5	0	0	True
+amorphous	202	ooze	44x34	31x22	10	46	6	0	0	True
+amorphous	303	jelly	32x39	25x33	12	46	5	0	0	True
+amorphous	404	octopus	43x42	37x37	13	46	10	0	0	True
+amorphous	505	ooze	37x29	24x20	9	46	6	0	0	True
+amorphous	606	jelly	41x54	33x40	9	46	5	0	0	True
+amorphous	707	slime	29x31	19x21	14	46	5	0	0	True
+amorphous	808	beholder	24x49	22x30	14	46	10	0	0	True
+plantfolk	101	mandrake	34x44	26x38	13	54	5	0	0	True
+plantfolk	202	mushroom|cap:liberty	30x48	25x42	15	54	4	0	0	True
+plantfolk	303	bloom	29x35	25x30	15	54	4	0	0	True
+plantfolk	404	flytrap	34x48	28x44	17	54	4	0	0	True
+plantfolk	505	sapling	36x62	30x55	16	54	4	0	0	True
+plantfolk	606	mushroom|cap:inkcap	38x57	33x52	25	54	4	0	0	True
+plantfolk	707	mandrake	28x40	22x34	12	54	4	0	0	True
+plantfolk	808	sapling	35x54	28x50	14	54	4	0	0	True
+anim biped 101 idle: frames=24 changedPixelsToNext=[85,70,26,40,82,84,90,88,39,35,94,139,129,103,45,39,77,82,102,85,38,36,53,120] (last is loop seam) baselineY=[60,61]
+anim biped 101 walk: frames=6 changedPixelsToNext=[1064,1009,501,952,1079,429] (last is loop seam) baselineY=[61,58,60]
+strip biped 101: walk 6 frames, idle 24 frames
+anim quadruped 202 idle: frames=24 changedPixelsToNext=[100,75,21,28,81,104,75,64,24,31,73,82,117,81,29,26,66,121,87,78,34,26,67,72] (last is loop seam) baselineY=[49]
+anim quadruped 202 walk: frames=6 changedPixelsToNext=[620,594,536,645,662,529] (last is loop seam) baselineY=[51,49,47,52]
+strip quadruped 202: walk 6 frames, idle 24 frames
+anim amorphous 303 idle: frames=24 changedPixelsToNext=[247,214,166,147,148,125,148,178,142,124,99,144,196,152,108,193,209,174,235,151,128,95,147,203] (last is loop seam) baselineY=[34,33,31,32]
+anim amorphous 303 walk: frames=5 changedPixelsToNext=[227,327,240,234,460] (last is loop seam) baselineY=[33,34]
+strip amorphous 303: walk 5 frames, idle 24 frames
+small biped 101: frame 23x35, content 21x32, colours 15
+small biped 202: frame 20x35, content 18x31, colours 24
+small biped 303: frame 25x36, content 23x33, colours 20
+small quadruped 101: frame 28x20, content 26x18, colours 15
+small quadruped 202: frame 30x24, content 27x20, colours 13
+small quadruped 303: frame 28x20, content 26x18, colours 14
+small amorphous 101: frame 14x13, content 11x11, colours 6
+small amorphous 202: frame 16x13, content 14x11, colours 10
+small amorphous 303: frame 20x23, content 15x20, colours 12
+small winged 101: frame 22x17, content 19x14, colours 13
+small winged 202: frame 18x16, content 16x13, colours 16
+small winged 303: frame 20x16, content 17x13, colours 14
