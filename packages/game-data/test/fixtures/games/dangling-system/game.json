@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "dangling-system",
+  "title": "Fixture",
+  "resolution": {
+    "width": 320,
+    "height": 180
+  },
+  "palette": "example",
+  "systems": [
+    "shop.arrivals",
+    "shop.delivery"
+  ],
+  "rowText": {
+    "customerKinds": [
+      "name"
+    ]
+  }
+}

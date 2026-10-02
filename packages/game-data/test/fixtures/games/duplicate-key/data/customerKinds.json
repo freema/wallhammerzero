@@ -1,0 +1,4 @@
+[
+  { "id": "student", "weight": 5, "budgetMin": 2, "budgetMax": 6, "patience": 12 },
+  { "id": "tourist", "weight": 1, "budgetMin": 10, "budgetMax": 40, "patience": 6, "weight": 2 }
+]

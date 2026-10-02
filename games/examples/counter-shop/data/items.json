@@ -1,0 +1,5 @@
+[
+  { "id": "apple", "price": 3, "unitCost": 1, "stock": 20, "weight": 5 },
+  { "id": "bread", "price": 6, "unitCost": 3, "stock": 12, "weight": 3 },
+  { "id": "cake", "price": 15, "unitCost": 8, "stock": 4, "weight": 1 }
+]

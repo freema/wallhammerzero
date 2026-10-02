@@ -1,0 +1,5 @@
+[
+  { "id": "student", "weight": 5, "budgetMin": 2, "budgetMax": 6, "patience": 12 },
+  { "id": "regular", "weight": 3, "budgetMin": 4, "budgetMax": 12, "patience": 20 },
+  { "id": "tourist", "weight": 1, "budgetMin": 10, "budgetMax": 40, "patience": 6 }
+]

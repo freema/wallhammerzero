@@ -15,6 +15,7 @@
     "asset": "node packages/asset-kit/src/node/bin.ts",
     "check": "node tools/check/run.mjs",
     "check:assets": "tsc --noEmit -p assets && eslint assets && node packages/asset-kit/src/node/bin.ts lint --all --no-write",
+    "game": "node packages/game-data/src/node/bin.ts",
     "sim": "node packages/sim/src/node/cli.ts"
   },
   "devDependencies": {

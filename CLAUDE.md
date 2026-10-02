@@ -98,6 +98,9 @@ The gate is one command, run from the repo root:
 - The studio (`packages/studio`) is the Compose service `studio`: `./dev compose up studio`,
   then `http://127.0.0.1:4100` (`WHZ_STUDIO_PORT=<port>` in front picks another port). Its pages,
   services, guards and checks are in [docs/studio.md](docs/studio.md).
+- A game is a folder of data under `games/`; after changing one, run
+  `./dev npm run game -- validate <id>` (the gate validates all of them). The layout, the id
+  rules and the package are in [docs/game-data.md](docs/game-data.md).
 - Containers have no GPU, so no headless WebGL there. Check graphics with numbers and hashes from
   CPU renderers, or in the host browser through Chrome DevTools MCP (`./dev -p 4101 <server>`
   publishes a port on 127.0.0.1).

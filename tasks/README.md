@@ -77,7 +77,6 @@ and every note against the format above ([docs/docs-check.md](../docs/docs-check
 | 11 | [Studio: task note from a rejection](2026-10-02-studio-task-from-rejection.md) | none | #10 |
 | 13 | [Art spike 2D (variants A + B)](2026-10-02-art-spike-2d.md) | none | #10, #9 |
 | 14 | [Art spike voxel (variant C)](2026-10-02-art-spike-voxel.md) | none | #12, #13 |
-| 17 | [Game package format](2026-10-02-game-package-format.md) | none | #16 |
 | 18 | [Player: game loop, host API, test protocol](2026-10-02-player-loop-test-protocol.md) | none | #17, #6 |
 | 19 | [Runtime text and UI](2026-10-02-runtime-text-ui.md) | none | #18, #5 |
 | 20 | [Runtime input](2026-10-02-runtime-input.md) | none | #19 |

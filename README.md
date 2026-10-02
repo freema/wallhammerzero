@@ -35,6 +35,9 @@ Two game types:
 | [docs/sim.md](docs/sim.md) | The sim contract: ticks, commands, events, ordering, the digest, snapshots and replays |
 | [packages/sim/](packages/sim/README.md) | The sim core: the deterministic tick kernel, the toy `counter-shop` systems and the `sim` replay runner |
 | [packages/runtime/](packages/runtime/README.md) | The renderer games and the studio share: a draw list of sprites, a WebGL2 backend (palette lookup texture, integer upscale into a rectangle), a CPU reference backend for Node, the clip player, and a dev page for the browser parity check |
+| [docs/game-data.md](docs/game-data.md) | What a game is on disk: the layout of `games/<id>/`, the id rules, `validate`, `pack` and the two hashes |
+| [packages/game-data/](packages/game-data/README.md) | The game data package: the strict loader, the schemas, the package format and the `game` command |
+| `games/` | Games as data (one folder each, e.g. `games/examples/counter-shop/game.json`) |
 | `assets/` | Asset programs (one folder each, e.g. `assets/examples/blinking-dot/gen.ts`; voxel-built: `assets/examples/voxel-crate/gen.ts`, `assets/examples/voxel-chibi/gen.ts`) and palettes (`assets/palettes/example.json`) |
 | [docs/studio.md](docs/studio.md) | The studio (`packages/studio`): how to start it, its port, pages, server services and guards |
 | [docs/docs-check.md](docs/docs-check.md) | The check that keeps links, paths, the queue and ids in the docs true |

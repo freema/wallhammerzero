@@ -1,0 +1,8 @@
+{
+  "customerKinds.regular.name": "Regular",
+  "customerKinds.student.name": "Student",
+  "customerKinds.tourist.name": "Tourist",
+  "items.apple.name": "Apple",
+  "items.bread.name": "Bread",
+  "items.cake.name": "Cake"
+}

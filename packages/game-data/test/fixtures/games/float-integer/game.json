@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "float-integer",
+  "title": "Fixture",
+  "resolution": {
+    "width": 320,
+    "height": 180
+  },
+  "palette": "example",
+  "systems": [
+    "shop.arrivals"
+  ],
+  "rowText": {
+    "customerKinds": [
+      "name"
+    ]
+  }
+}

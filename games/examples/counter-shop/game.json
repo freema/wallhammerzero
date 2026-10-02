@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "counter-shop",
+  "title": "Counter Shop",
+  "resolution": { "width": 320, "height": 180 },
+  "palette": "example",
+  "systems": ["shop.arrivals", "shop.counter"],
+  "rowText": {
+    "customerKinds": ["name"],
+    "items": ["name"]
+  }
+}

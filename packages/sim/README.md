@@ -97,8 +97,9 @@ all maths (`mulDiv`, `divRound`, `isin`, `ease`).
 `shop.set-price { item, price }`, `shop.restock { item, amount }`, `shop.set-open { open }`. It
 exists to exercise the kernel and to be the example game's sim; it is not a genre system.
 
-- `golden/counter-shop.data.json`: its sim data (the example game's tables until the game package
-  format moves them).
+- `golden/counter-shop.data.json`: its sim data. The example game `games/examples/counter-shop/`
+  holds the same tables; this file is the sim's own copy (the sim cannot depend on
+  `packages/game-data`), and a test there keeps the two equal.
 - `golden/counter-shop.replay.json`: the golden replay. `npm run check` replays it in normal and
   in heavy mode. If the digests change, the sim or its data changed: record again with
   `--record` only in a commit that says why.
