@@ -154,6 +154,10 @@ bake in a worker gives the same bytes as the command.
 | `@whz/asset-kit` | `bakeAsset(asset, { sourceHash })` → the atlas and one `IndexedBuffer` sheet per variant; `lintAsset(asset)` → the report; `reviewAsset(asset, options)` and `reviewPack(...)` → RGB images; `layoutSheet`, `lintFrames`, `renderSheet`, `formatJson` | none: runs in Node, in a worker and in the browser |
 | `@whz/asset-kit/node` | `openProject`, `findAssets`, `findAsset`, `loadEntry`, `sourceHash`; `bakeToDisk`, `bakeAll`, `pruneBakes`, `lintToDisk`, `reviewToDisk`, `reviewPackToDisk`; `encodeIndexedPng`, `encodeRgbPng`, `decodePng`; `runCli` | files |
 
+A voxel-built asset is no special case: its `gen.ts` returns `bakeIso(model, { facing, pose })`
+from `render` ([packages/voxel-kit/README.md](../packages/voxel-kit/README.md)), and everything
+above works on it unchanged.
+
 A Node process loads each `gen.ts` once (modules are cached). A host that bakes again after an
 edit runs the bake in a fresh worker or process. The studio does: its bake worker calls
 `bakeToDisk` per asset and `pruneBakes` (the clean-up of `bakeAll`) at the end

@@ -75,7 +75,6 @@ and every note against the format above ([docs/docs-check.md](../docs/docs-check
 | 9 | [Studio animation player](2026-10-02-studio-animation-player.md) | none | #8, #6 |
 | 10 | [Studio verdicts](2026-10-02-studio-verdicts.md) | none | #8 |
 | 11 | [Studio: task note from a rejection](2026-10-02-studio-task-from-rejection.md) | none | #10 |
-| 12 | [Voxel sprite baker](2026-10-02-voxel-sprite-baker.md) | none | #5 |
 | 13 | [Art spike 2D (variants A + B)](2026-10-02-art-spike-2d.md) | none | #10, #9 |
 | 14 | [Art spike voxel (variant C)](2026-10-02-art-spike-voxel.md) | none | #12, #13 |
 | 17 | [Game package format](2026-10-02-game-package-format.md) | none | #16 |
@@ -103,7 +102,7 @@ and every note against the format above ([docs/docs-check.md](../docs/docs-check
 | Track | Notes |
 |---|---|
 | Infrastructure | all done: #1 Docker ([docs/dev-environment.md](../docs/dev-environment.md)), #2 the implement-tasks skill ([Running the queue](#running-the-queue)), #3 skill intake ([security/skill-intake/README.md](../security/skill-intake/README.md)), #15 docs check ([docs/docs-check.md](../docs/docs-check.md)) |
-| Graphics from code | #12 voxel baker, #21 FX emitters, #13 + #14 art spikes (#4 asset kit is done: [packages/asset-kit/README.md](../packages/asset-kit/README.md), [packages/det/README.md](../packages/det/README.md); #5 render CLI is done: [docs/asset-pipeline.md](../docs/asset-pipeline.md), [docs/looking-at-images.md](../docs/looking-at-images.md)) |
+| Graphics from code | #21 FX emitters, #13 + #14 art spikes (#4 asset kit is done: [packages/asset-kit/README.md](../packages/asset-kit/README.md), [packages/det/README.md](../packages/det/README.md); #5 render CLI is done: [docs/asset-pipeline.md](../docs/asset-pipeline.md), [docs/looking-at-images.md](../docs/looking-at-images.md); #12 voxel baker is done: [packages/voxel-kit/README.md](../packages/voxel-kit/README.md)) |
 | Engine | #17 game package, #18 player + test protocol, #19 text and UI, #20 input, #22 tilemap, #23 saves, #32 conformance (#6 sprite core is done: [packages/runtime/README.md](../packages/runtime/README.md); #16 sim core is done: [docs/sim.md](../docs/sim.md), [packages/sim/README.md](../packages/sim/README.md)) |
 | Audio | #24 synth core, #25 runtime audio, #29 studio audio |
 | Studio | #7 skeleton, #8 live reload, #9 player, #10 verdicts, #11 task from rejection, #26 concept pages, #27 compare, #28 sliders, #29 audio, #30 play and builds, #31 voxel inspector |

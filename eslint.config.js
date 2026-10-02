@@ -19,6 +19,7 @@ const DETERMINISTIC = [
   "packages/asset-kit/src/**/*.ts",
   "packages/sim/src/**/*.ts",
   "packages/runtime/src/**/*.ts",
+  "packages/voxel-kit/src/**/*.ts",
 ];
 
 /** Node-side entry points of deterministic packages: they load files, they do not draw. */

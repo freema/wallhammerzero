@@ -84,10 +84,11 @@ The gate is one command, run from the repo root:
   gate.
 - A new package joins the gate by having a `check` script in its own `package.json`. The root
   script is never edited for that.
-- Asset programs (`assets/`), `packages/det`, `packages/asset-kit` and `packages/sim` are under
-  the **determinism lint** (`tools/lint/determinism.js`): no `Math.random`, clocks or float
-  `Math`; use `@whz/det`. The asset contract is in
-  [packages/asset-kit/README.md](packages/asset-kit/README.md); the sim contract (ticks,
+- Asset programs (`assets/`), `packages/det`, `packages/asset-kit`, `packages/voxel-kit` and
+  `packages/sim` are under the **determinism lint** (`tools/lint/determinism.js`): no
+  `Math.random`, clocks or float `Math`; use `@whz/det`. The asset contract is in
+  [packages/asset-kit/README.md](packages/asset-kit/README.md); voxel models and the iso baker
+  are in [packages/voxel-kit/README.md](packages/voxel-kit/README.md); the sim contract (ticks,
   commands, digests, replays) is in [docs/sim.md](docs/sim.md).
 - The renderer is `packages/runtime` (also under the determinism lint): the host passes the time
   and the rectangle, the runtime has no frame loop, and the CPU backend is the reference for
