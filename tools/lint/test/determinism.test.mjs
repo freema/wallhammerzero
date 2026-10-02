@@ -1,6 +1,7 @@
 // Proves that the determinism lint fires: fixture asset programs that call Math.random() or
-// Math.sin() fail ESLint, the real assets pass, and each banned construct is caught in every
-// place the root eslint.config.js puts under the lint, and nowhere else.
+// Math.sin() and a fixture sim system that calls Math.random() fail ESLint, the real assets
+// and packages pass, and each banned construct is caught in every place the root
+// eslint.config.js puts under the lint, and nowhere else.
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -26,6 +27,7 @@ async function lintAs(path, code) {
 }
 
 const fixture = (name) => readFileSync(join(here, "fixtures", "assets", name, "gen.ts"), "utf8");
+const simFixture = (name) => readFileSync(join(here, "fixtures", "sim", name, "system.ts"), "utf8");
 
 /** Where the determinism lint applies. */
 const UNDER_LINT = [
@@ -33,6 +35,8 @@ const UNDER_LINT = [
   "assets/some-pack/some-asset/parts/legs.ts",
   "packages/det/src/extra.ts",
   "packages/asset-kit/src/extra.ts",
+  "packages/sim/src/extra.ts",
+  "packages/sim/src/systems/extra.ts",
 ];
 /** Where it does not: tests, scripts and the Node-side loader. */
 const NOT_UNDER_LINT = [
@@ -40,6 +44,8 @@ const NOT_UNDER_LINT = [
   "packages/det/scripts/extra.ts",
   "packages/asset-kit/test/extra.test.ts",
   "packages/asset-kit/src/node/extra.ts",
+  "packages/sim/test/extra.test.ts",
+  "packages/sim/src/node/extra.ts",
 ];
 
 test("a fixture asset that calls Math.random() fails ESLint", async () => {
@@ -58,6 +64,14 @@ test("a fixture asset that calls Math.sin() fails ESLint", async () => {
   assert.match(messages[0].message, /Math\.sin is implementation-approximated.*isin/);
 });
 
+test("a fixture sim system that calls Math.random() fails ESLint", async () => {
+  const messages = await lintAs("packages/sim/src/systems/bad-random.ts", simFixture("bad-random"));
+  assert.equal(messages.length, 1, JSON.stringify(messages));
+  assert.equal(messages[0].severity, 2);
+  assert.equal(messages[0].ruleId, "no-restricted-properties");
+  assert.match(messages[0].message, /Math\.random is not seeded\. Use createRng\(seed, stream\)/);
+});
+
 test("the eslint command exits non-zero on the fixtures and zero on the real assets", () => {
   const bin = join(root, "node_modules", "eslint", "bin", "eslint.js");
   const run = (args, input) => spawnSync(process.execPath, [bin, ...args], { cwd: root, input, encoding: "utf8" });
@@ -68,14 +82,23 @@ test("the eslint command exits non-zero on the fixtures and zero on the real ass
     assert.match(bad.stdout, /no-restricted-properties/);
   }
 
-  const good = run(["assets"]);
+  const badSystem = run(["--stdin", "--stdin-filename", "packages/sim/src/systems/bad-random.ts"], simFixture("bad-random"));
+  assert.equal(badSystem.status, 1, `${badSystem.stdout}${badSystem.stderr}`);
+  assert.match(badSystem.stdout, /no-restricted-properties/);
+  // The same file outside the lint (a test of the sim) is fine.
+  const asTest = run(["--stdin", "--stdin-filename", "packages/sim/test/bad-random.ts"], simFixture("bad-random"));
+  assert.equal(asTest.status, 0, `${asTest.stdout}${asTest.stderr}`);
+
+  const good = run(["assets", "packages/sim/src"]);
   assert.equal(good.status, 0, `${good.stdout}${good.stderr}`);
 });
 
 test("the example asset and the kits are clean under the lint", async () => {
-  const results = await eslint.lintFiles(["assets", "packages/det/src", "packages/asset-kit/src"]);
+  const results = await eslint.lintFiles(["assets", "packages/det/src", "packages/asset-kit/src", "packages/sim/src"]);
   assert.ok(results.length >= 10, `only ${results.length} files were linted`);
   assert.ok(results.some((result) => result.filePath.endsWith("assets/examples/blinking-dot/gen.ts")));
+  assert.ok(results.some((result) => result.filePath.endsWith("packages/sim/src/kernel.ts")));
+  assert.ok(results.some((result) => result.filePath.endsWith("packages/sim/src/systems/counter-shop.ts")));
   for (const result of results) {
     assert.deepEqual(result.messages, [], result.filePath);
   }
@@ -109,6 +132,17 @@ const BANNED = {
   "setTimeout": "setTimeout(() => {}, 1);\nexport {};",
   "parseFloat": 'export const x = parseFloat("1.5");',
   "Number.parseFloat": 'export const x = Number.parseFloat("1.5");',
+  "Intl": "export const x = new Intl.Collator().compare;",
+  "localeCompare": 'export const x = "a".localeCompare("b");',
+  "toLocaleString": "export const x = (1234).toLocaleString();",
+  "fetch": 'export const x = fetch("/data.json");',
+  "XMLHttpRequest": "export const x = new XMLHttpRequest();",
+  "WebSocket": 'export const x = new WebSocket("ws://localhost");',
+  "localStorage": 'export const x = localStorage.getItem("save");',
+  "sessionStorage": 'export const x = sessionStorage.getItem("save");',
+  "indexedDB": 'export const x = indexedDB.open("saves");',
+  "document": 'export const x = document.createElement("canvas");',
+  "navigator": "export const x = navigator.userAgent;",
   "globalThis": "export const x = globalThis.Math.random();",
   "window": "export const x = window.Math.random();",
   "a node: import": 'import { readFileSync } from "node:fs";\nexport const x = readFileSync;',

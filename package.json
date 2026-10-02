@@ -14,7 +14,8 @@
   "scripts": {
     "asset": "node packages/asset-kit/src/node/bin.ts",
     "check": "node tools/check/run.mjs",
-    "check:assets": "tsc --noEmit -p assets && eslint assets && node packages/asset-kit/src/node/bin.ts lint --all --no-write"
+    "check:assets": "tsc --noEmit -p assets && eslint assets && node packages/asset-kit/src/node/bin.ts lint --all --no-write",
+    "sim": "node packages/sim/src/node/cli.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

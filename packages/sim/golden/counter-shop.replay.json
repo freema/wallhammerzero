@@ -1,0 +1,25 @@
+{
+  "format": "whz-sim-replay",
+  "version": 1,
+  "dataFile": "counter-shop.data.json",
+  "simDataHash": "6cbfd194efd4e042",
+  "seed": 20261002,
+  "ticks": 600,
+  "digestEvery": 50,
+  "commands": [
+    {"tick":20,"type":"shop.set-price","payload":{"item":"apple","price":4}},
+    {"tick":60,"type":"shop.restock","payload":{"amount":10,"item":"apple"}},
+    {"tick":60,"type":"shop.restock","payload":{"amount":50,"item":"cake"}},
+    {"tick":120,"type":"shop.set-open","payload":{"open":false}},
+    {"tick":150,"type":"shop.set-open","payload":{"open":true}},
+    {"tick":200,"type":"shop.set-price","payload":{"item":"cake","price":12}},
+    {"tick":300,"type":"shop.restock","payload":{"amount":6,"item":"bread"}},
+    {"tick":300,"type":"shop.set-price","payload":{"item":"bread","price":6}},
+    {"tick":450,"type":"shop.restock","payload":{"amount":20,"item":"apple"}}
+  ],
+  "digests": [
+    "62949a3a", "d7b237b2", "200e97fd", "385cd1f5", "897f8e75", "737d8ffa", "151b7a34", "c7bcd8c5",
+    "b6cc56ff", "9242f368", "cb2bd2ff", "0a7b53df"
+  ],
+  "finalDigest": "0a7b53df"
+}

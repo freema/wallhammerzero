@@ -11,12 +11,17 @@ import { determinism } from "./tools/lint/determinism.js";
 /**
  * Code that must give the same result on every engine and in a later port: no clocks, no
  * unseeded randomness, no floating-point Math. Tests and build scripts are not under it.
- * Later notes add the sim and the synth here.
+ * A later note adds the synth here.
  */
-const DETERMINISTIC = ["assets/**/*.ts", "packages/det/src/**/*.ts", "packages/asset-kit/src/**/*.ts"];
+const DETERMINISTIC = [
+  "assets/**/*.ts",
+  "packages/det/src/**/*.ts",
+  "packages/asset-kit/src/**/*.ts",
+  "packages/sim/src/**/*.ts",
+];
 
 /** Node-side entry points of deterministic packages: they load files, they do not draw. */
-const DETERMINISTIC_EXCEPT = ["packages/asset-kit/src/node/**"];
+const DETERMINISTIC_EXCEPT = ["packages/asset-kit/src/node/**", "packages/sim/src/node/**"];
 
 const TYPESCRIPT = ["**/*.ts"];
 

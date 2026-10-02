@@ -1,0 +1,17 @@
+{
+  "systems": ["shop.arrivals", "shop.counter"],
+  "tables": {
+    "arrivals": { "perMille": 220, "queueLimit": 6 },
+    "customerKinds": [
+      { "id": "student", "weight": 5, "budgetMin": 2, "budgetMax": 6, "patience": 12 },
+      { "id": "regular", "weight": 3, "budgetMin": 4, "budgetMax": 12, "patience": 20 },
+      { "id": "tourist", "weight": 1, "budgetMin": 10, "budgetMax": 40, "patience": 6 }
+    ],
+    "shop": { "startMoney": 20, "serviceTicks": 3 },
+    "items": [
+      { "id": "apple", "price": 3, "unitCost": 1, "stock": 20, "weight": 5 },
+      { "id": "bread", "price": 6, "unitCost": 3, "stock": 12, "weight": 3 },
+      { "id": "cake", "price": 15, "unitCost": 8, "stock": 4, "weight": 1 }
+    ]
+  }
+}

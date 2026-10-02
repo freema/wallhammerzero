@@ -1,7 +1,7 @@
 // The determinism lint.
 //
 // Code under it must give the same result on every JavaScript engine and in a later port
-// (a Godot player): asset programs, the determinism kit, the asset kit, and later the sim and
+// (a Godot player): asset programs, the determinism kit, the asset kit, the sim, and later
 // the synth. A written rule is not enough (research/ref-procedural-pixel-creatures.md §5: a
 // codebase with the rule and its own maths library still broke it 19 times), so the rule is a
 // lint. It uses only ESLint core rules: no plugin, no type information.
@@ -14,8 +14,10 @@
 //   Math.round                           divRound, mulDivRound, lerpInt (halves away from zero)
 //   Math.sqrt and every other Math.*     isqrt; only the exact integer helpers of Math stay
 //   parseFloat                           integers
+//   Intl, localeCompare, toLocale*       compare ASCII ids with < and > (compareId in @whz/sim)
+//   fetch, storage, document, navigator  nothing: I/O is the host's job (host adapters)
 //   globalThis, window, self, global     a back door to all of the above
-//   node:* imports                       an asset program does no I/O
+//   node:* imports                       an asset program or a sim system does no I/O
 //
 // The root eslint.config.js lists the files it applies to.
 
@@ -39,6 +41,8 @@ const NAMED_MATH = {
   sqrt: "Math.sqrt gives a float. Use isqrt from @whz/det.",
 };
 
+const IO = "is I/O. Deterministic code gets everything as arguments and returns its result; I/O is the host's job.";
+
 const GLOBALS = {
   Date: "Date reads the clock. A frame is a pure function of (params, seed, clip, frame, facing).",
   performance: "performance reads the clock. A frame is a pure function of (params, seed, clip, frame, facing).",
@@ -47,6 +51,15 @@ const GLOBALS = {
   setInterval: "Timers are not deterministic. A frame is a pure function of (params, seed, clip, frame, facing).",
   requestAnimationFrame: "Frame callbacks are not deterministic. A frame is a pure function of (params, seed, clip, frame, facing).",
   parseFloat: "parseFloat gives a float. Deterministic code works in integers.",
+  Intl: "Intl depends on the locale and the ICU version of the engine. Deterministic code uses ASCII ids and integers.",
+  fetch: `fetch ${IO}`,
+  XMLHttpRequest: `XMLHttpRequest ${IO}`,
+  WebSocket: `WebSocket ${IO}`,
+  localStorage: `localStorage ${IO}`,
+  sessionStorage: `sessionStorage ${IO}`,
+  indexedDB: `indexedDB ${IO}`,
+  document: `document ${IO}`,
+  navigator: `navigator ${IO}`,
   globalThis: "globalThis reaches Math, Date and the rest without the lint seeing it.",
   window: "window reaches Math, Date and the rest without the lint seeing it.",
   self: "self reaches Math, Date and the rest without the lint seeing it.",
@@ -83,6 +96,10 @@ export const determinismRules = {
     {
       selector: ":not(MemberExpression) > Identifier[name='Math']",
       message: `Math may only be used as Math.<name>: an alias or a destructuring hides which function is called. ${HOW}`,
+    },
+    {
+      selector: "MemberExpression[computed=false][property.name=/^(localeCompare|toLocale(String|DateString|TimeString|LowerCase|UpperCase))$/]",
+      message: `Locale-aware methods depend on the locale and the ICU version of the engine. Compare ASCII ids with < and >, and format integers yourself. ${HOW}`,
     },
     {
       selector: "BinaryExpression[operator='**'], AssignmentExpression[operator='**=']",

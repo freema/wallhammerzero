@@ -2,7 +2,7 @@
   "name": "@whz/lint",
   "version": "0.0.0",
   "private": true,
-  "description": "The determinism lint: ESLint rules that keep asset programs, the determinism kit and the asset kit free of clocks, randomness and non-portable maths.",
+  "description": "The determinism lint: ESLint rules that keep asset programs, the determinism kit, the asset kit and the sim free of clocks, randomness, I/O and non-portable maths.",
   "type": "module",
   "exports": {
     "./determinism": "./determinism.js"
