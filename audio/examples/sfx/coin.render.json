@@ -1,0 +1,18 @@
+{
+  "format": "wz.audio-render/0.1",
+  "id": "sfx.coin",
+  "kind": "sfx",
+  "source": "coin.sfx.json",
+  "sampleRate": 48000,
+  "frames": 17520,
+  "hash": "a0e9ab0bc3144806",
+  "seconds": 0.365,
+  "lufsI": -17.6,
+  "lufsMomentaryMax": -17.6,
+  "dBTP": -10.1,
+  "clipped": 0,
+  "energyAbove8k": 0.007,
+  "seam": null,
+  "trimDb": 0,
+  "warnings": []
+}

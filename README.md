@@ -38,6 +38,9 @@ Two game types:
 | [docs/game-data.md](docs/game-data.md) | What a game is on disk: the layout of `games/<id>/`, the id rules, `validate`, `pack` and the two hashes |
 | [packages/game-data/](packages/game-data/README.md) | The game data package: the strict loader, the schemas, the package format and the `game` command |
 | `games/` | Games as data (one folder each, e.g. `games/examples/counter-shop/game.json`) |
+| [docs/audio.md](docs/audio.md) | Music and SFX as data: the `wz.song` and `wz.sfx` formats, the validators, the `audio` command, loudness targets and the composition procedure |
+| [packages/audio/](packages/audio/README.md) | The reference synth (sample-level, deterministic), the readers and validators, metrics and pictures |
+| `audio/` | Songs, jingles and SFX with their sidecars (e.g. `audio/examples/music/shop-day.song.json`) |
 | `assets/` | Asset programs (one folder each, e.g. `assets/examples/blinking-dot/gen.ts`; voxel-built: `assets/examples/voxel-crate/gen.ts`, `assets/examples/voxel-chibi/gen.ts`) and palettes (`assets/palettes/example.json`) |
 | [docs/studio.md](docs/studio.md) | The studio (`packages/studio`): how to start it, its port, pages, server services and guards |
 | [docs/docs-check.md](docs/docs-check.md) | The check that keeps links, paths, the queue and ids in the docs true |

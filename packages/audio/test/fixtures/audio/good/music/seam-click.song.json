@@ -1,0 +1,47 @@
+{
+  "format": "wz.song/0.1",
+  "id": "fixture.seam-click",
+  "title": "A triangle held to the end of the loop",
+  "tempo": 100,
+  "meter": [
+    4,
+    4
+  ],
+  "stepsPerBeat": 4,
+  "key": "Bb major",
+  "instruments": {
+    "bass": {
+      "wave": "triangle",
+      "env": {
+        "a": 0.003,
+        "d": 0.05,
+        "s": 0.9,
+        "r": 0.05
+      }
+    }
+  },
+  "channels": {
+    "bass": {
+      "instrument": "bass",
+      "gainDb": -10
+    }
+  },
+  "sections": {
+    "A": {
+      "chords": [
+        "Bb",
+        "Bb"
+      ],
+      "bass": [
+        "Bb2 - - - | . . . . | F2 - - - | . . . .",
+        "Bb2 - - - | - - - - | - - - - | - - - -"
+      ]
+    }
+  },
+  "order": [
+    "A"
+  ],
+  "loop": {
+    "fromOrderIndex": 0
+  }
+}

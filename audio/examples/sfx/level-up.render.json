@@ -1,0 +1,18 @@
+{
+  "format": "wz.audio-render/0.1",
+  "id": "sfx.level-up",
+  "kind": "sfx",
+  "source": "level-up.sfx.json",
+  "sampleRate": 48000,
+  "frames": 43920,
+  "hash": "2892f971cc54de71",
+  "seconds": 0.915,
+  "lufsI": -19,
+  "lufsMomentaryMax": -17.6,
+  "dBTP": -6.7,
+  "clipped": 0,
+  "energyAbove8k": 0.003,
+  "seam": null,
+  "trimDb": 0,
+  "warnings": []
+}

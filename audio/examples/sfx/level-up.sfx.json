@@ -1,0 +1,23 @@
+{
+  "format": "wz.sfx/0.1",
+  "id": "sfx.level-up",
+  "seed": 11,
+  "gainDb": -17,
+  "play": { "jitterCents": 0, "maxVoices": 1, "minIntervalMs": 500 },
+  "voices": [
+    {
+      "wave": "pulse",
+      "duty": 0.25,
+      "notes": [["C5", 0.07], ["E5", 0.07], ["G5", 0.07], ["C6", 0.45]],
+      "env": { "a": 0.002, "d": 0.05, "s": 0.7, "r": 0.25 },
+      "vibrato": { "cents": 20, "hz": 6, "delay": 0.15 },
+      "lowpassHz": 8000
+    },
+    {
+      "wave": "triangle",
+      "notes": [["C4", 0.21], ["C5", 0.45]],
+      "env": { "a": 0.002, "d": 0.05, "s": 0.8, "r": 0.25 },
+      "gainDb": -3
+    }
+  ]
+}

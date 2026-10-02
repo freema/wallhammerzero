@@ -1,0 +1,560 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "wz.song/0.1",
+  "title": "wz.song/0.1",
+  "description": "A song or a jingle of Wallhammer Zero. This schema covers the structure; the step grid inside the bar strings, the references between names and the music itself are checked by `./dev npm run audio -- check` (docs/audio.md).",
+  "type": "object",
+  "required": [
+    "format",
+    "id",
+    "tempo",
+    "meter",
+    "stepsPerBeat",
+    "key",
+    "instruments",
+    "channels",
+    "sections",
+    "order",
+    "loop"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "wz.song/0.1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*([._-][a-z0-9]+)*$",
+      "maxLength": 64
+    },
+    "title": {
+      "type": "string"
+    },
+    "tempo": {
+      "type": "integer",
+      "minimum": 30,
+      "maximum": 300,
+      "description": "Beats per minute."
+    },
+    "meter": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12,
+          "description": "Beats per bar."
+        },
+        {
+          "enum": [
+            2,
+            4,
+            8
+          ],
+          "description": "The note value of a beat."
+        }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "stepsPerBeat": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 8,
+      "description": "Steps (tokens) per beat."
+    },
+    "key": {
+      "type": "string",
+      "pattern": "^[A-G][#b]? (major|minor|dorian|phrygian|lydian|mixolydian|locrian)$"
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295,
+      "description": "Seeds the noise generators. Default 1."
+    },
+    "instruments": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,31}$"
+      },
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/tone"
+          },
+          {
+            "$ref": "#/$defs/kit"
+          }
+        ]
+      }
+    },
+    "channels": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,31}$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/channel"
+      },
+      "minProperties": 1
+    },
+    "sections": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,31}$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/section"
+      },
+      "minProperties": 1
+    },
+    "order": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "description": "Section names, in playing order."
+    },
+    "loop": {
+      "oneOf": [
+        {
+          "const": false,
+          "description": "The song plays once: a jingle."
+        },
+        {
+          "type": "object",
+          "required": [
+            "fromOrderIndex"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "fromOrderIndex": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      ]
+    },
+    "layers": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,31}$"
+      },
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "states": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,31}$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "layers"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "layers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "lowpassHz": {
+            "type": "number",
+            "minimum": 100,
+            "maximum": 20000,
+            "description": "A low-pass on the whole mix in this state."
+          }
+        }
+      }
+    },
+    "orchestrations": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,31}$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "propertyNames": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,31}$"
+        },
+        "additionalProperties": {
+          "$ref": "#/$defs/patch"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "envelope": {
+      "type": "object",
+      "description": "A linear ADSR envelope. Attack and release are never shorter than 1 ms.",
+      "required": [
+        "a",
+        "d",
+        "s",
+        "r"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "a": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Attack, seconds."
+        },
+        "d": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Decay, seconds."
+        },
+        "s": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Sustain level, 0..1."
+        },
+        "r": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Release, seconds."
+        }
+      }
+    },
+    "vibrato": {
+      "type": "object",
+      "required": [
+        "cents",
+        "hz"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "cents": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 200,
+          "description": "Depth in cents."
+        },
+        "hz": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 20,
+          "description": "Rate in Hz."
+        },
+        "delay": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 5,
+          "description": "Seconds before the vibrato fades in (over 0.1 s). Default 0."
+        }
+      }
+    },
+    "tone": {
+      "type": "object",
+      "required": [
+        "wave",
+        "env"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "wave": {
+          "enum": [
+            "pulse",
+            "triangle",
+            "noise",
+            "wave"
+          ]
+        },
+        "duty": {
+          "enum": [
+            0.125,
+            0.25,
+            0.5
+          ],
+          "description": "Pulse only. Default 0.5."
+        },
+        "steps": {
+          "const": 32,
+          "description": "Triangle only: the 32-step, 16-level (4-bit) triangle."
+        },
+        "mode": {
+          "enum": [
+            "long",
+            "short"
+          ],
+          "description": "Noise only. Default long."
+        },
+        "samples": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Wave only (and required there): 32 samples as hexadecimal digits."
+        },
+        "env": {
+          "$ref": "#/$defs/envelope"
+        },
+        "vibrato": {
+          "$ref": "#/$defs/vibrato"
+        },
+        "arpHz": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 120,
+          "description": "Arpeggio steps per second. Default 60."
+        },
+        "glide": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Seconds to glide in from the previous note (songs only). Default 0."
+        },
+        "slideSemitonesPerSec": {
+          "type": "number",
+          "minimum": -480,
+          "maximum": 480,
+          "description": "A steady pitch slide over the note. Default 0."
+        }
+      }
+    },
+    "drum": {
+      "type": "object",
+      "required": [
+        "wave",
+        "env",
+        "pitch"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "wave": {
+          "enum": [
+            "pulse",
+            "triangle",
+            "noise",
+            "wave"
+          ]
+        },
+        "duty": {
+          "enum": [
+            0.125,
+            0.25,
+            0.5
+          ],
+          "description": "Pulse only. Default 0.5."
+        },
+        "steps": {
+          "const": 32,
+          "description": "Triangle only: the 32-step, 16-level (4-bit) triangle."
+        },
+        "mode": {
+          "enum": [
+            "long",
+            "short"
+          ],
+          "description": "Noise only. Default long."
+        },
+        "samples": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Wave only (and required there): 32 samples as hexadecimal digits."
+        },
+        "env": {
+          "$ref": "#/$defs/envelope"
+        },
+        "vibrato": {
+          "$ref": "#/$defs/vibrato"
+        },
+        "arpHz": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 120,
+          "description": "Arpeggio steps per second. Default 60."
+        },
+        "glide": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Seconds to glide in from the previous note (songs only). Default 0."
+        },
+        "slideSemitonesPerSec": {
+          "type": "number",
+          "minimum": -480,
+          "maximum": 480,
+          "description": "A steady pitch slide over the note. Default 0."
+        },
+        "pitch": {
+          "type": "string",
+          "pattern": "^[A-G][#b]?[0-9]$",
+          "description": "The note the drum plays at; for noise, the rate of the noise."
+        }
+      }
+    },
+    "kit": {
+      "type": "object",
+      "required": [
+        "drums"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "drums": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9]{0,3}$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/drum"
+          }
+        }
+      }
+    },
+    "patch": {
+      "type": "object",
+      "description": "The fields of a tone that the orchestration changes.",
+      "additionalProperties": false,
+      "properties": {
+        "wave": {
+          "enum": [
+            "pulse",
+            "triangle",
+            "noise",
+            "wave"
+          ]
+        },
+        "duty": {
+          "enum": [
+            0.125,
+            0.25,
+            0.5
+          ],
+          "description": "Pulse only. Default 0.5."
+        },
+        "steps": {
+          "const": 32,
+          "description": "Triangle only: the 32-step, 16-level (4-bit) triangle."
+        },
+        "mode": {
+          "enum": [
+            "long",
+            "short"
+          ],
+          "description": "Noise only. Default long."
+        },
+        "samples": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Wave only (and required there): 32 samples as hexadecimal digits."
+        },
+        "env": {
+          "$ref": "#/$defs/envelope"
+        },
+        "vibrato": {
+          "$ref": "#/$defs/vibrato"
+        },
+        "arpHz": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 120,
+          "description": "Arpeggio steps per second. Default 60."
+        },
+        "glide": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Seconds to glide in from the previous note (songs only). Default 0."
+        },
+        "slideSemitonesPerSec": {
+          "type": "number",
+          "minimum": -480,
+          "maximum": 480,
+          "description": "A steady pitch slide over the note. Default 0."
+        }
+      }
+    },
+    "channel": {
+      "type": "object",
+      "required": [
+        "instrument",
+        "gainDb"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "instrument": {
+          "type": "string"
+        },
+        "gainDb": {
+          "type": "number",
+          "minimum": -60,
+          "maximum": 6
+        },
+        "pan": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1,
+          "description": "-1 left, 0 centre, 1 right. Default 0."
+        },
+        "echo": {
+          "type": "object",
+          "required": [
+            "beats",
+            "feedback",
+            "mix"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "beats": {
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 4,
+              "description": "The delay in beats."
+            },
+            "feedback": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 0.9
+            },
+            "mix": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        }
+      }
+    },
+    "section": {
+      "type": "object",
+      "required": [
+        "chords"
+      ],
+      "propertyNames": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,31}$"
+      },
+      "properties": {
+        "chords": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          },
+          "description": "One string per bar: a chord symbol, or several that share the bar."
+        }
+      },
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "A channel's bars: one string per bar, `|` between beats, or `=n` to repeat bar n."
+      }
+    }
+  }
+}

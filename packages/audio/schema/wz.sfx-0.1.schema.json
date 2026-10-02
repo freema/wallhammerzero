@@ -1,0 +1,244 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "wz.sfx/0.1",
+  "title": "wz.sfx/0.1",
+  "description": "A sound effect of Wallhammer Zero: named parameters in physical units. Checked further by `./dev npm run audio -- check` (docs/audio.md).",
+  "type": "object",
+  "required": [
+    "format",
+    "id",
+    "gainDb",
+    "voices"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "wz.sfx/0.1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*([._-][a-z0-9]+)*$",
+      "maxLength": 64
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295,
+      "description": "Seeds the noise generators and, in the game, the pitch jitter. Default 1."
+    },
+    "gainDb": {
+      "type": "number",
+      "minimum": -60,
+      "maximum": 6
+    },
+    "play": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "How the game may play the sound.",
+      "properties": {
+        "jitterCents": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 200,
+          "description": "Random detune per play, up or down. Default 0."
+        },
+        "maxVoices": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16,
+          "description": "Copies that may sound at once. Default 4."
+        },
+        "minIntervalMs": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "The shortest time between two starts. Default 0."
+        }
+      }
+    },
+    "voices": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "$ref": "#/$defs/voice"
+      }
+    }
+  },
+  "$defs": {
+    "envelope": {
+      "type": "object",
+      "description": "A linear ADSR envelope. Attack and release are never shorter than 1 ms.",
+      "required": [
+        "a",
+        "d",
+        "s",
+        "r"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "a": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Attack, seconds."
+        },
+        "d": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Decay, seconds."
+        },
+        "s": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Sustain level, 0..1."
+        },
+        "r": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Release, seconds."
+        }
+      }
+    },
+    "vibrato": {
+      "type": "object",
+      "required": [
+        "cents",
+        "hz"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "cents": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 200,
+          "description": "Depth in cents."
+        },
+        "hz": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 20,
+          "description": "Rate in Hz."
+        },
+        "delay": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 5,
+          "description": "Seconds before the vibrato fades in (over 0.1 s). Default 0."
+        }
+      }
+    },
+    "voice": {
+      "type": "object",
+      "required": [
+        "wave",
+        "env",
+        "notes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "wave": {
+          "enum": [
+            "pulse",
+            "triangle",
+            "noise",
+            "wave"
+          ]
+        },
+        "duty": {
+          "enum": [
+            0.125,
+            0.25,
+            0.5
+          ],
+          "description": "Pulse only. Default 0.5."
+        },
+        "steps": {
+          "const": 32,
+          "description": "Triangle only: the 32-step, 16-level (4-bit) triangle."
+        },
+        "mode": {
+          "enum": [
+            "long",
+            "short"
+          ],
+          "description": "Noise only. Default long."
+        },
+        "samples": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Wave only (and required there): 32 samples as hexadecimal digits."
+        },
+        "env": {
+          "$ref": "#/$defs/envelope"
+        },
+        "vibrato": {
+          "$ref": "#/$defs/vibrato"
+        },
+        "arpHz": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 120,
+          "description": "Arpeggio steps per second. Default 60."
+        },
+        "glide": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Seconds to glide in from the previous note (songs only). Default 0."
+        },
+        "slideSemitonesPerSec": {
+          "type": "number",
+          "minimum": -480,
+          "maximum": 480,
+          "description": "A steady pitch slide over the note. Default 0."
+        },
+        "notes": {
+          "type": "array",
+          "minItems": 1,
+          "description": "[note, seconds] pairs, played one after another. \".\" as the note is a pause.",
+          "items": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number",
+                "minimum": 0.001,
+                "maximum": 10
+              }
+            ],
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "startSec": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Seconds before the first note. Default 0."
+        },
+        "gainDb": {
+          "type": "number",
+          "minimum": -60,
+          "maximum": 6,
+          "description": "Default 0."
+        },
+        "lowpassHz": {
+          "type": "number",
+          "minimum": 100,
+          "maximum": 20000
+        },
+        "highpassHz": {
+          "type": "number",
+          "minimum": 20,
+          "maximum": 10000
+        }
+      }
+    }
+  }
+}

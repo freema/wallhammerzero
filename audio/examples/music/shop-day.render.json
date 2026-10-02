@@ -1,0 +1,41 @@
+{
+  "format": "wz.audio-render/0.1",
+  "id": "bgm.shop.day",
+  "kind": "song",
+  "source": "shop-day.song.json",
+  "sampleRate": 48000,
+  "frames": 853333,
+  "loop": true,
+  "hash": "b4294ab4e2bafbf7",
+  "seconds": 17.778,
+  "lufsI": -17.9,
+  "lufsMomentaryMax": -16.2,
+  "dBTP": -5.7,
+  "clipped": 0,
+  "energyAbove8k": 0.017,
+  "seam": { "jump": 0.0019, "ratio": 0, "click": false },
+  "trimDb": -0.1,
+  "stems": [
+    { "channel": "lead", "hash": "d419f541d0fd6f7c" },
+    { "channel": "keys", "hash": "4b2ac999a8820b70" },
+    { "channel": "bass", "hash": "5b642ec23d44e9a5" },
+    { "channel": "drums", "hash": "bf8eee27487621ed" }
+  ],
+  "states": [
+    { "state": "calm", "hash": "fe056cebc63a451b", "lufsI": -18.5, "dBTP": -6.2, "trimDb": 0.5 },
+    { "state": "rush", "hash": "b4294ab4e2bafbf7", "lufsI": -17.9, "dBTP": -5.7, "trimDb": -0.1 },
+    { "state": "night", "hash": "37dcd606014a985d", "lufsI": -21.2, "dBTP": -8.5, "trimDb": 3.2 }
+  ],
+  "stats": {
+    "bars": 8,
+    "seconds": 17.778,
+    "uniqueBarRatio": 1,
+    "channels": [
+      { "channel": "lead", "kit": false, "bars": 8, "notes": 40, "onsetsPerStep": 0.313, "restRatio": 0.211, "lowest": "A4", "highest": "G5", "uniqueBarRatio": 1 },
+      { "channel": "keys", "kit": false, "bars": 8, "notes": 16, "onsetsPerStep": 0.125, "restRatio": 0.75, "lowest": "G3", "highest": "C5", "uniqueBarRatio": 0.75 },
+      { "channel": "bass", "kit": false, "bars": 8, "notes": 39, "onsetsPerStep": 0.305, "restRatio": 0.266, "lowest": "G1", "highest": "C3", "uniqueBarRatio": 0.875 },
+      { "channel": "drums", "kit": true, "bars": 8, "notes": 77, "onsetsPerStep": 0.602, "restRatio": 0.398, "lowest": null, "highest": null, "uniqueBarRatio": 0.5 }
+    ]
+  },
+  "warnings": []
+}

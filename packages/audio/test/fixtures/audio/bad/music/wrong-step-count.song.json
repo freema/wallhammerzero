@@ -1,0 +1,140 @@
+{
+  "format": "wz.song/0.1",
+  "id": "fixture.wrong-step-count",
+  "title": "Beat 3 of the first lead bar has 5 steps",
+  "tempo": 120,
+  "meter": [
+    4,
+    4
+  ],
+  "stepsPerBeat": 4,
+  "key": "C major",
+  "instruments": {
+    "lead": {
+      "wave": "pulse",
+      "duty": 0.25,
+      "env": {
+        "a": 0.005,
+        "d": 0.1,
+        "s": 0.6,
+        "r": 0.05
+      }
+    },
+    "bass": {
+      "wave": "triangle",
+      "env": {
+        "a": 0.003,
+        "d": 0.05,
+        "s": 0.9,
+        "r": 0.05
+      }
+    },
+    "kit": {
+      "drums": {
+        "k": {
+          "wave": "triangle",
+          "pitch": "C3",
+          "slideSemitonesPerSec": -160,
+          "env": {
+            "a": 0,
+            "d": 0.1,
+            "s": 0,
+            "r": 0.02
+          }
+        },
+        "h": {
+          "wave": "noise",
+          "pitch": "C8",
+          "env": {
+            "a": 0,
+            "d": 0.03,
+            "s": 0,
+            "r": 0.01
+          }
+        }
+      }
+    }
+  },
+  "channels": {
+    "lead": {
+      "instrument": "lead",
+      "gainDb": -16,
+      "pan": -0.2
+    },
+    "bass": {
+      "instrument": "bass",
+      "gainDb": -12
+    },
+    "drums": {
+      "instrument": "kit",
+      "gainDb": -18,
+      "pan": 0.1
+    }
+  },
+  "sections": {
+    "A": {
+      "chords": [
+        "C",
+        "G"
+      ],
+      "lead": [
+        "E5 - G5 - | C6 - - - | . . B5 - - | A5 - G5 -",
+        "D5 - - - | . . G5 - | B5 - D6 - | . . . ."
+      ],
+      "bass": [
+        "C3 - - . | G2 - . . | C3 - - . | E3 - G2 -",
+        "G2 - - . | D3 - . . | G2 - - . | B2 - . ."
+      ],
+      "drums": [
+        "k . h . | . . h . | k . h . | . . h h",
+        "=0"
+      ]
+    }
+  },
+  "order": [
+    "A"
+  ],
+  "loop": {
+    "fromOrderIndex": 0
+  },
+  "layers": {
+    "base": [
+      "bass"
+    ],
+    "melody": [
+      "lead"
+    ],
+    "groove": [
+      "drums"
+    ]
+  },
+  "states": {
+    "calm": {
+      "layers": [
+        "base",
+        "melody"
+      ]
+    },
+    "busy": {
+      "layers": [
+        "base",
+        "melody",
+        "groove"
+      ]
+    },
+    "muffled": {
+      "layers": [
+        "base",
+        "melody"
+      ],
+      "lowpassHz": 900
+    }
+  },
+  "orchestrations": {
+    "soft": {
+      "lead": {
+        "wave": "triangle"
+      }
+    }
+  }
+}

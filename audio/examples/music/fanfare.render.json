@@ -1,0 +1,37 @@
+{
+  "format": "wz.audio-render/0.1",
+  "id": "jingle.fanfare",
+  "kind": "song",
+  "source": "fanfare.song.json",
+  "sampleRate": 48000,
+  "frames": 155648,
+  "loop": false,
+  "hash": "87286d3886132b53",
+  "seconds": 3.243,
+  "lufsI": -17.5,
+  "lufsMomentaryMax": -16.3,
+  "dBTP": -8,
+  "clipped": 0,
+  "energyAbove8k": 0.008,
+  "seam": null,
+  "trimDb": -0.5,
+  "stems": [
+    { "channel": "lead", "hash": "124c93718e9f0fa1" },
+    { "channel": "harm", "hash": "ba42b32d2a633b12" },
+    { "channel": "bass", "hash": "cd3101d8728f7100" },
+    { "channel": "drums", "hash": "9142a4a097202430" }
+  ],
+  "states": [],
+  "stats": {
+    "bars": 2,
+    "seconds": 3.2,
+    "uniqueBarRatio": 1,
+    "channels": [
+      { "channel": "lead", "kit": false, "bars": 2, "notes": 10, "onsetsPerStep": 0.313, "restRatio": 0.219, "lowest": "A4", "highest": "G5", "uniqueBarRatio": 1 },
+      { "channel": "harm", "kit": false, "bars": 2, "notes": 10, "onsetsPerStep": 0.313, "restRatio": 0.219, "lowest": "F4", "highest": "E5", "uniqueBarRatio": 1 },
+      { "channel": "bass", "kit": false, "bars": 2, "notes": 8, "onsetsPerStep": 0.25, "restRatio": 0.031, "lowest": "F2", "highest": "C3", "uniqueBarRatio": 1 },
+      { "channel": "drums", "kit": true, "bars": 2, "notes": 13, "onsetsPerStep": 0.406, "restRatio": 0.594, "lowest": null, "highest": null, "uniqueBarRatio": 1 }
+    ]
+  },
+  "warnings": []
+}

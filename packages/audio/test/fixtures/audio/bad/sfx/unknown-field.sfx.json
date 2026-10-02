@@ -1,0 +1,53 @@
+{
+  "format": "wz.sfx/0.1",
+  "id": "fixture.bad-sfx",
+  "seed": 5,
+  "gainDb": -12,
+  "play": {
+    "jitterCents": 20,
+    "maxVoices": 2,
+    "minIntervalMs": 50
+  },
+  "voices": [
+    {
+      "wave": "pulse",
+      "duty": 0.5,
+      "notes": [
+        [
+          "H5",
+          0.03
+        ],
+        [
+          "E6",
+          0.06
+        ]
+      ],
+      "env": {
+        "a": 0.001,
+        "d": 0.02,
+        "s": 0.5,
+        "r": 0.05
+      },
+      "lowpassHz": 8000,
+      "volume": 0.5
+    },
+    {
+      "wave": "noise",
+      "mode": "short",
+      "notes": [
+        [
+          "C6",
+          0.02
+        ]
+      ],
+      "env": {
+        "a": 0,
+        "d": 0.02,
+        "s": 0,
+        "r": 0.01
+      },
+      "gainDb": -8,
+      "highpassHz": 2000
+    }
+  ]
+}

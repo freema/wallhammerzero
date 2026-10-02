@@ -1,0 +1,57 @@
+{
+  "format": "wz.song/0.1",
+  "id": "jingle.fanfare",
+  "title": "Rank Up",
+  "tempo": 150,
+  "meter": [4, 4],
+  "stepsPerBeat": 4,
+  "key": "F major",
+  "instruments": {
+    "brass": {
+      "wave": "pulse",
+      "duty": 0.5,
+      "env": { "a": 0.004, "d": 0.08, "s": 0.7, "r": 0.12 },
+      "vibrato": { "cents": 15, "hz": 6, "delay": 0.25 }
+    },
+    "bass": {
+      "wave": "triangle",
+      "steps": 32,
+      "env": { "a": 0.003, "d": 0.05, "s": 0.9, "r": 0.1 }
+    },
+    "kit": {
+      "drums": {
+        "k": { "wave": "triangle", "pitch": "C3", "slideSemitonesPerSec": -160, "env": { "a": 0, "d": 0.11, "s": 0, "r": 0.02 } },
+        "s": { "wave": "noise", "mode": "long", "pitch": "A5", "env": { "a": 0, "d": 0.09, "s": 0, "r": 0.02 } }
+      }
+    }
+  },
+  "channels": {
+    "lead": { "instrument": "brass", "gainDb": -20, "pan": -0.2 },
+    "harm": { "instrument": "brass", "gainDb": -23, "pan": 0.2 },
+    "bass": { "instrument": "bass", "gainDb": -14 },
+    "drums": { "instrument": "kit", "gainDb": -20 }
+  },
+  "sections": {
+    "A": {
+      "chords": ["F Bb", "C F"],
+      "lead": [
+        "A4 . A4 . | C5 - - - | Bb4 . Bb4 . | D5 - - -",
+        "E5 . E5 . | G5 - - - | F5 - - - | - - - ."
+      ],
+      "harm": [
+        "F4 . F4 . | A4 - - - | F4 . F4 . | Bb4 - - -",
+        "C5 . C5 . | E5 - - - | C5 - - - | - - - ."
+      ],
+      "bass": [
+        "F2 - - - | F2 - - - | Bb2 - - - | Bb2 - - -",
+        "C3 - - - | C3 - G2 - | F2 - - - | - - - ."
+      ],
+      "drums": [
+        "k . . . | . . . . | k . . . | s:4 s:5 s:6 s",
+        "k . s . | s s s:8 s:9 | k . . . | . . . ."
+      ]
+    }
+  },
+  "order": ["A"],
+  "loop": false
+}

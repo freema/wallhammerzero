@@ -1,0 +1,116 @@
+{
+  "format": "wz.song/0.1",
+  "id": "bgm.shop.day",
+  "title": "Morning Counter",
+  "tempo": 108,
+  "meter": [4, 4],
+  "stepsPerBeat": 4,
+  "key": "F major",
+  "seed": 1,
+  "instruments": {
+    "lead": {
+      "wave": "pulse",
+      "duty": 0.25,
+      "env": { "a": 0.005, "d": 0.12, "s": 0.6, "r": 0.08 },
+      "vibrato": { "cents": 12, "hz": 5.5, "delay": 0.2 }
+    },
+    "keys": {
+      "wave": "pulse",
+      "duty": 0.125,
+      "arpHz": 40,
+      "env": { "a": 0.002, "d": 0.3, "s": 0, "r": 0.05 }
+    },
+    "bass": {
+      "wave": "triangle",
+      "steps": 32,
+      "env": { "a": 0.003, "d": 0.06, "s": 0.85, "r": 0.05 }
+    },
+    "kit": {
+      "drums": {
+        "k": { "wave": "triangle", "pitch": "C3", "slideSemitonesPerSec": -160, "env": { "a": 0, "d": 0.11, "s": 0, "r": 0.02 } },
+        "s": { "wave": "noise", "mode": "long", "pitch": "A5", "env": { "a": 0, "d": 0.12, "s": 0, "r": 0.02 } },
+        "h": { "wave": "noise", "mode": "long", "pitch": "C8", "env": { "a": 0, "d": 0.035, "s": 0, "r": 0.01 } }
+      }
+    }
+  },
+  "channels": {
+    "lead": { "instrument": "lead", "gainDb": -17, "pan": -0.15 },
+    "keys": { "instrument": "keys", "gainDb": -22, "pan": 0.25, "echo": { "beats": 0.75, "feedback": 0.3, "mix": 0.25 } },
+    "bass": { "instrument": "bass", "gainDb": -12 },
+    "drums": { "instrument": "kit", "gainDb": -18 }
+  },
+  "sections": {
+    "A": {
+      "chords": ["F", "Dm", "Bb", "C"],
+      "lead": [
+        "A4 - C5 - | F5 - - - | . . E5 - | D5 - C5 -",
+        "D5 - - - | . . A4 - | C5 - D5 - | . . . .",
+        "Bb4 - D5 - | F5 - - - | . . G5 - | F5 - D5 -",
+        "E5 - - - | G5 - - - | . . . . | C5 - . ."
+      ],
+      "keys": [
+        "F4@047 - . . | . . . . | F4@047 - . . | . . . .",
+        "D4@037 - . . | . . . . | D4@037 - . . | . . . .",
+        "Bb3@047 - . . | . . . . | Bb3@047 - . . | . . . .",
+        "C4@047 - . . | . . . . | C4@047 - . . | . . . ."
+      ],
+      "bass": [
+        "F2 - - . | C3 - . . | F2 - - . | C3 - A2 -",
+        "D2 - - . | A2 - . . | D2 - - . | A2 - F2 -",
+        "Bb1 - - . | F2 - . . | Bb1 - - . | F2 - D2 -",
+        "C2 - - . | G2 - . . | C2 - - . | E2 - G2 -"
+      ],
+      "drums": [
+        "k . h . | s . h . | k . h k | s . h .",
+        "=0",
+        "=0",
+        "k . h . | s . h . | k . s . | s s:4 s:5 s"
+      ]
+    },
+    "B": {
+      "chords": ["Bb", "C", "Am Dm", "Gm C"],
+      "lead": [
+        "D5 - F5 - | D5 - Bb4 - | . . . . | F5 - D5 -",
+        "E5 - G5 - | E5 - C5 - | . . . . | G5 - E5 -",
+        "C5 - - - | A4 - C5 - | D5 - - - | F5 - - .",
+        "G5 - - - | D5 - Bb4 - | C5 - - - | - - . ."
+      ],
+      "keys": [
+        "Bb3@047 - . . | . . . . | Bb3@047 - . . | . . . .",
+        "C4@047 - . . | . . . . | C4@047 - . . | . . . .",
+        "A3@037 - . . | . . . . | D4@037 - . . | . . . .",
+        "G3@037 - . . | . . . . | C4@047 - . . | . . . ."
+      ],
+      "bass": [
+        "Bb1 - - . | F2 - . . | Bb1 - - . | D2 - F2 -",
+        "C2 - - . | G2 - . . | C2 - - . | E2 - G2 -",
+        "A1 - - . | E2 - . . | D2 - - . | A2 - . .",
+        "G1 - - . | D2 - . . | C2 - - . | G2 - E2 -"
+      ],
+      "drums": [
+        "k . h . | s . h . | k k h . | s . h h",
+        "=0",
+        "=0",
+        "k . h . | s . h . | k . s . | s:4 s:5 s s:9"
+      ]
+    }
+  },
+  "order": ["A", "B"],
+  "loop": { "fromOrderIndex": 0 },
+  "layers": {
+    "base": ["bass", "keys"],
+    "melody": ["lead"],
+    "groove": ["drums"]
+  },
+  "states": {
+    "calm": { "layers": ["base", "melody"] },
+    "rush": { "layers": ["base", "melody", "groove"] },
+    "night": { "layers": ["base"], "lowpassHz": 1800 }
+  },
+  "orchestrations": {
+    "winter": {
+      "lead": { "wave": "triangle" },
+      "keys": { "duty": 0.5 }
+    }
+  }
+}

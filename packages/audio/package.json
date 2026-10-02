@@ -1,0 +1,26 @@
+{
+  "name": "@whz/audio",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Music and SFX as data, and the one reference synth that plays them: a sample-level chip synth in plain TypeScript, the wz.song and wz.sfx formats with their validators, loudness metrics, and the audio command (list, check, render, metrics).",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./analysis": "./src/analysis/index.ts",
+    "./node": "./src/node/index.ts",
+    "./pow2.json": "./data/pow2.json",
+    "./tan.json": "./data/tan.json",
+    "./song.schema.json": "./schema/wz.song-0.1.schema.json",
+    "./sfx.schema.json": "./schema/wz.sfx-0.1.schema.json"
+  },
+  "scripts": {
+    "check": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json && eslint . && vitest run && npm run examples",
+    "examples": "node src/node/bin.ts check --all --root ../..",
+    "make-data": "node scripts/make-data.ts"
+  },
+  "dependencies": {
+    "@whz/asset-kit": "0.0.0",
+    "@whz/det": "0.0.0"
+  }
+}

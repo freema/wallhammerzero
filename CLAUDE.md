@@ -101,6 +101,10 @@ The gate is one command, run from the repo root:
 - A game is a folder of data under `games/`; after changing one, run
   `./dev npm run game -- validate <id>` (the gate validates all of them). The layout, the id
   rules and the package are in [docs/game-data.md](docs/game-data.md).
+- The synth of `packages/audio` is under the same lint (its `analysis` and `node` folders are
+  not). Songs and SFX in `audio/` are checked by `./dev npm run audio -- check --all`, which the
+  gate runs: validators, then the PCM hash of each render against its checked-in sidecar
+  ([docs/audio.md](docs/audio.md)).
 - Containers have no GPU, so no headless WebGL there. Check graphics with numbers and hashes from
   CPU renderers, or in the host browser through Chrome DevTools MCP (`./dev -p 4101 <server>`
   publishes a port on 127.0.0.1).

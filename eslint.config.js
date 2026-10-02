@@ -11,7 +11,7 @@ import { determinism } from "./tools/lint/determinism.js";
 /**
  * Code that must give the same result on every engine and in a later port: no clocks, no
  * unseeded randomness, no floating-point Math. Tests and build scripts are not under it.
- * A later note adds the synth here.
+ * The synth (packages/audio) computes in floats, but only with + - * / and checked-in tables.
  */
 const DETERMINISTIC = [
   "assets/**/*.ts",
@@ -20,10 +20,20 @@ const DETERMINISTIC = [
   "packages/sim/src/**/*.ts",
   "packages/runtime/src/**/*.ts",
   "packages/voxel-kit/src/**/*.ts",
+  "packages/audio/src/**/*.ts",
 ];
 
-/** Node-side entry points of deterministic packages: they load files, they do not draw. */
-const DETERMINISTIC_EXCEPT = ["packages/asset-kit/src/node/**", "packages/sim/src/node/**", "packages/runtime/src/node/**"];
+/**
+ * Node-side entry points of deterministic packages: they load files, they do not draw. The
+ * analysis of the audio package measures rendered sound (loudness, spectra) and may use floats.
+ */
+const DETERMINISTIC_EXCEPT = [
+  "packages/asset-kit/src/node/**",
+  "packages/sim/src/node/**",
+  "packages/runtime/src/node/**",
+  "packages/audio/src/node/**",
+  "packages/audio/src/analysis/**",
+];
 
 const TYPESCRIPT = ["**/*.ts", "**/*.tsx"];
 
