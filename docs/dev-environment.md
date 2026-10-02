@@ -75,8 +75,9 @@ Every Node service uses the entrypoint
 The sync is skipped for `npm install`, `npm ci` and the other npm commands that install by
 themselves, and when `WHZ_SKIP_INSTALL=1` is set.
 
-A later service (the studio) starts from the same base with `<<: *node-service` in
-`compose.yaml` and adds its command and ports.
+The studio is the second service: it starts from the same base with `<<: *node-service` in
+`compose.yaml` and adds its command and its port ([studio.md](studio.md)). A later service
+does the same.
 
 ### Changing dependencies
 
@@ -160,6 +161,10 @@ browser code against the DOM library (`packages/runtime/tsconfig.webgl.json`), a
 `vite build` of its dev page, so a page that no longer bundles fails the gate. Its WebGL
 backend itself is checked in the host browser, not in the gate
 ([packages/runtime/README.md](../packages/runtime/README.md#checks)).
+
+The studio (`packages/studio`) adds React Router's type
+generation, a production build and an end-to-end test of its server to that
+([studio.md](studio.md#checks)).
 
 ## TypeScript packages
 
@@ -246,7 +251,7 @@ loopback binding is on the host side.
 
 | Port | Variable | Use |
 |---|---|---|
-| 4100 | `WHZ_STUDIO_PORT` | The studio (reserved; the service comes with the studio skeleton note). |
+| 4100 | `WHZ_STUDIO_PORT` | The studio: the Compose service `studio` ([studio.md](studio.md)). |
 | 4101 | none | Short-lived servers for a check, started with `./dev -p 4101 <cmd>`. Stop them afterwards. |
 
 Two checkouts that run the same service at the same time need different ports, e.g.

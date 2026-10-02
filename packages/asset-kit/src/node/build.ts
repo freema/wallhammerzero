@@ -109,21 +109,33 @@ function bakedIds(project: AssetProject): string[] {
 }
 
 /**
- * Bakes every asset of the project, in id order, and removes the output of assets that no
- * longer exist. The result of a bake does not depend on what was in `build/` before.
+ * Removes the output of assets that no longer exist under the assets folder, and the pack
+ * folders that are empty after that. Returns the ids it removed. `bakeAll` ends with this; a
+ * host that bakes asset by asset (the studio's bake worker) calls it after the last one.
  */
-export async function bakeAll(project: AssetProject): Promise<BakeResult[]> {
+export function pruneBakes(project: AssetProject): string[] {
   const entries = findAssets(project);
-  const results: BakeResult[] = [];
-  for (const entry of entries) results.push(await bakeToDisk(project, entry));
   const root = join(project.outDir, "assets");
+  const removed: string[] = [];
   for (const id of bakedIds(project)) {
     if (entries.some((entry) => entry.id === id)) continue;
     let folder = bakeDir(project, id);
     rmSync(folder, { recursive: true, force: true });
+    removed.push(id);
     // Folders of a pack that are empty now go too.
     for (folder = dirname(folder); folder !== root && readdirSync(folder).length === 0; folder = dirname(folder)) rmSync(folder, { recursive: true });
   }
+  return removed;
+}
+
+/**
+ * Bakes every asset of the project, in id order, and removes the output of assets that no
+ * longer exist. The result of a bake does not depend on what was in `build/` before.
+ */
+export async function bakeAll(project: AssetProject): Promise<BakeResult[]> {
+  const results: BakeResult[] = [];
+  for (const entry of findAssets(project)) results.push(await bakeToDisk(project, entry));
+  pruneBakes(project);
   return results;
 }
 

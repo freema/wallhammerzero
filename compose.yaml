@@ -31,10 +31,17 @@ services:
     # The default bridge: outbound network for npm, and no per-checkout Compose network.
     network_mode: bridge
 
-  # Port convention for services that listen (the studio is the first one):
-  #   ports:
-  #     - "127.0.0.1:${WHZ_STUDIO_PORT:-4100}:4100"
-  # 127.0.0.1 only, a fixed default, and a WHZ_<SERVICE>_PORT variable to override it.
+  # The studio (docs/studio.md): `./dev compose up studio`, then http://127.0.0.1:4100.
+  # Dev mode: Vite middleware with HMR on the same port.
+  studio:
+    <<: *node-service
+    network_mode: bridge
+    command: ["npm", "run", "dev", "--workspace", "@whz/studio"]
+    ports:
+      - "127.0.0.1:${WHZ_STUDIO_PORT:-4100}:4100"
+
+  # Port convention for services that listen: 127.0.0.1 only, a fixed default, and a
+  # WHZ_<SERVICE>_PORT variable to override it (another checkout, a verifier).
   # tools/dev-env/compose-lint.mjs enforces this in the gate.
 
 volumes:

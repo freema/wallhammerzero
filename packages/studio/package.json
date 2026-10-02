@@ -1,0 +1,31 @@
+{
+  "name": "@whz/studio",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The studio: a local web app (React Router framework mode on a custom Node server) where the owner sees every generated asset. The app shell, the asset index, the gallery and the bake button.",
+  "type": "module",
+  "scripts": {
+    "dev": "NODE_ENV=development node --conditions development server.ts",
+    "build": "react-router build",
+    "start": "NODE_ENV=production node server.ts",
+    "typegen": "react-router typegen",
+    "check": "react-router typegen && tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json && eslint . && react-router build && vitest run"
+  },
+  "dependencies": {
+    "@react-router/express": "^8.4.0",
+    "@react-router/node": "^8.4.0",
+    "@whz/asset-kit": "0.0.0",
+    "express": "^5.2.1",
+    "isbot": "^5.2.2",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router": "^8.4.0"
+  },
+  "devDependencies": {
+    "@react-router/dev": "^8.4.0",
+    "@types/express": "^5.0.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "vite": "^8.3.2"
+  }
+}

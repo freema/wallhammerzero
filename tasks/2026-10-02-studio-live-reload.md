@@ -37,3 +37,20 @@ owner watches results appear while Claude works.
 - A generator that loops forever is killed by the timeout and shows an error card; the studio
   keeps running.
 - Server tests for debounce/batching and the SSE ring buffer are in `npm run check`.
+
+## From the skeleton (2026-10-02)
+What `studio-skeleton-gallery` left for this note (see `docs/studio.md`):
+- Until there is a watcher, every loader calls `index.refresh()`, which rescans the disk when the
+  last scan is older than a second, and pages poll with `useBakePolling` (a revalidation every
+  second) while a bake is in flight. Both are stand-ins: the watcher and the SSE stream replace
+  them.
+- The bake service already takes ids (`bake.bake(ids, reason)`), runs in a fresh worker per run,
+  has the per-asset timeout and queues runs. `needsBake(record)` in `asset-index.ts` says which
+  records have no current output. A new `BakeReason` (for example `"watch"`) is all a re-bake on
+  change needs from it.
+- The source hash covers an asset's own folder only. A change to a palette or to shared code
+  leaves every asset `baked`; finding the assets that use a changed palette or stamp is this
+  note's scope item 2.
+- New long-lived things (the watcher, the event hub) are services in
+  `packages/studio/server/services/index.ts`; `/api/events` can be a resource route or an
+  Express handler next to `/api/files` in `packages/studio/server.ts`.

@@ -10,3 +10,5 @@ coverage/
 .env.*
 .DS_Store
 .claude/worktrees/
+.studio-cache/
+.react-router/

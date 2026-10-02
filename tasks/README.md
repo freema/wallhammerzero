@@ -71,7 +71,6 @@ and every note against the format above ([docs/docs-check.md](../docs/docs-check
 | # | Note | Gate | Depends on |
 |---|---|---|---|
 | 0 | [Owner calls](2026-10-02-owner-calls.md) | owner answers | none |
-| 7 | [Studio skeleton + gallery](2026-10-02-studio-skeleton-gallery.md) | none | #1, #5 |
 | 8 | [Studio live reload](2026-10-02-studio-live-reload.md) | none | #7 |
 | 9 | [Studio animation player](2026-10-02-studio-animation-player.md) | none | #8, #6 |
 | 10 | [Studio verdicts](2026-10-02-studio-verdicts.md) | none | #8 |

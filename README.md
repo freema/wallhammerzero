@@ -35,5 +35,6 @@ Two game types:
 | [packages/sim/](packages/sim/README.md) | The sim core: the deterministic tick kernel, the toy `counter-shop` systems and the `sim` replay runner |
 | [packages/runtime/](packages/runtime/README.md) | The renderer games and the studio share: a draw list of sprites, a WebGL2 backend (palette lookup texture, integer upscale into a rectangle), a CPU reference backend for Node, the clip player, and a dev page for the browser parity check |
 | `assets/` | Asset programs (one folder each, e.g. `assets/examples/blinking-dot/gen.ts`) and palettes (`assets/palettes/example.json`) |
+| [docs/studio.md](docs/studio.md) | The studio (`packages/studio`): how to start it, its port, pages, server services and guards |
 | [docs/docs-check.md](docs/docs-check.md) | The check that keeps links, paths, the queue and ids in the docs true |
 | [CLAUDE.md](CLAUDE.md) | Working rules for Claude Code sessions in this repo |

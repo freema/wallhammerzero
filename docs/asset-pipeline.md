@@ -152,7 +152,9 @@ bake in a worker gives the same bytes as the command.
 | Import | Functions | I/O |
 |---|---|---|
 | `@whz/asset-kit` | `bakeAsset(asset, { sourceHash })` → the atlas and one `IndexedBuffer` sheet per variant; `lintAsset(asset)` → the report; `reviewAsset(asset, options)` and `reviewPack(...)` → RGB images; `layoutSheet`, `lintFrames`, `renderSheet`, `formatJson` | none: runs in Node, in a worker and in the browser |
-| `@whz/asset-kit/node` | `openProject`, `findAssets`, `findAsset`, `loadEntry`, `sourceHash`; `bakeToDisk`, `bakeAll`, `lintToDisk`, `reviewToDisk`, `reviewPackToDisk`; `encodeIndexedPng`, `encodeRgbPng`, `decodePng`; `runCli` | files |
+| `@whz/asset-kit/node` | `openProject`, `findAssets`, `findAsset`, `loadEntry`, `sourceHash`; `bakeToDisk`, `bakeAll`, `pruneBakes`, `lintToDisk`, `reviewToDisk`, `reviewPackToDisk`; `encodeIndexedPng`, `encodeRgbPng`, `decodePng`; `runCli` | files |
 
 A Node process loads each `gen.ts` once (modules are cached). A host that bakes again after an
-edit runs the bake in a fresh worker or process.
+edit runs the bake in a fresh worker or process. The studio does: its bake worker calls
+`bakeToDisk` per asset and `pruneBakes` (the clean-up of `bakeAll`) at the end
+([studio.md](studio.md#the-server)).

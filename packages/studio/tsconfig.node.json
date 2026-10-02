@@ -1,0 +1,7 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["server.ts", "server/services", "test", "vite.config.ts", "vitest.config.ts", "react-router.config.ts"]
+}

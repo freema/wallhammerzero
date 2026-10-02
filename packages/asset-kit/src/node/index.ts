@@ -7,7 +7,7 @@ export { decodePng, encodeIndexedPng, encodeRgbPng } from "./png.ts";
 export type { DecodedPng, IndexedImage } from "./png.ts";
 export { findAsset, findAssets, findPack, GEN_FILE, loadEntry, openProject, sourceHash } from "./project.ts";
 export type { AssetEntry, AssetProject, ProjectOptions } from "./project.ts";
-export { BAKE_ERROR_FORMAT, bakeAll, bakeDir, bakeToDisk, lintToDisk, reviewDir, reviewPackToDisk, reviewToDisk } from "./build.ts";
+export { BAKE_ERROR_FORMAT, bakeAll, bakeDir, bakeToDisk, lintToDisk, pruneBakes, reviewDir, reviewPackToDisk, reviewToDisk } from "./build.ts";
 export type { BakeResult, LintResult, LintToDiskOptions, ReviewResult, WrittenImage } from "./build.ts";
 export { runCli } from "./cli.ts";
 export type { CliIo } from "./cli.ts";

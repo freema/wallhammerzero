@@ -24,13 +24,15 @@ const DETERMINISTIC = [
 /** Node-side entry points of deterministic packages: they load files, they do not draw. */
 const DETERMINISTIC_EXCEPT = ["packages/asset-kit/src/node/**", "packages/sim/src/node/**", "packages/runtime/src/node/**"];
 
-const TYPESCRIPT = ["**/*.ts"];
+const TYPESCRIPT = ["**/*.ts", "**/*.tsx"];
 
 export default [
   {
     name: "whz/ignores",
     ignores: ["**/node_modules/**", "**/dist/**", "build/**", "coverage/**", ".tools/**", "tools/lint/test/fixtures/**"],
   },
+  // The studio's generated files: the built app and React Router's route types.
+  { name: "whz/ignores-studio", ignores: ["packages/studio/build/**", "packages/studio/.react-router/**"] },
   { name: "whz/options", linterOptions: { reportUnusedDisableDirectives: "error" } },
   { ...js.configs.recommended, name: "whz/js-recommended", files: TYPESCRIPT },
   ...tseslint.configs.recommended.map((config) => ({ ...config, files: TYPESCRIPT })),
