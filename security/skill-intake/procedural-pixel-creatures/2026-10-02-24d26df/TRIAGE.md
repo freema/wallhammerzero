@@ -103,8 +103,9 @@ docker run --rm --network none \
     dotnet tools/core_harness/bin/Release/net8.0/CoreHarness.dll test /out/harness all 10'
 ```
 
-- **Driver:** our own console program (`samples/driver/`, about 250 lines) that compiles the
-  upstream Core + Plantfolk sources from the read-only mount, the same way upstream's
+- **Driver:** our own console program
+  (`research/scans/2026-10-02-procedural-pixel-creatures/samples/driver/`, about 250 lines) that
+  compiles the upstream Core + Plantfolk sources from the read-only mount, the same way upstream's
   `tools/core_harness` does. It renders the 8 uncurated seeds of all 9 families, animation strips,
   8 facings and a small-size test, writes PNG contact sheets (upscaled by integers with upstream's
   nearest-neighbour `PngEncoder.Upscale`) and `stats.tsv`. No NuGet packages were needed; restore
@@ -113,7 +114,9 @@ docker run --rm --network none \
   `render.deterministic_and_golden`, whose palette-index hashes were generated upstream on
   Linux x64. Determinism held across CPU architectures for the golden set. Windows was not tested.
 - **Results:** all 72 uncurated creatures re-render byte-identically; 0 repairs, 0 validation
-  warnings. Contact sheets and numbers are in `samples/` and discussed in the analysis doc §6.
+  warnings. Contact sheets and numbers are in
+  `research/scans/2026-10-02-procedural-pixel-creatures/samples/` and discussed in the analysis
+  doc §6.
 
 ## Conclusion (recommendation only: per D17 the owner decides)
 
@@ -126,3 +129,17 @@ docker run --rm --network none \
   Its value is ideas (D13). The code is MIT (+ Apache-2.0 PCG, fdlibm notice), so copying would be
   legally possible with attribution, but our stack is TypeScript with integer-only asset maths
   (D18, asset-kit-core), so the recommendation is **ideas only, clean-room re-implementation**.
+
+## Re-scan with `tools/skill-intake` (2026-10-02)
+
+The scan was repeated with the repo's own tooling (`tools/skill-intake/fetch.sh` and `scan.sh`,
+image `whz-skillspector:2.12.0-c7958a3`, dependencies from upstream's `uv.lock`) on a fresh
+quarantine clone of the same commit (tree hash `55d58daa41cd22c31fa314614d0cbb69cd1eceaa`).
+
+- **Same findings:** repo root 17 (0 CRITICAL, 4 HIGH, 9 MEDIUM, 4 LOW), score 94, exit 1;
+  `scripts/` 1 MEDIUM, score 6, exit 1. Every finding is at the same file and line.
+- `scripts.md` came out identical except for the scan time. `root.md` differs only in coverage
+  notes: the `.git` files of the new clone, and the `runtime_limit` gap landed on
+  `Core/Genetics` instead of `Core/Rendering` (it depends on timing).
+- With [`baseline.json`](baseline.json) all 17 findings are suppressed (0 active, score 0). The
+  scan still exits 1, because the coverage stays "partial".

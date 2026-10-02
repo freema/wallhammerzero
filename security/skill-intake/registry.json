@@ -1,0 +1,116 @@
+{
+  "schema": 1,
+  "entries": [
+    {
+      "name": "game-creator",
+      "kind": "skill plugin (31 skills, agents, hooks, scripts)",
+      "source": "https://github.com/PlayableIntelligence/game-creator",
+      "commit": "4e64b83b5fe400b34ad3a484d9b4a6090b26d512",
+      "treeHash": "ec345c1771c475f4b4c61d8d22554039ccd0fa77",
+      "licence": "Unclear: no LICENSE file; the README says MIT, package.json says ISC. Nothing may be copied.",
+      "scanner": {
+        "name": "SkillSpector",
+        "version": "2.12.0",
+        "commit": "c7958a3268d9498644b22edb75d0f051bbc8cbfc"
+      },
+      "scanned": "2026-10-02",
+      "evidence": "game-creator/2026-10-02-4e64b83",
+      "scans": [
+        {
+          "scope": "skills",
+          "recursive": true,
+          "report": "skills.md",
+          "findings": 121,
+          "critical": 0,
+          "high": 31,
+          "medium": 90,
+          "low": 0,
+          "score": 76,
+          "recommendation": "DO_NOT_INSTALL",
+          "exit": 1
+        },
+        {
+          "scope": "agents",
+          "recursive": true,
+          "report": "agents.md",
+          "findings": 9,
+          "critical": 0,
+          "high": 0,
+          "medium": 9,
+          "low": 0,
+          "score": 32,
+          "recommendation": "CAUTION",
+          "exit": 0
+        },
+        {
+          "scope": "scripts",
+          "recursive": true,
+          "report": "scripts.md",
+          "findings": 16,
+          "critical": 0,
+          "high": 3,
+          "medium": 13,
+          "low": 0,
+          "score": 79,
+          "recommendation": "DO_NOT_INSTALL",
+          "exit": 1
+        }
+      ],
+      "verdict": "ideas-only",
+      "approval": {
+        "by": "owner",
+        "date": "2026-10-02",
+        "ref": "D13 (inspiration: ideas, not copies)"
+      },
+      "installed": [],
+      "notes": "Not installed; ideas only. The triage confirms the scanner's DO_NOT_INSTALL for the API-key hook, the credential flows and the paid-service skills. The ideas we take are in research/game-creator.md."
+    },
+    {
+      "name": "procedural-pixel-creatures",
+      "kind": "reference repo (Godot 4.5 .NET creature generator; not a skill)",
+      "source": "https://github.com/idlerunner00/procedural-pixel-creatures",
+      "commit": "24d26df10e9f0d369f1caf5b6ba0e8e724ec0888",
+      "treeHash": "55d58daa41cd22c31fa314614d0cbb69cd1eceaa",
+      "licence": "MIT (LICENSE), plus Apache-2.0 PCG32 and the fdlibm notice (THIRD_PARTY_NOTICES.md).",
+      "scanner": {
+        "name": "SkillSpector",
+        "version": "2.12.0",
+        "commit": "c7958a3268d9498644b22edb75d0f051bbc8cbfc"
+      },
+      "scanned": "2026-10-02",
+      "evidence": "procedural-pixel-creatures/2026-10-02-24d26df",
+      "scans": [
+        {
+          "scope": ".",
+          "recursive": true,
+          "report": "root.md",
+          "findings": 17,
+          "critical": 0,
+          "high": 4,
+          "medium": 9,
+          "low": 4,
+          "score": 94,
+          "recommendation": "DO_NOT_INSTALL",
+          "exit": 1
+        },
+        {
+          "scope": "scripts",
+          "recursive": true,
+          "report": "scripts.md",
+          "findings": 1,
+          "critical": 0,
+          "high": 0,
+          "medium": 1,
+          "low": 0,
+          "score": 6,
+          "recommendation": "CAUTION",
+          "exit": 1
+        }
+      ],
+      "verdict": "ideas-only",
+      "approval": null,
+      "installed": [],
+      "notes": "Not a skill and nothing to install: a reference repo, ideas only, re-implemented clean-room in TypeScript (research/ref-procedural-pixel-creatures.md). Every HIGH finding is a false positive. Never run its Windows launcher (Start.cmd, Start.ps1, scripts/bootstrap.ps1): it downloads a toolchain onto the host (D16)."
+    }
+  ]
+}

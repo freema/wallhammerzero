@@ -35,7 +35,8 @@ Read in this order: [docs/DECISIONS.md](docs/DECISIONS.md) → [tasks/README.md]
   iOS builds) is an owner call.
 - **Third-party skills** (anything not from `anthropics/skills`, and not the owner's own) are never
   installed or copied before a skillspector scan, triage and owner approval. Reading them for ideas
-  is fine.
+  is fine. The procedure, the scan command and the registry of what was scanned:
+  [security/skill-intake/README.md](security/skill-intake/README.md).
 - **Licences before borrowing.** Research found code that must not be copied; the list is in
   [research/README.md](research/README.md#licence-flags). Check the licence of anything new before
   copying even a snippet.

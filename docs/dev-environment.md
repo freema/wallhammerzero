@@ -145,6 +145,10 @@ Today the gate holds these checks, all plain `node --test` with no dependencies:
   (`./dev node tools/task-queue/cli.mjs`: which note is next, which wait for the owner), plus
   checks that keep the skill's text tied to the repo (its links, the files and commands it names,
   the shape of `docs/progress.md`).
+- `@whz/skill-intake`: the lints of the skill intake records (`security/skill-intake/`: registry,
+  evidence, baselines), the pins of the scanner image, and tests of the scan command against a
+  stand-in `docker`. The scanner itself runs on the host's Docker, not in the gate
+  ([security/skill-intake/README.md](../security/skill-intake/README.md)).
 
 ## Several checkouts at once (git worktrees)
 

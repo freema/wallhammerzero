@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "scanner_version": "2.12.0",
+  "rules": [
+    {
+      "id": "MP3",
+      "path": "*scenes-and-lifecycle.md",
+      "message": "*Reset state*",
+      "reason": "False positive (TRIAGE.md): Phaser documentation tells a scene to reset its game state in init(). Game state, not agent memory."
+    },
+    {
+      "id": "YR4",
+      "path": "assets/characters/characters/elon-musk/*/normal.png",
+      "message": "*agent_skill_mcp_tool_poisoning_metadata*",
+      "reason": "False positive (TRIAGE.md): XMP image metadata with zero-width characters, not a tool schema. The real-person photo assets are excluded from any adoption anyway."
+    }
+  ]
+}

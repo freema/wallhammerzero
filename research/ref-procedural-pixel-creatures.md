@@ -4,8 +4,8 @@
   `24d26df10e9f0d369f1caf5b6ba0e8e724ec0888` (2026-10-01, "Add Procedural Pixel Creatures source
   release"), 2 commits. Analysed 2026-10-02 for Wallhammer Zero (WZ).
 - **Licence:** MIT © 2026 idlerunner00, plus an Apache-2.0 PCG32 port and the fdlibm notice (§9).
-- **Security scan:** `research/scans/2026-10-02-procedural-pixel-creatures/TRIAGE.md`. No real
-  finding; the scanner's CRITICAL label rests on four false positives. It is not a skill.
+- **Security scan:** `security/skill-intake/procedural-pixel-creatures/2026-10-02-24d26df/TRIAGE.md`.
+  No real finding; the scanner's CRITICAL label rests on four false positives. It is not a skill.
 - **Method:**
   - Static reading of the engine-independent Core (about 19,400 lines of C#), the families,
     tests and docs. Sub-agents swept the families, the motion code and the genetics.
@@ -735,7 +735,8 @@ Relevant to `research/ref-nms-procgen.md` §3.9 and `research/voxels.md` §5. *(
   - `addons/procedural_creatures_plantfolk/Core/*`.
 - Docker run outputs: `research/scans/2026-10-02-procedural-pixel-creatures/samples/` (sheets,
   `stats.tsv`, driver source); harness report (17/17 pass, linux-arm64).
-- Scan: `research/scans/2026-10-02-procedural-pixel-creatures/TRIAGE.md`, `root.md`, `scripts.md`.
+- Scan: `security/skill-intake/procedural-pixel-creatures/2026-10-02-24d26df/` (`TRIAGE.md`,
+  `root.md`, `scripts.md`).
 - zfedoran/pixel-sprite-generator, README and source (MIT): https://github.com/zfedoran/pixel-sprite-generator
 - yurkth/sprator, README (MIT): https://github.com/yurkth/sprator
 - Inigo Quilez, ray-surface intersectors: https://iquilezles.org/articles/intersectors/

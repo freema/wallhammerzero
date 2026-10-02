@@ -33,7 +33,7 @@ numbers, every cited link) is in the research reports, each of which ends with i
 | [ref-sakura-crossing.md](../research/ref-sakura-crossing.md) | game-package-format (kinds as table rows), player-loop-test-protocol (`shot`), runtime-text-ui, runtime-tilemap-scene |
 | [ref-threejs-punk.md](../research/ref-threejs-punk.md) | repo-docs-check (docs drift), fx-emitters |
 | [ref-nms-procgen.md](../research/ref-nms-procgen.md) | player-saves (pin versions); the rest waits for the voxel game |
-| [skill-validation.md](../research/skill-validation.md) | skill-intake-tooling |
+| [skill-validation.md](../research/skill-validation.md) | skill-intake-tooling (done: [security/skill-intake/](../security/skill-intake/README.md)) |
 | The owner's `code-pixel-game` skill | asset-kit-core, asset-render-cli, art-spike-2d, runtime-text-ui, runtime-tilemap-scene, audio-synth-core |
 
 ## The owner's own sources
@@ -55,8 +55,8 @@ numbers, every cited link) is in the research reports, each of which ends with i
 | [ektogamat/threejs-conference](https://github.com/ektogamat/threejs-conference) (Threejs-Punk, [demo](https://threejspunk.vercel.app/)) | AGENTS.md + techniques docs (and how they drift), perf profiles, dev perf API | Rain shaders CC BY-NC-SA: **don't copy** | [ref-threejs-punk.md](../research/ref-threejs-punk.md) |
 | [mike007jd/voxel-musou](https://github.com/mike007jd/voxel-musou) | Voxel `sculpt` box-list builder, rig + pose arrays + IK, strict sim/render split, game-feel tricks | MIT | [ref-voxel-musou.md](../research/ref-voxel-musou.md) |
 | No Man's Sky / Light No Fire (technique, not a repo) | Positional seed cascade, store only deltas, pin the generator version, seed browser | n/a | [ref-nms-procgen.md](../research/ref-nms-procgen.md) |
-| [idlerunner00/procedural-pixel-creatures](https://github.com/idlerunner00/procedural-pixel-creatures) | Pixel-art rules for a 3D → pixel baker (selective outline, depth-gap contours, ramp-step shadows, speck cleanup), faces as stamps, uncurated review seeds, animation lints | MIT (+ Apache-2.0 PCG32, fdlibm notice); ideas only by choice | [ref-procedural-pixel-creatures.md](../research/ref-procedural-pixel-creatures.md), [scan](../research/scans/2026-10-02-procedural-pixel-creatures/TRIAGE.md) |
-| [PlayableIntelligence/game-creator](https://github.com/PlayableIntelligence/game-creator) | Test protocol in every game (state as text, time stepping, seeded action scripts, QA loop with attempt log) | Unclear (README MIT, package.json ISC, no LICENSE) | [game-creator.md](../research/game-creator.md), [scan](../research/scans/2026-10-02-game-creator/TRIAGE.md) |
+| [idlerunner00/procedural-pixel-creatures](https://github.com/idlerunner00/procedural-pixel-creatures) | Pixel-art rules for a 3D → pixel baker (selective outline, depth-gap contours, ramp-step shadows, speck cleanup), faces as stamps, uncurated review seeds, animation lints | MIT (+ Apache-2.0 PCG32, fdlibm notice); ideas only by choice | [ref-procedural-pixel-creatures.md](../research/ref-procedural-pixel-creatures.md), [scan](../security/skill-intake/procedural-pixel-creatures/2026-10-02-24d26df/TRIAGE.md) |
+| [PlayableIntelligence/game-creator](https://github.com/PlayableIntelligence/game-creator) | Test protocol in every game (state as text, time stepping, seeded action scripts, QA loop with attempt log) | Unclear (README MIT, package.json ISC, no LICENSE) | [game-creator.md](../research/game-creator.md), [scan](../security/skill-intake/game-creator/2026-10-02-4e64b83/TRIAGE.md) |
 
 ## Graphics from code (Opus 5.5)
 
@@ -119,8 +119,10 @@ numbers, every cited link) is in the research reports, each of which ends with i
 ## Security
 
 - [NVIDIA SkillSpector](https://github.com/NVIDIA/skillspector) (Apache-2.0): how we run it is in
-  [skill-validation.md](../research/skill-validation.md) and the
-  [first scan](../research/scans/2026-10-02-game-creator/TRIAGE.md).
+  [security/skill-intake/README.md](../security/skill-intake/README.md) (procedure, scan command,
+  registry); the research behind it is [skill-validation.md](../research/skill-validation.md), and
+  the first scan is
+  [game-creator](../security/skill-intake/game-creator/2026-10-02-4e64b83/TRIAGE.md).
 
 ## Licences
 

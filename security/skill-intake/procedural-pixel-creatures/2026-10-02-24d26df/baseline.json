@@ -1,0 +1,58 @@
+{
+  "version": 2,
+  "scanner_version": "2.12.0",
+  "rules": [
+    {
+      "id": "PE3",
+      "path": ".gitignore",
+      "message": "*.env*",
+      "reason": "False positive (TRIAGE.md): the line `.env` in an ignore list keeps secrets out of git. Nothing reads them."
+    },
+    {
+      "id": "P2",
+      "path": "ProceduralPixelCreatures.csproj",
+      "reason": "False positive (TRIAGE.md): two ordinary XML comments that describe the project and the Debug build. No instructions to an agent."
+    },
+    {
+      "id": "P2",
+      "path": "ProceduralPixelCreatures.sln",
+      "reason": "False positive (TRIAGE.md): the 'hidden' content is the UTF-8 BOM that Visual Studio writes into solution files."
+    },
+    {
+      "id": "TM1",
+      "path": "addons/procedural_creatures/Core/Motion/Behaviors.cs",
+      "message": "*roar*",
+      "reason": "False positive (TRIAGE.md): pose parameters of the 'roar' animation (`p.EarPitch -= 1.0 * roar`). Maths, not a tool call."
+    },
+    {
+      "id": "RA2",
+      "path": "addons/procedural_creatures/Core/Rendering/CreatureRenderer.cs",
+      "message": "*pList*",
+      "reason": "False positive (TRIAGE.md): every hit is the identifier `_groupList`, a scratch array of primitive indices."
+    },
+    {
+      "id": "EA4",
+      "path": "addons/procedural_creatures/Core/Export/GifEncoder.cs",
+      "message": "*loop forever*",
+      "reason": "False positive (TRIAGE.md): the comment `// loop forever` above the GIF NETSCAPE2.0 loop block."
+    },
+    {
+      "id": "YR4",
+      "path": "addons/procedural_creatures/Core/Families/QuadrupedFamily.cs",
+      "message": "*fierce*",
+      "reason": "False positive (TRIAGE.md): the word 'fierce' in a gene description; Fierce is also the name of a DNS reconnaissance tool."
+    },
+    {
+      "id": "E1",
+      "path": "scripts/bootstrap.ps1",
+      "message": "*api.nuget.org*",
+      "reason": "Accepted (TRIAGE.md): the public NuGet feed URL written into a generated NuGet.Config. It is part of the Windows launcher, which we never run."
+    },
+    {
+      "id": "EA3",
+      "path": "THIRD_PARTY_NOTICES.md",
+      "message": "*not limited to*",
+      "reason": "False positive (TRIAGE.md): the phrase 'not limited to' in the Apache-2.0 licence text."
+    }
+  ]
+}

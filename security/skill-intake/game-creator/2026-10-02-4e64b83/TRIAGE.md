@@ -39,4 +39,27 @@ MEDIUMs are mostly RP1 (68; unlabelled in the report), E1 external transmission 
 
 - **Recommendation: don't install game-creator as-is** (scanner: DO_NOT_INSTALL; our triage agrees for the hook, the credential flows and the paid-service skills).
 - **Taking ideas is fine** (D13), for example the test protocol and the QA loop described in `research/game-creator.md`. Copying even text still waits for a clear licence (none: README says MIT, `package.json` says ISC, no LICENSE file).
-- Static mode reached only 3.2 % coverage of the skills. A fuller verdict would need the LLM stage, e.g. the `claude_cli` provider (owner call, see the skill-intake task).
+- Static mode reached only 3.2 % coverage of the skills. A fuller verdict would need the LLM stage, which is out: scans stay offline and static only (D27).
+
+## Re-scan with `tools/skill-intake` (2026-10-02)
+
+The scan was repeated with the repo's own tooling (`tools/skill-intake/fetch.sh` and `scan.sh`,
+image `whz-skillspector:2.12.0-c7958a3`, dependencies from upstream's `uv.lock`) on a fresh
+quarantine clone of the same commit (tree hash `ec345c1771c475f4b4c61d8d22554039ccd0fa77`).
+
+| Scope | Findings | CRITICAL | HIGH | MEDIUM | Score | Exit | Against the first scan |
+|---|---|---|---|---|---|---|---|
+| `skills/` (`-r`) | 121 | 0 | 31 | 90 | 76 | 1 | Same counts; `skills.md` identical except for the scan times |
+| `agents/` (`-r`) | 9 | 0 | 0 | 9 | 32 | 0 | Same counts; `agents.md` identical except for the scan time |
+| `scripts/` (`-r`) | 16 | 0 | 3 | 13 | 79 | 1 | Same counts; `scripts.md` identical except for the scan time |
+| repo root | 616 | 0 | 592 | 24 | 100 | 1 | 4 fewer SC9 coverage notices (588, not 592) |
+
+- The root scan differs by 4 SC9 notices. 22 of the 588 are files of the clone's own `.git`
+  folder, which differs from clone to clone; the first scan's root output was not kept, so the
+  4 could not be compared one by one. The other root findings are the same: 2 PE3
+  (`.gitignore`), 2 YR4 (the PNG metadata) and 24 MEDIUM.
+- The MEDIUM count by rule in `skills/` is RP1 62, E1 16, RA2 4, EA2 2, PE2 2, and one each of
+  AS3, MP2, P4 and TR2. The "RP1 68" above is `skills/` (62) plus `agents/` (6).
+- [`baseline.json`](baseline.json) holds the two false positives (MP3, YR4). With it, the
+  `phaser` skill alone shows 3 findings and 1 suppressed, and the root scan 614 and 2
+  suppressed. The true positives and the coverage gaps are not baselined.

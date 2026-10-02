@@ -70,7 +70,6 @@ studio and the engine follow (D23).
 | # | Note | Gate | Depends on |
 |---|---|---|---|
 | 0 | [Owner calls](2026-10-02-owner-calls.md) | owner answers | none |
-| 3 | [Skill intake tooling (skillspector in Docker)](2026-10-02-skill-intake-tooling.md) | none | #1 |
 | 4 | [Asset kit core + determinism kit](2026-10-02-asset-kit-core.md) | none | #1 |
 | 5 | [Asset render CLI: bake, review sheets, lints](2026-10-02-asset-render-cli.md) | none | #4 |
 | 6 | [Runtime sprite core (WebGL2 + CPU reference)](2026-10-02-runtime-sprite-core.md) | none | #5 |
@@ -108,7 +107,7 @@ studio and the engine follow (D23).
 
 | Track | Notes |
 |---|---|
-| Infrastructure | #3 skill intake, #15 docs check (#1 Docker is done: [docs/dev-environment.md](../docs/dev-environment.md); #2 the implement-tasks skill is done: [Running the queue](#running-the-queue)) |
+| Infrastructure | #15 docs check (#1 Docker is done: [docs/dev-environment.md](../docs/dev-environment.md); #2 the implement-tasks skill is done: [Running the queue](#running-the-queue); #3 skill intake is done: [security/skill-intake/README.md](../security/skill-intake/README.md)) |
 | Graphics from code | #4 asset kit, #5 render CLI, #12 voxel baker, #21 FX emitters, #13 + #14 art spikes |
 | Engine | #6 sprite core, #16 sim core, #17 game package, #18 player + test protocol, #19 text and UI, #20 input, #22 tilemap, #23 saves, #32 conformance |
 | Audio | #24 synth core, #25 runtime audio, #29 studio audio |

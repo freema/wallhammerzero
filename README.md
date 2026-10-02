@@ -20,7 +20,8 @@ Two game types:
 |---|---|
 | [docs/DECISIONS.md](docs/DECISIONS.md) | What the owner has decided (and when) |
 | [docs/references.md](docs/references.md) | Where the ideas come from and how others do it |
-| [research/README.md](research/README.md) | Deep research reports, security scans and the conclusions that repeat across them |
+| [research/README.md](research/README.md) | Deep research reports and the conclusions that repeat across them |
+| [security/skill-intake/README.md](security/skill-intake/README.md) | Third-party skill intake: the procedure, the scan command, the registry and the scan evidence |
 | [tasks/README.md](tasks/README.md) | The work queue and its rules |
 | [docs/dev-environment.md](docs/dev-environment.md) | The Docker dev environment, the `./dev` wrapper and the gate |
 | [CLAUDE.md](CLAUDE.md) | Working rules for Claude Code sessions in this repo |
