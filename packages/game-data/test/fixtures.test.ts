@@ -12,9 +12,19 @@ const repo = openGameProject({ root: REPO });
 const fixtures = openGameProject({ root: REPO, games: FIXTURES });
 const at = (name: string, rest: string): string => `${FIXTURES}/${name}/${rest}`;
 
+/**
+ * The palettes of the checkout, as `validate` lists them. Read from the folder here, so a
+ * palette added under assets/palettes does not change what this test expects.
+ */
+const PALETTES = readdirSync(join(REPO, "assets/palettes"))
+  .filter((name) => name.endsWith(".json"))
+  .map((name) => name.slice(0, -".json".length))
+  .sort()
+  .join(", ");
+
 /** Every fixture and the one line `validate` must print for it (two for unknown-file). */
 const DEFECTS: Readonly<Record<string, readonly string[]>> = {
-  "dangling-palette": [at("dangling-palette", 'game.json:9:14: $.palette: no palette "no-such-palette": assets/palettes/no-such-palette.json does not exist (palettes: example) [ref]')],
+  "dangling-palette": [at("dangling-palette", 'game.json:9:14: $.palette: no palette "no-such-palette": assets/palettes/no-such-palette.json does not exist (palettes: ' + PALETTES + ") [ref]")],
   "dangling-scene": [at("dangling-scene", 'game.json:18:17: $.entryScene: "shop" does not resolve: scenes/shop.json does not exist [ref]')],
   "dangling-system": [at("dangling-system", 'game.json:12:5: $.systems[1]: unknown system "shop.delivery" (the engine has: shop.arrivals, shop.counter) [ref]')],
   "dangling-table": [at("dangling-table", 'game.json:17:5: $.rowText.staff: no data table "staff" (the game\'s systems declare: arrivals, customerKinds) [ref]')],

@@ -10,12 +10,16 @@ Two game types:
    Pocket Academy …). **We start here.**
 2. **Voxel games.** These come later and are also rendered as pixel art.
 
-> **Status (2026-10-02): foundation, the dev environment and the first packages.** Agreed
-> decisions, research reports and the work queue for the whole studio and engine are in place.
-> Everything runs in Docker through `./dev`, and the gate is `./dev npm run check`. The asset kit
-> with its `asset` command (bake, review sheets, lints), the determinism kit, the voxel kit
-> (voxel models baked to 2:1 isometric pixel art) and the sim core exist (`packages/asset-kit`,
-> `packages/det`, `packages/voxel-kit`, `packages/sim`). No runtime, studio or game code yet.
+> **Status (2026-10-02): the first layer of the studio and the engine.** Agreed decisions,
+> research reports and the work queue for the whole studio and engine are in place. Everything
+> runs in Docker through `./dev`, and the gate is `./dev npm run check`. What exists: the asset
+> kit with its `asset` command, the determinism kit and the voxel kit (`packages/asset-kit`,
+> `packages/det`, `packages/voxel-kit`); the sim core (`packages/sim`); the sprite renderer with
+> a WebGL2 and a CPU backend (`packages/runtime`); the game package format with its `game`
+> command and one example game (`packages/game-data`, `games/`); the audio synth with its `audio`
+> command and example songs and SFX (`packages/audio`, `audio/`); and the studio skeleton with
+> the asset gallery (`packages/studio`, `./dev compose up studio`). No player and no real game
+> yet.
 
 ## Where things are
 

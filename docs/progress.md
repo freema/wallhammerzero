@@ -9,9 +9,10 @@ tool disagree, the tool wins. Format:
 ## Now
 
 - **In flight:** nothing.
-- **Last finished:** `asset-render-cli` and `sim-core` (2026-10-02), built in parallel and
-  integrated on the `implementation` branch.
-- **Next:** #6 `runtime-sprite-core` (#7, #12, #17 and #24 are open too).
+- **Last finished:** `runtime-sprite-core`, `studio-skeleton-gallery`, `voxel-sprite-baker`,
+  `game-package-format` and `audio-synth-core` (2026-10-02), built in parallel and integrated on
+  the `implementation` branch.
+- **Next:** #8 `studio-live-reload` (#18 and #32 are open too).
 
 ## Blocked on the owner
 

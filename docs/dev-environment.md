@@ -203,10 +203,11 @@ replacements are in [`@whz/det`](../packages/det/README.md). The rules and their
 [`tools/lint/determinism.js`](../tools/lint/determinism.js) (ESLint core rules only), and the
 list of files under them is `DETERMINISTIC` in `eslint.config.js`: today everything in
 `assets/`, `packages/det/src/`, `packages/asset-kit/src/`, `packages/sim/src/`,
-`packages/voxel-kit/src/` and `packages/runtime/src/` (for the runtime the lint is also what
-keeps frame callbacks and clocks out: the host passes the time in). Tests, build scripts and the
-Node-side entry points (`src/node/`) are exempt. A later package (the synth) joins by adding its
-source glob to that list.
+`packages/voxel-kit/src/`, `packages/audio/src/` and `packages/runtime/src/` (for the runtime
+the lint is also what keeps frame callbacks and clocks out: the host passes the time in). Tests,
+build scripts, the Node-side entry points (`src/node/`) and the audio analysis
+(`packages/audio/src/analysis/`, which measures rendered sound in floats) are exempt. A later
+package joins by adding its source glob to that list.
 
 ## Several checkouts at once (git worktrees)
 
