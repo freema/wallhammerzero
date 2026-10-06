@@ -24,6 +24,7 @@ import { needsBake } from "./asset-index.ts";
 import type { AssetIndex, AssetRecord } from "./asset-index.ts";
 import type { BakeProgress, BakeService } from "./bake.ts";
 import type { EventHub } from "./events.ts";
+import { prunePresets } from "./presets.ts";
 import { createWatcher } from "./watcher.ts";
 import type { Watcher } from "./watcher.ts";
 
@@ -99,7 +100,10 @@ export function createLiveService(options: LiveOptions): LiveService {
     const records = index.scan();
     // An asset whose folder is gone leaves its output behind: remove it, as `bake --all` would.
     // The paths say so, not the index before the scan: a page load may have scanned first.
-    if (paths.some((path) => path.endsWith(GEN_SUFFIX) && index.get(path.slice(0, -GEN_SUFFIX.length)) === undefined)) pruneBakes(project);
+    if (paths.some((path) => path.endsWith(GEN_SUFFIX) && index.get(path.slice(0, -GEN_SUFFIX.length)) === undefined)) {
+      pruneBakes(project);
+      prunePresets(project);
+    }
     const ids = toBake(records, paths);
     if (ids.length > 0) await bake.bake(ids, "watch");
   };

@@ -16,6 +16,7 @@ import { formatJson } from "@whz/asset-kit";
 import { BAKE_ERROR_FORMAT, bakeDir, findAssets, pruneBakes, sourceHash } from "@whz/asset-kit/node";
 import type { AssetProject } from "@whz/asset-kit/node";
 import type { BakeJob, BakeMessage } from "./bake-worker.ts";
+import { prunePresets } from "./presets.ts";
 
 /** Why a run started: the server came up, the owner pressed the button, or a watched file changed. */
 export type BakeReason = "start" | "manual" | "watch";
@@ -201,6 +202,8 @@ export function createBakeService(options: BakeServiceOptions): BakeService {
         if (items.length === before) break; // a worker that got nowhere and blamed no asset: never loop on it
       }
       if (ids === null && !closed) pruned = pruneBakes(project);
+      // The preset previews of an asset that has no atlas now (it failed, or it is gone) go too.
+      if (!closed) prunePresets(project);
     } finally {
       running = null;
     }

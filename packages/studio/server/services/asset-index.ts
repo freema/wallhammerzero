@@ -4,6 +4,8 @@
 //   assets/<pack>/<name>/gen.ts          an asset exists, and its source hash
 //   build/assets/<id>/atlas.json         what the last bake drew (kind, size, clips, variants)
 //   build/assets/<id>/error.json         ... or why the last bake failed
+//   assets/palettes/<id>.json            the names of the palette's slots
+//   build/studio/presets/<id>/           the studio's preset previews (presets.ts)
 //
 // A copy is written to `.studio-cache/index.json` (gitignored) for tools that want the same
 // view without the server. The index is derived data: delete the cache and it comes back.
@@ -11,10 +13,11 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
-import { ATLAS_FORMAT, formatJson } from "@whz/asset-kit";
+import { ATLAS_FORMAT, formatJson, paletteHash } from "@whz/asset-kit";
 import type { Atlas } from "@whz/asset-kit";
-import { BAKE_ERROR_FORMAT, bakeDir, findAssets, sourceHash } from "@whz/asset-kit/node";
+import { BAKE_ERROR_FORMAT, bakeDir, findAssets, loadPaletteFile, sourceHash } from "@whz/asset-kit/node";
 import type { AssetEntry, AssetProject } from "@whz/asset-kit/node";
+import { readPresets } from "./presets.ts";
 
 /** The `format` value of `.studio-cache/index.json`. */
 export const INDEX_FORMAT = "wz.studio-index/1";
@@ -48,6 +51,14 @@ export interface IndexedVariant {
   readonly firstFrame: string;
 }
 
+/** One preset preview: the preset rendered with the asset's first variant seed (presets.ts). */
+export interface IndexedPreset {
+  readonly name: string;
+  readonly outputHash: string;
+  /** The sheet PNG, relative to the checkout. It has the layout of the atlas's sheets. */
+  readonly sheet: string;
+}
+
 /** Everything the index keeps about one asset. Plain data: loaders hand it to the client as it is. */
 export interface AssetRecord {
   /** `<pack>/<name>`: the folder under the assets folder. */
@@ -76,7 +87,11 @@ export interface AssetRecord {
   readonly kind: string | null;
   readonly size: readonly [w: number, h: number] | null;
   readonly pivot: readonly [x: number, y: number] | null;
-  readonly palette: { readonly id: string; readonly hash: string; readonly colors: readonly string[] } | null;
+  /**
+   * The palette the output was baked with. `names` are the slot names from the palette file,
+   * or null when the file is not the palette of the bake any more (or cannot be read).
+   */
+  readonly palette: { readonly id: string; readonly hash: string; readonly colors: readonly string[]; readonly names: readonly string[] | null } | null;
   readonly sheet: { readonly w: number; readonly h: number; readonly columns: number; readonly rows: number; readonly padding: number } | null;
   readonly frameCount: number;
   readonly clips: readonly IndexedClip[];
@@ -85,6 +100,10 @@ export interface AssetRecord {
   readonly presets: readonly string[];
   readonly reviewSeeds: readonly number[];
   readonly variants: readonly IndexedVariant[];
+  /** The preset previews that belong to this bake. Empty until the studio itself baked the asset. */
+  readonly presetVariants: readonly IndexedPreset[];
+  /** Why the presets could not be rendered, else null. */
+  readonly presetError: string | null;
 }
 
 /** The content of `.studio-cache/index.json`. */
@@ -165,7 +184,22 @@ const EMPTY = {
   presets: [],
   reviewSeeds: [],
   variants: [],
+  presetVariants: [],
+  presetError: null,
 } as const;
+
+/**
+ * The slot names of the palette a bake used: read from the palette file, and only if that
+ * file still has the hash the atlas names (the hash covers names and colours).
+ */
+function slotNames(project: AssetProject, id: string, hash: string): string[] | null {
+  try {
+    const palette = loadPaletteFile(join(project.assetsDir, "palettes", `${id}.json`));
+    return paletteHash(palette) === hash ? palette.slots.map((slot) => slot.name) : null;
+  } catch {
+    return null;
+  }
+}
 
 /** The record of one asset: its source hash, and what its output folder says. */
 export function readRecord(project: AssetProject, entry: AssetEntry): AssetRecord {
@@ -211,6 +245,7 @@ export function readRecord(project: AssetProject, entry: AssetEntry): AssetRecor
       sheet: `${relDir}/${variant.sheet}`,
       firstFrame: first === undefined ? `${relDir}/${variant.sheet}` : `${relDir}/${variant.frames}/${first.file}`,
     }));
+    const previews = readPresets(project, entry.id, baked);
     return {
       ...base,
       status: baked.sourceHash === source ? "baked" : "stale",
@@ -221,7 +256,7 @@ export function readRecord(project: AssetProject, entry: AssetEntry): AssetRecor
       kind: baked.kind,
       size: [baked.size[0], baked.size[1]],
       pivot: [baked.pivot[0], baked.pivot[1]],
-      palette: { id: baked.palette.id, hash: baked.palette.hash, colors: [...baked.palette.colors] },
+      palette: { id: baked.palette.id, hash: baked.palette.hash, colors: [...baked.palette.colors], names: slotNames(project, baked.palette.id, baked.palette.hash) },
       sheet: { w: baked.sheet.w, h: baked.sheet.h, columns: baked.sheet.columns, rows: baked.sheet.rows, padding: baked.sheet.padding },
       frameCount: baked.frames.length,
       clips: baked.clips.map((clip) => ({ name: clip.name, frames: clip.frames, durations: [...clip.durations], loop: clip.loop })),
@@ -230,6 +265,8 @@ export function readRecord(project: AssetProject, entry: AssetEntry): AssetRecor
       presets: [...baked.presets],
       reviewSeeds: [...baked.reviewSeeds],
       variants,
+      presetVariants: previews === null ? [] : previews.presets,
+      presetError: previews?.error ?? null,
     };
   } catch (error) {
     // A file that is being written right now, or one that something else left there.

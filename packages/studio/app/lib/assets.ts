@@ -10,9 +10,6 @@ export const STATUSES: readonly AssetStatus[] = ["baked", "stale", "error", "unb
 /** The integer zooms of the gallery (D22: integer zoom only). */
 export const GALLERY_ZOOMS: readonly number[] = [1, 2, 3, 4];
 export const DEFAULT_GALLERY_ZOOM = 4;
-/** The integer zooms of the sheet on the asset page. */
-export const SHEET_ZOOMS: readonly number[] = [1, 2, 3, 4, 6, 8];
-export const DEFAULT_SHEET_ZOOM = 4;
 
 /** What stands for the kind of an asset that has no atlas yet (the kind is in the atlas). */
 export const UNKNOWN_KIND = "unknown";

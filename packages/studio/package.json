@@ -15,6 +15,7 @@
     "@react-router/express": "^8.4.0",
     "@react-router/node": "^8.4.0",
     "@whz/asset-kit": "0.0.0",
+    "@whz/runtime": "0.0.0",
     "express": "^5.2.1",
     "isbot": "^5.2.2",
     "react": "^19.3.0",

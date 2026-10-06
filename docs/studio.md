@@ -5,10 +5,11 @@ package `packages/studio`: React Router 8 in framework mode with server renderin
 official custom Node server template (Express), React 19 and Vite (D9). It runs in Docker like
 everything else (D16).
 
-So far it has the app shell, the asset index, the gallery, the asset page, the bake button and
-[live reload](#live-reload): a file written under `assets/` is re-baked and shows in the open
-pages by itself. The animation player, verdicts and the other pages are later notes in
-[tasks/README.md](../tasks/README.md); each adds its own route and navigation entry.
+So far it has the app shell, the asset index, the gallery, the asset page with the
+[animation player](#the-player), the bake button and [live reload](#live-reload): a file
+written under `assets/` is re-baked and shows in the open pages by itself. Verdicts and the
+other pages are later notes in [tasks/README.md](../tasks/README.md); each adds its own route
+and navigation entry.
 
 ## Starting it
 
@@ -79,6 +80,7 @@ of them: it uses the defaults.
 |---|---|---|
 | `assets/` (every folder with a `gen.ts`, and `assets/palettes/`) | read, watched | Which assets exist, the hash of their source files, and which files changed. The server never runs an asset program itself: the bake worker does. |
 | `build/assets/<id>/` | read; written by a bake | `atlas.json`, the sheets and frames, or `error.json` of a failed bake ([asset-pipeline.md](asset-pipeline.md#bake)). Served read-only under `/api/files/`. Removed when the asset's folder is removed. |
+| `build/studio/presets/<id>/` | written by the studio's bake | The preview sheet of every preset of the asset (`<preset>.png`, in the atlas's layout, rendered with the first variant seed) and `presets.json` (`format: "wz.studio-presets/1"`: the source and palette hashes it was made for, the seed, the sheets and their output hashes, or `error`). The command line's bake never writes it; the studio's does, after every successful bake of the asset. Removed with the asset's output. |
 | `.studio-cache/index.json` | written | A copy of the asset index (below). Derived and gitignored: delete it and it comes back. |
 | `packages/studio/build/`, `packages/studio/.react-router/` | written by the package's build and typecheck | The built app and React Router's generated route types. Gitignored. |
 
@@ -90,13 +92,82 @@ verdicts note).
 | URL | What |
 |---|---|
 | `/` | Dashboard: asset counts by bake status and by kind, the **Bake all** button with the result of the last run, and the bake errors that are on disk now. |
-| `/gallery` | Every asset as a card with the first frame of its first variant. A card follows its asset ([live reload](#live-reload)). Filters by pack, kind, bake status and text (every word must be in the id, the kind or a clip name), and the zoom: 1×, 2×, 3× or 4×. The filters and the zoom are in the URL (`/gallery?pack=examples&kind=sprite&q=dot&zoom=2`), so a view can be reloaded and scripted. An asset whose bake failed is an error card with the message; one without output says so. |
-| `/asset/<pack>/<name>` | One asset: meta (kind, size, pivot, hashes, params, presets), the palette, the clip table, and the baked sheet of every variant at an integer zoom (1× to 8×, `?zoom=`). The page follows its asset: after a re-bake it shows the new record and sheets in place. The animation player replaces the still sheet later. |
+| `/gallery` | Every asset as a card: its first clip playing (first variant seed; the first frame as a still image until the sheet is loaded). A card follows its asset ([live reload](#live-reload)). Filters by pack, kind, bake status and text (every word must be in the id, the kind or a clip name), and the zoom: 1×, 2×, 3× or 4×. The filters and the zoom are in the URL (`/gallery?pack=examples&kind=sprite&q=dot&zoom=2`), so a view can be reloaded and scripted. An asset whose bake failed is an error card with the message; one without output says so. |
+| `/asset/<pack>/<name>` | One asset: meta (kind, size, pivot, hashes, params, presets), the palette, the clip table, and [the player](#the-player): the asset animated at an integer zoom, every variant seed and preset side by side, the pixel inspector. `?zoom=`, `?clip=` and `?facing=` choose where the player starts. The page follows its asset: after a re-bake it shows the new record and the new frames in place, and the player keeps its clip, time and zoom. |
 | `/api/files/<path>` | A build output by its path relative to the checkout, read-only, e.g. `/api/files/build/assets/examples/blinking-dot/atlas.json`. With `?h=<key>` the answer is cached for good; without it the browser revalidates. The pages use `<output hash>.<palette hash>` as the key (`imageKey` in `packages/studio/app/lib/assets.ts`): the output hash alone does not change when only a palette's colours do. |
 | `/api/events` | The event stream of [live reload](#live-reload) (Server-Sent Events). |
 
 Pixel art is always shown at a whole multiple of its size with `image-rendering: pixelated`
-(the `PixelImage` component); nothing scales it by a fraction.
+(the `PixelImage` component); nothing scales it by a fraction. The previews of the player and
+the cards go further: the zoom is a whole number of **device** pixels (`deviceScale` in
+`packages/studio/app/lib/scene.ts`), so on a 2× display a 4× preview is 8 device pixels per
+pixel, never 7.5.
+
+## The player
+
+The player is the studio's first use of the runtime (D10, D22): what the owner sees is drawn
+by `@whz/runtime`'s WebGL2 backend from the baked atlas and sheets, exactly as a game draws
+them. The still images stay in the page as the content of each preview until its sheet is
+loaded (and for good without WebGL2).
+
+**One context per page.** The WebGL context limit of a browser is about sixteen per page, and
+a gallery has more cards than that. So the page has one canvas, the full size of the document,
+in the `#preview-layer` element of the app shell, above the content and under the pointer
+(`pointer-events: none`); it moves with the scroll. Every preview is an element in the page
+(`<div class="preview" data-preview="<name>">`, the size of its picture); the **preview host**
+(`packages/studio/app/preview/host.ts`) draws each registered element's frame into the
+element's rectangle of the canvas (one native target per preview, presented with a scissor
+rectangle) in one `requestAnimationFrame` loop. Only visible previews are drawn
+(`IntersectionObserver`), and a frame that shows what the last one showed is skipped; the loop
+stops when nothing is registered. A lost context is restored by the browser; the host resets
+the backend and goes on. The host never asks React for a frame: a preview gives it a function
+that says which frame is on now, so thirty cards animate without a render.
+
+**What a preview draws** is pure code (`packages/studio/app/lib/scene.ts`), tested with the CPU
+backend, which is the reference of the WebGL one: the draw list of one frame of a clip at the
+pivot, with the onion skin under it (the frame before in red, the frame after in blue, the
+colours half mixed with the tint, as palette rows 1 and 2 of the preview's palette table). The
+pixel inspector reads the sheet's palette indices, not the screen.
+
+**The model** (`packages/studio/app/lib/player.ts`) is pure too: the selected clip and facing,
+the time in the clip, play or pause, the speed, loop, zoom, background, grid and onion skin,
+driven by the real time the host passes in. Which frame a time is, is asked of the runtime's
+`sampleClip`, as in a game. A clip that does not loop holds its last frame and stops; play
+from there starts over. A re-bake (`setAsset`) keeps the clip, facing, time, zoom, speed and
+the rest when the new atlas still has them.
+
+On the page:
+
+- play / pause, one frame back or on, the timeline (one segment per frame, as wide as the
+  frame is long, with its number and its ms; drag or click to scrub; the playhead and the time
+  move every frame);
+- speeds 0.1×, 0.25×, 0.5×, 1×, 2× (keys **1** to **5**), loop, the clip and the facing;
+- zoom 1× to 16× (**+** / **−**), the pixel grid (from 4× up), the onion skin, the background:
+  checker, dark, light or floor tiles (a CSS tile pattern: there is no floor asset yet);
+- the pixel inspector: point at the picture and read x, y, the palette slot, its name and its
+  colour. The slot names come from the palette file in `assets/palettes/` when its hash is the
+  one the asset was baked with; otherwise the page says the names are unknown;
+- **Variants:** every variant seed, then every preset, at 4× on the same clock; click one to
+  put it in the player. The presets are rendered by the studio's bake
+  (`build/studio/presets/`, above) with the first variant seed; an asset baked only by the
+  command line has none until **Bake all**, and the page says so;
+- **1× in context:** the same variants at the size of the game, on the floor tiles;
+- keys: **space** play or pause, **←** / **→** one frame, **+** / **−** zoom, **1** to **5**
+  speed. They are the page's keys when no control has the focus.
+
+**For scripts** (a check in the browser, a blind verifier), every page with a preview has
+`window.__studio` (`packages/studio/app/preview/api.ts`):
+
+```js
+__studio.preview.stats(); // { contexts: 1, canvases: 1, previews, visible, drawn, draws, frames, pixelRatio, canvas, contextLost }
+__studio.preview.list(); // [{ id, live, zoom, nativeSize }] in page order
+__studio.preview.readNative("main"); // { id, width, height, pixels }: the native framebuffer of a preview, RGBA, top row first
+__studio.player; // the model of the asset page: state(), time(), play(), pause(), seekFrame(n), step(±1), setClip(name), setSpeed(0.25), …
+```
+
+A preview's name is `main` for the player, the variant's id (`seed-<n>`, `preset-<name>`,
+`1x-<id>`) in the grids, and the asset id on a gallery card. `readNative` of a stepped frame
+is the frame's own PNG pixel for pixel; that is the check a verifier runs, never a screenshot.
 
 **Bake status** of an asset: `baked` (the output was made from the current source files),
 `stale` (the source files changed since), `error` (the last bake failed) and `unbaked` (no
@@ -251,15 +322,28 @@ typecheck of the app and of the server, ESLint, a production build, and the test
   everything, a generator that never returns becomes an error and the studio goes on, a
   changed palette or stamp re-bakes its users only; and the page's store
   (`app-live.test.ts`);
+- the player: its model with the time passed in (`app-player.test.ts`: frames, speeds,
+  stepping, the end of a clip, the keys, what a re-bake keeps); what a preview draws, through
+  the runtime's CPU backend over a baked fixture (`app-scene.test.ts`: every frame of every
+  clip equals the kit's frame PNG, the onion skin, the pixel inspector, the device-pixel
+  placing); the variants and their URLs (`app-variants.test.ts`); the preset previews of the
+  studio's bake and the palette slot names (`presets.test.ts`);
 - `server.test.ts`: the real `server.ts` as a process in production mode over the fixture
   assets, read through its HTML: the gallery lists every asset, the broken fixture is an error
-  card, the filters and zooms, the asset page, the dashboard and **Bake all**, the greeting of
+  card, the filters and zooms, the asset page with the player as rendered (the start from the
+  URL, the variants, one preview per thing), the dashboard and **Bake all**, the greeting of
   `/api/events` and a bake run pushed to an open stream;
 - `dev-server.test.ts`: the real `server.ts` as a process in dev mode: which source files Vite
   hands to a browser (the four workspace packages and the studio's own code) and which it
   refuses (everything else of the checkout).
 
 What only a browser shows (HMR, the console, that images are sharp, that a card updates
-without a reload and the other cards fetch nothing) is checked in the host's
-Chrome through the Chrome DevTools MCP tools against a studio on a `127.0.0.1` port
-([dev-environment.md](dev-environment.md#no-gpu-in-containers)).
+without a reload and the other cards fetch nothing, and everything WebGL: that
+`readNative` of a stepped frame equals the baked frame, the timing of the speeds, thirty
+cards on one context) is checked in the host's Chrome through the Chrome DevTools MCP tools
+against a studio on a `127.0.0.1` port
+([dev-environment.md](dev-environment.md#no-gpu-in-containers)), through `window.__studio`
+([the player](#the-player)). A gallery of thirty assets for that: a scratch assets folder
+under `.studio-cache/` (gitignored) with copies of `assets/examples/blinking-dot`, each with
+its own id, and a second studio on another port:
+`./dev -p 4107 env WHZ_STUDIO_PORT=4107 WHZ_STUDIO_ASSETS=.studio-cache/many/assets WHZ_STUDIO_OUT=.studio-cache/many/build WHZ_STUDIO_CACHE=.studio-cache/many/cache npm run dev -w @whz/studio`.

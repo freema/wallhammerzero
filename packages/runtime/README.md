@@ -71,5 +71,6 @@ window.__runtime.readNative(); // { width, height, timeMs, pixels }: the native 
 await window.__runtime.contextLoss(); // loses and restores the context, then parity again
 ```
 
-`setTime(ms)`, `play()` and `pause()` drive the page's clock. The page is a stand-in until the
-studio's player exists.
+`setTime(ms)`, `play()` and `pause()` drive the page's clock. The page checks the backend
+alone; the studio's player ([docs/studio.md](../../docs/studio.md#the-player)) is the real
+use of it, with its own script API (`window.__studio`).

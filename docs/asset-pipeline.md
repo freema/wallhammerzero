@@ -42,7 +42,8 @@ asset with a lint error fails the gate.
 | `error.json` | Only when the bake failed: `{ format: "wz.bake-error/1", id, sourceHash, message }`. It is then the only file in the folder. |
 
 - **Variants** are the asset's `variantSeeds`, rendered with the default params. Presets are
-  listed in the atlas by name but not baked.
+  listed in the atlas by name but not baked here; the studio's bake renders a preview sheet of
+  each under `build/studio/presets/<id>/` ([studio.md](studio.md#what-it-reads-and-writes)).
 - **The sheet:** one row per clip and facing, frames left to right, in canonical order (clips,
   then facings, then frames). Every frame has 1 transparent pixel around it. A clip that is
   wider than 4096 px wraps onto the next row. All variants of an asset share one layout.

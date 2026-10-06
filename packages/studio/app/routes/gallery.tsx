@@ -8,6 +8,8 @@ import { Form, Link, useNavigate } from "react-router";
 import { BakeBanner, PixelImage, StatusBadge } from "../components.tsx";
 import { studioContext } from "../context.ts";
 import { assetHref, fileUrl, filterAssets, filterChoices, GALLERY_ZOOMS, gallerySearch, imageKey, kindOf, parseGalleryQuery, STATUSES } from "../lib/assets.ts";
+import { previewVariants } from "../lib/variants.ts";
+import { playingChoice, SourcePreview } from "../preview/preview.tsx";
 import type { GalleryQuery } from "../lib/assets.ts";
 import { galleryNeedsLoader } from "../lib/live.ts";
 import { useAsset, useLoaderOn, useLoaderRevision, useRunning } from "../live.tsx";
@@ -28,16 +30,21 @@ export function loader({ request, context }: Route.LoaderArgs) {
 /**
  * One card. `loaded` is the loader's record from the index at `revision`; an event about this
  * asset replaces it, and then only this card renders again and only its image is fetched.
+ * The card plays the asset's first clip (first seed) once its sheet is loaded; the first
+ * frame is its still image until then.
  */
 function Card({ loaded, revision, zoom }: { loaded: AssetRecord; revision: number; zoom: number }) {
   const asset = useAsset(loaded, revision);
   const variant = asset.variants[0];
+  const source = previewVariants(asset)[0]?.source ?? null;
   return (
     <li className={`card card-${asset.status}`} data-asset-id={asset.id} data-status={asset.status} data-kind={kindOf(asset)}>
       <Link to={assetHref(asset.id)} className="card-link">
         <div className="thumb checker">
           {variant !== undefined && asset.size !== null ? (
-            <PixelImage src={fileUrl(variant.firstFrame, imageKey(asset, variant))} w={asset.size[0]} h={asset.size[1]} zoom={zoom} alt={`${asset.id}, first frame`} />
+            <SourcePreview source={source} width={asset.size[0]} height={asset.size[1]} zoom={zoom} choice={playingChoice} id={asset.id}>
+              <PixelImage src={fileUrl(variant.firstFrame, imageKey(asset, variant))} w={asset.size[0]} h={asset.size[1]} zoom={zoom} alt={`${asset.id}, first frame`} />
+            </SourcePreview>
           ) : (
             <span className="thumb-none">{asset.status === "error" ? "bake failed" : "not baked yet"}</span>
           )}

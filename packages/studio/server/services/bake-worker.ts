@@ -5,10 +5,12 @@
 // modules per thread, so the server's own thread must never import an asset program.
 //
 // It calls the same `bakeToDisk` as the `asset bake` command, so the files are byte for byte
-// the files of the command line.
+// the files of the command line. After a bake that worked it also renders the asset's presets
+// into the studio's own folder (presets.ts), inside the same time limit.
 
 import { parentPort, workerData } from "node:worker_threads";
 import { bakeToDisk, findAssets, openProject } from "@whz/asset-kit/node";
+import { bakePresetsToDisk } from "./presets.ts";
 
 /** What the server gives a worker. */
 export interface BakeJob {
@@ -40,6 +42,7 @@ for (const id of job.ids) {
   const entry = entries.find((candidate) => candidate.id === id);
   // bakeToDisk never throws for a broken asset: it leaves error.json and says why.
   const result = entry === undefined ? { ok: false as const, error: `no asset ${JSON.stringify(id)} under ${project.assetsDir}` } : await bakeToDisk(project, entry);
+  if (result.ok && entry !== undefined) await bakePresetsToDisk(project, entry, result.atlas);
   send({ type: "done", id, ok: result.ok, error: result.ok ? null : result.error, ms: Math.round(performance.now() - started) });
 }
 send({ type: "end" });

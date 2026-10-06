@@ -601,26 +601,314 @@ pre.card-error {
   background-size: 8px 8px;
 }
 
-.variants {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 16px;
+/* --- previews (app/preview) --- */
+
+/* One canvas over the whole document draws every preview; the layer scrolls with the page
+   and lets every pointer event through. The previews are above the page's content (the
+   still images, the backgrounds) and under the pixel grid. */
+body {
+  position: relative;
 }
 
-.variant-head {
+.preview-layer {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.preview-layer canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+}
+
+/* A preview: the size of the frame at its zoom (set inline), holding the still image. Once
+   the preview draws, the still image stays in the flow but is not seen. */
+.preview {
+  position: relative;
+  flex: none;
+  display: block;
+}
+
+.preview[data-live="true"] > .pixel {
+  visibility: hidden;
+}
+
+/* --- the player --- */
+
+.player-controls {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin: 0 0 6px;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 10px;
 }
 
-.sheet {
+.control-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.control-row button:not(.primary) {
+  background: var(--panel-2);
+  border-color: var(--line);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.zoom button {
+  border: 0;
+  border-radius: 0;
+  padding: 5px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dim);
+  background: var(--panel-2);
+}
+
+.zoom button[aria-pressed="true"] {
+  background: var(--accent);
+  color: #1b1503;
+  font-weight: 600;
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stepper output {
+  min-width: 36px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+/* The timeline: one segment per frame, as wide as the frame is long. */
+.timeline-wrap {
+  margin: 0 0 12px;
+}
+
+.timeline {
+  position: relative;
+  display: flex;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--panel);
+  cursor: ew-resize;
+  user-select: none;
+  touch-action: none;
+}
+
+.tick {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 4px;
+  border-right: 1px solid var(--line);
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--dim);
+  overflow: hidden;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.tick:last-of-type {
+  border-right: 0;
+}
+
+.tick b {
+  color: var(--text);
+}
+
+.tick[data-current="true"] {
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+.playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--accent);
+  pointer-events: none;
+}
+
+.timeline-read {
+  margin: 4px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The stage: the main preview on its background. The stage is a frame around the preview;
+   the preview itself is as big as the frame at the zoom. */
+.stage {
   display: inline-block;
   max-width: 100%;
-  padding: 12px;
+  padding: 24px;
   overflow: auto;
   border: 1px solid var(--line);
   border-radius: 6px;
+}
+
+.stage-inner {
+  display: inline-block;
+  position: relative;
+}
+
+/* The backgrounds of the stage (the player's choice). `--px` is the CSS size of one native
+   pixel at the zoom of the preview; the checker and the tiles are in native pixels too. */
+.bg-checker {
+  background-color: var(--check-a);
+  background-image: repeating-conic-gradient(var(--check-b) 0% 25%, transparent 0% 50%);
+  background-size: 16px 16px;
+}
+
+.bg-dark {
+  background: #0d0c12;
+}
+
+.bg-light {
+  background: #e9e4d8;
+}
+
+/* Floor tiles: a stand-in drawn by CSS (there is no floor asset yet), 16 x 16 pixels with a
+   seam, so a sprite is seen against the kind of ground a game would put it on. */
+.bg-floor {
+  --tile: calc(var(--px, 1px) * 16);
+  background-color: #6f5a3e;
+  background-image:
+    linear-gradient(#5a4731, #5a4731),
+    linear-gradient(90deg, #5a4731, #5a4731),
+    repeating-linear-gradient(45deg, transparent 0 calc(var(--px, 1px) * 3), rgba(0, 0, 0, 0.06) 0 calc(var(--px, 1px) * 4));
+  background-size:
+    var(--tile) var(--px, 1px),
+    var(--px, 1px) var(--tile),
+    var(--tile) var(--tile);
+  background-position: 0 0;
+}
+
+.stage.bg-floor {
+  --px: 8px;
+}
+
+/* The pixel grid over the main preview: a line around every native pixel, from 4x up. */
+.pixel-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.22) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.22) 1px, transparent 1px);
+  background-size: var(--px) var(--px);
+}
+
+.inspector {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 24px;
+  font-variant-numeric: tabular-nums;
+}
+
+.swatch {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  vertical-align: middle;
+}
+
+.swatch[data-empty="true"] {
+  background-color: var(--check-a);
+  background-image: repeating-conic-gradient(var(--check-b) 0% 25%, transparent 0% 50%);
+  background-size: 8px 8px;
+}
+
+/* Every variant seed and preset side by side. */
+.variant-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.variant-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 6px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-weight: 500;
+  text-align: left;
+}
+
+.variant-pick:hover,
+.variant-pick[aria-pressed="true"] {
+  border-color: var(--accent);
+}
+
+.variant-pick .thumb {
+  min-height: 48px;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.variant-label {
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.variant-pick[aria-pressed="true"] .variant-label {
+  color: var(--text);
+}
+
+/* The 1x row: the variants at the size of the game, on the floor. */
+.context-row {
+  --px: 1px;
+  list-style: none;
+  margin: 0;
+  padding: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 24px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.context-row li {
+  display: block;
+}
+
+.keys kbd {
+  display: inline-block;
+  padding: 0 5px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--panel-2);
+  font: 12px var(--mono);
 }

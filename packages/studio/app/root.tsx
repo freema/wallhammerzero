@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { isRouteErrorResponse, Link, Links, Meta, NavLink, Outlet, Scripts, ScrollRestoration } from "react-router";
 import type { Route } from "./+types/root";
 import { LiveEvents, LiveIndicator } from "./live.tsx";
+import { PREVIEW_LAYER_ID } from "./preview/host.ts";
 import "./app.css";
 
 /** The navigation. A later note that adds a page adds its entry here. */
@@ -39,6 +40,8 @@ export function Layout({ children }: { children: ReactNode }) {
           <LiveIndicator />
         </header>
         <LiveEvents />
+        {/* The one canvas every preview of the page is drawn on (app/preview/host.ts). */}
+        <div id={PREVIEW_LAYER_ID} className="preview-layer" aria-hidden="true" />
         {children}
         <ScrollRestoration />
         <Scripts />

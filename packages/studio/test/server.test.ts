@@ -112,25 +112,31 @@ describe("/gallery", () => {
 });
 
 describe("/asset/:id", () => {
-  it("shows the meta, the clips, and the sheet of every variant", async () => {
+  it("shows the meta, the clips, and the player with every variant on the page as rendered", async () => {
     const { status, html } = await page("/asset/shapes/square");
     expect(status).toBe(200);
     expect(html).toContain('data-asset-id="shapes/square" data-status="baked"');
     expect(html).toContain('<tr data-clip="idle">');
     expect(html).toContain('<tr data-clip="pulse">');
-    expect([...html.matchAll(/<li data-seed="(\d+)"/g)].map((match) => match[1])).toEqual(["1", "2"]);
-    // The sheet is 23 x 23 px, shown at 4x by default and at the zoom of the URL.
-    expect(html).toMatch(/src="\/api\/files\/build\/assets\/shapes\/square\/seed-1\.png\?h=[0-9a-f]{16}\.[0-9a-f]{16}"[^>]*width="92" height="92" data-native-size="23x23" data-zoom="4"/);
-    expect((await page("/asset/shapes/square?zoom=8")).html).toMatch(/width="184" height="184" data-native-size="23x23" data-zoom="8"/);
-    // The zoom control links to the same page; the default zoom has no query.
-    expect([...html.matchAll(/href="(\/asset\/shapes\/square(?:\?zoom=\d)?)"/g)].map((match) => match[1])).toEqual([
-      "/asset/shapes/square?zoom=1",
-      "/asset/shapes/square?zoom=2",
-      "/asset/shapes/square?zoom=3",
-      "/asset/shapes/square",
-      "/asset/shapes/square?zoom=6",
-      "/asset/shapes/square?zoom=8",
+    // The player starts on the first clip, playing, at 8x; the variants grid has both seeds and the preset the studio rendered.
+    expect(html).toMatch(/<section class="player" data-player="true" data-clip="idle" data-facing="default" data-frame="0" data-playing="true" data-speed="1" data-zoom="8">/);
+    expect([...html.matchAll(/<li data-variant="([^"]+)" data-kind="(\w+)"/g)].map((match) => [match[1], match[2]])).toEqual([
+      ["seed-1", "seed"],
+      ["seed-2", "seed"],
+      ["preset-tight", "preset"],
     ]);
+    expect([...html.matchAll(/<option[^>]*>([^<]+)<\/option>/g)].map((match) => match[1])).toEqual(["idle", "pulse", "checker", "dark", "light", "floor tiles"]);
+    // The frame is 10 x 10 px; the main preview shows the first frame of the first seed as its still image, at the zoom of the player.
+    expect(html).toMatch(/<div class="preview" data-preview="main" data-live="false" data-zoom="8" data-native-size="10x10"[^>]*><img class="pixel" src="\/api\/files\/build\/assets\/shapes\/square\/frames\/seed-1\/idle\.default\.0\.png\?h=[0-9a-f]{16}\.[0-9a-f]{16}"[^>]*width="80" height="80" data-native-size="10x10" data-zoom="8"/);
+    // `?zoom=`, `?clip=` and `?facing=` choose the start; what cannot be is the default.
+    const asked = (await page("/asset/shapes/square?zoom=3&clip=pulse&facing=default")).html;
+    expect(asked).toMatch(/<section class="player" data-player="true" data-clip="pulse" data-facing="default" data-frame="0" data-playing="true" data-speed="1" data-zoom="3">/);
+    expect(asked).toMatch(/data-preview="main" data-live="false" data-zoom="3" data-native-size="10x10"/);
+    const wrong = (await page("/asset/shapes/square?zoom=40&clip=nope")).html;
+    expect(wrong).toMatch(/data-clip="idle" data-facing="default" data-frame="0" data-playing="true" data-speed="1" data-zoom="16">/);
+    // The 1x row and the grid hold one preview per variant; a gallery card is a preview too.
+    expect([...html.matchAll(/data-preview="([^"]+)"/g)].map((match) => match[1])).toEqual(["main", "seed-1", "seed-2", "preset-tight", "1x-seed-1", "1x-seed-2", "1x-preset-tight"]);
+    expect((await page("/gallery")).html).toMatch(/<div class="preview" data-preview="shapes\/square" data-live="false" data-zoom="4" data-native-size="10x10"/);
   });
 
   it("shows the error of an asset whose bake failed", async () => {

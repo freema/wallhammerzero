@@ -97,7 +97,7 @@ describe("URLs", () => {
 
   it("keys a baked image by its output hash and the hash of the palette's colours", () => {
     const variant = { outputHash: "ff98ad430bb70a8f" };
-    const palette = (hash: string) => ({ palette: { id: "warm", hash, colors: [] } });
+    const palette = (hash: string) => ({ palette: { id: "warm", hash, colors: [], names: null } });
     expect(imageKey(palette("1111"), variant)).toBe("ff98ad430bb70a8f.1111");
     // The output hash does not cover the colours: an edited palette must give another URL.
     expect(imageKey(palette("2222"), variant)).not.toBe(imageKey(palette("1111"), variant));

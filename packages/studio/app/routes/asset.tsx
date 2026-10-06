@@ -1,13 +1,16 @@
-// /asset/<pack>/<name>: one asset. Its meta, clips, variants and the baked sheet of every
-// variant as a still image. (The animation player replaces the still sheet later.) The page
-// follows its asset: after a re-bake it shows the new record and the new sheets by itself.
+// /asset/<pack>/<name>: one asset. Its meta, its clips, and the player: every variant seed
+// and preset animated side by side (app/preview/player.tsx). The page follows its asset: after
+// a re-bake it shows the new record and the new sheets by itself, and the player keeps its
+// clip, time and zoom.
 
 import { data, Link } from "react-router";
-import { BakeBanner, PixelImage, StatusBadge } from "../components.tsx";
+import { BakeBanner, StatusBadge } from "../components.tsx";
 import { studioContext } from "../context.ts";
-import { DEFAULT_SHEET_ZOOM, fileUrl, formatMs, gallerySearch, imageKey, kindOf, pickZoom, SHEET_ZOOMS } from "../lib/assets.ts";
+import { fileUrl, formatMs, gallerySearch, kindOf } from "../lib/assets.ts";
 import { assetNeedsLoader } from "../lib/live.ts";
+import { pickPlayerZoom } from "../lib/player.ts";
 import { useAsset, useLoaderOn, useLoaderRevision, useRunning } from "../live.tsx";
+import { PlayerSection } from "../preview/player.tsx";
 import type { Route } from "./+types/asset";
 
 export function meta({ params }: Route.MetaArgs) {
@@ -20,17 +23,18 @@ export function loader({ params, request, context }: Route.LoaderArgs) {
   const id = params["*"];
   const asset = index.get(id);
   if (asset === undefined) throw data(`There is no asset ${JSON.stringify(id)} under the assets folder.`, { status: 404 });
-  const zoom = pickZoom(new URL(request.url).searchParams.get("zoom"), SHEET_ZOOMS, DEFAULT_SHEET_ZOOM);
-  return { asset, zoom, running: bake.state().running, revision: index.revision };
+  // The player starts from the URL (`?zoom=`, `?clip=`, `?facing=`); after that it is its own.
+  const query = new URL(request.url).searchParams;
+  const start = { zoom: pickPlayerZoom(query.get("zoom")), clip: query.get("clip") ?? "", facing: query.get("facing") ?? "" };
+  return { asset, start, running: bake.state().running, revision: index.revision };
 }
 
 export default function AssetPage({ loaderData }: Route.ComponentProps) {
-  const { zoom, revision } = loaderData;
+  const { start, revision } = loaderData;
   const asset = useAsset(loaderData.asset, revision);
   const running = useRunning(loaderData.running);
   useLoaderRevision(revision);
   useLoaderOn((event) => assetNeedsLoader(event, asset.id));
-  const rows = asset.clips.flatMap((clip) => asset.facings.map((facing) => `${clip.name}${asset.facings.length > 1 ? ` (${facing})` : ""}`));
 
   return (
     <main className="page" data-asset-id={asset.id} data-status={asset.status}>
@@ -190,39 +194,7 @@ export default function AssetPage({ loaderData }: Route.ComponentProps) {
         </section>
       )}
 
-      {asset.variants.length === 0 || asset.sheet === null ? null : (
-        <section>
-          <h2>Variants</h2>
-          <div className="toolbar">
-            <span>Zoom</span>
-            <span className="zoom">
-              {SHEET_ZOOMS.map((choice) => (
-                <Link key={choice} to={{ search: choice === DEFAULT_SHEET_ZOOM ? "" : `?zoom=${choice}` }} replace preventScrollReset aria-current={choice === zoom ? "true" : undefined}>
-                  {choice}×
-                </Link>
-              ))}
-            </span>
-            <span className="sub">
-              Sheet rows, top to bottom: {rows.join(", ")}. Frames run left to right.
-            </span>
-          </div>
-          <ul className="variants">
-            {asset.variants.map((variant) => (
-              <li key={variant.seed} data-seed={variant.seed}>
-                <div className="variant-head">
-                  <strong>seed {variant.seed}</strong>
-                  <span className="sub">
-                    output hash <code>{variant.outputHash}</code> · <a href={fileUrl(variant.sheet, imageKey(asset, variant))}>PNG</a>
-                  </span>
-                </div>
-                <div className="sheet checker">
-                  <PixelImage src={fileUrl(variant.sheet, imageKey(asset, variant))} w={asset.sheet?.w ?? 0} h={asset.sheet?.h ?? 0} zoom={zoom} alt={`${asset.id}, sheet of seed ${variant.seed}`} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {asset.variants.length === 0 || asset.sheet === null ? null : <PlayerSection asset={asset} zoom={start.zoom} clip={start.clip} facing={start.facing} />}
     </main>
   );
 }
