@@ -3,6 +3,8 @@
 // Only types come from the server code, so nothing of Node reaches the browser bundle.
 
 import type { AssetRecord, AssetStatus } from "../../server/services/index.ts";
+import { matchesReview, pickReviewFilter } from "./reviews.ts";
+import type { ReviewFilter } from "./reviews.ts";
 
 /** The bake statuses, in the order the UI lists them. */
 export const STATUSES: readonly AssetStatus[] = ["baked", "stale", "error", "unbaked"];
@@ -57,6 +59,8 @@ export interface GalleryQuery {
   readonly pack: string;
   readonly kind: string;
   readonly status: string;
+  /** The owner's verdict: none yet, a status, or changed since the verdict (lib/reviews.ts). */
+  readonly review: ReviewFilter;
   /** Free text: every word must be in the id, the kind or a clip name. */
   readonly q: string;
   readonly zoom: number;
@@ -68,6 +72,7 @@ export function parseGalleryQuery(params: URLSearchParams): GalleryQuery {
     pack: params.get("pack") ?? "",
     kind: params.get("kind") ?? "",
     status: params.get("status") ?? "",
+    review: pickReviewFilter(params.get("review")),
     q: (params.get("q") ?? "").trim(),
     zoom: pickZoom(params.get("zoom"), GALLERY_ZOOMS, DEFAULT_GALLERY_ZOOM),
   };
@@ -79,6 +84,7 @@ export function gallerySearch(query: Partial<GalleryQuery>): string {
   if (query.pack) params.set("pack", query.pack);
   if (query.kind) params.set("kind", query.kind);
   if (query.status) params.set("status", query.status);
+  if (query.review) params.set("review", query.review);
   if (query.q) params.set("q", query.q);
   if (query.zoom !== undefined && query.zoom !== DEFAULT_GALLERY_ZOOM) params.set("zoom", String(query.zoom));
   const text = params.toString();
@@ -86,12 +92,13 @@ export function gallerySearch(query: Partial<GalleryQuery>): string {
 }
 
 /** The assets a query shows, in the order given. */
-export function filterAssets<T extends Pick<AssetRecord, "id" | "pack" | "kind" | "status" | "clips">>(assets: readonly T[], query: Pick<GalleryQuery, "pack" | "kind" | "status" | "q">): T[] {
+export function filterAssets<T extends Pick<AssetRecord, "id" | "pack" | "kind" | "status" | "clips" | "review">>(assets: readonly T[], query: Pick<GalleryQuery, "pack" | "kind" | "status" | "review" | "q">): T[] {
   const words = query.q.toLowerCase().split(/\s+/).filter((word) => word !== "");
   return assets.filter((asset) => {
     if (query.pack !== "" && asset.pack !== query.pack) return false;
     if (query.kind !== "" && kindOf(asset) !== query.kind) return false;
     if (query.status !== "" && asset.status !== query.status) return false;
+    if (!matchesReview(asset.review, query.review)) return false;
     if (words.length === 0) return true;
     const text = [asset.id, kindOf(asset), ...asset.clips.map((clip) => clip.name)].join("\n").toLowerCase();
     return words.every((word) => text.includes(word));

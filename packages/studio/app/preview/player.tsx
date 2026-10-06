@@ -16,6 +16,7 @@ import type { FrameChoice, PixelInfo } from "../lib/scene.ts";
 import { previewVariants } from "../lib/variants.ts";
 import type { PreviewVariant } from "../lib/variants.ts";
 import { PixelImage } from "../components.tsx";
+import { VerdictPanel } from "../verdicts.tsx";
 import type { AssetRecord } from "../../server/services/index.ts";
 import { studioApi } from "./api.ts";
 import { previewHost } from "./host.ts";
@@ -311,6 +312,8 @@ export function PlayerSection({ asset, zoom, clip, facing }: PlayerProps) {
         {state.grid && state.zoom < GRID_FROM_ZOOM ? ` · the pixel grid shows from ${GRID_FROM_ZOOM}× up` : ""}
       </p>
       <Inspector info={info} names={asset.palette?.names !== null} />
+
+      <VerdictPanel asset={asset} looking={{ seed: main.source.seed, preset: main.kind === "preset" ? main.id.slice("preset-".length) : null, frame: state.frame }} />
 
       <h3>Variants</h3>
       <p className="sub">

@@ -5,23 +5,25 @@
 
 import { spawn } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { FIXTURE_ASSETS, removeTemps, tempRoot } from "./helpers.ts";
+import { copyFixtures, removeTemps, tempRoot } from "./helpers.ts";
 
 const SERVER = fileURLToPath(new URL("../server.ts", import.meta.url));
 const BUILD = fileURLToPath(new URL("../build/server/index.js", import.meta.url));
 
 let child: ChildProcess;
 let origin: string;
+let root: string;
 let output = "";
 
 beforeAll(async () => {
   if (!existsSync(BUILD)) throw new Error("the studio is not built: run `npm run build` in packages/studio first (`npm run check` does)");
-  const root = tempRoot("server");
+  root = tempRoot("server");
   child = spawn(process.execPath, [SERVER], {
-    env: { PATH: process.env["PATH"], NODE_ENV: "production", WHZ_STUDIO_ROOT: root, WHZ_STUDIO_ASSETS: FIXTURE_ASSETS, WHZ_STUDIO_PORT: "0", WHZ_STUDIO_HOST: "127.0.0.1" },
+    env: { PATH: process.env["PATH"], NODE_ENV: "production", WHZ_STUDIO_ROOT: root, WHZ_STUDIO_ASSETS: copyFixtures(root), WHZ_STUDIO_PORT: "0", WHZ_STUDIO_HOST: "127.0.0.1" },
     stdio: ["ignore", "pipe", "pipe"],
   });
   origin = await new Promise<string>((resolve, reject) => {
@@ -183,6 +185,60 @@ describe("/ (dashboard)", () => {
 
     const unknown = await page("/?index", { method: "POST", body: new URLSearchParams({ intent: "something-else" }), headers: { ...headers, Origin: origin } });
     expect(unknown.status).toBe(400);
+  });
+});
+
+describe("verdicts", () => {
+  const headers = { "Content-Type": "application/x-www-form-urlencoded" };
+
+  it("a verdict posted to the asset page writes review.json and the inbox, and shows on the page and the card", async () => {
+    const before = (await page("/asset/shapes/square")).html;
+    expect(before).toContain('<section class="verdicts" data-verdicts="true" data-review="none" data-count="0">');
+    const hash = /Output hash<\/dt><dd><code>([0-9a-f]{16})<\/code>/.exec(before)?.[1];
+    expect(hash).toMatch(/^[0-9a-f]{16}$/);
+
+    const body = new URLSearchParams([["intent", "verdict"], ["status", "rejected"], ["tags", "silhouette"], ["tags", "palette"], ["comment", "Corners too soft."], ["about-frame", "on"], ["frame", "1"], ["seed", "2"], ["preset", ""], ["output-hash", hash ?? ""]]);
+    const done = await fetch(`${origin}/asset/shapes/square`, { method: "POST", body, headers: { ...headers, Origin: origin } });
+    expect(done.status).toBe(200);
+    const file = JSON.parse(readFileSync(join(root, "assets", "shapes", "square", "review.json"), "utf8")) as { format: string; verdicts: Record<string, unknown>[] };
+    expect(file.format).toBe("wz.review/1");
+    expect(file.verdicts).toHaveLength(1);
+    expect(file.verdicts[0]).toMatchObject({ status: "rejected", outputHash: hash, variant: { seed: 2, preset: null }, tags: ["palette", "silhouette"], comment: "Corners too soft.", frame: 1 });
+    const inbox = readFileSync(join(root, "reviews", "INBOX.md"), "utf8");
+    expect(inbox).toContain("## Rejected\n\n- **shapes/square**");
+    expect(inbox).toContain("seed 2 · frame 1 · palette, silhouette");
+    expect(inbox).toContain("> Corners too soft.");
+
+    const after = (await page("/asset/shapes/square")).html;
+    expect(after).toContain('data-review="rejected" data-count="1"');
+    expect(after).toContain('<span class="badge badge-review badge-review-rejected" data-review="rejected"');
+    expect(after).toContain("Corners too soft.");
+    const card = (await page("/gallery")).html;
+    expect(card).toMatch(/data-asset-id="shapes\/square"[^]*?badge-review-rejected/);
+    expect(card).not.toMatch(/data-asset-id="ground\/floor"[^]*?badge-review[^]*?data-asset-id="shapes\/broken"/);
+    expect(card).toContain('<form class="card-actions" data-verdict-quick="true" data-discover="true" action="/asset/shapes/square" method="post"><input type="hidden" name="intent" value="verdict"/><input type="hidden" name="output-hash" value="' + hash + '"/><input type="hidden" name="seed" value="1"/>');
+    expect(cards((await page("/gallery?review=rejected")).html).map((card) => card[0])).toEqual(["shapes/square"]);
+    expect(cards((await page("/gallery?review=unreviewed")).html).map((card) => card[0])).toEqual(["ground/floor", "shapes/broken"]);
+
+    // The quick form of a card: approve as it is. The verdict is on what the card showed.
+    const quick = await fetch(`${origin}/asset/shapes/square`, { method: "POST", body: new URLSearchParams({ intent: "verdict", status: "approved", "output-hash": hash ?? "", seed: "1" }), headers: { ...headers, Origin: origin } });
+    expect(quick.status).toBe(200);
+    expect((await page("/asset/shapes/square")).html).toContain('data-review="approved" data-count="2"');
+    expect(readFileSync(join(root, "reviews", "INBOX.md"), "utf8")).toContain("## Approved\n\n- **shapes/square**");
+  });
+
+  it("is refused without the studio's own Origin, and a bad verdict is refused with the reason", async () => {
+    const body = new URLSearchParams({ intent: "verdict", status: "approved" });
+    expect((await fetch(`${origin}/asset/shapes/square`, { method: "POST", body, headers })).status).toBe(403);
+    expect((await fetch(`${origin}/asset/shapes/square`, { method: "POST", body, headers: { ...headers, Origin: "https://evil.example" } })).status).toBe(403);
+    const bad = await fetch(`${origin}/asset/shapes/square`, { method: "POST", body: new URLSearchParams({ intent: "verdict", status: "meh" }), headers: { ...headers, Origin: origin } });
+    expect(bad.status).toBe(400);
+    expect(await bad.text()).toContain("a verdict is one of approved, rejected, comment");
+    const other = await fetch(`${origin}/asset/shapes/square`, { method: "POST", body: new URLSearchParams({ intent: "other" }), headers: { ...headers, Origin: origin } });
+    expect(other.status).toBe(400);
+    expect(await other.text()).toContain("unknown intent");
+    expect((await fetch(`${origin}/asset/shapes/nope`, { method: "POST", body, headers: { ...headers, Origin: origin } })).status).toBe(400);
+    expect(JSON.parse(readFileSync(join(root, "assets", "shapes", "square", "review.json"), "utf8")).verdicts).toHaveLength(2);
   });
 });
 

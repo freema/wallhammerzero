@@ -3,21 +3,34 @@
 
 import { describe, expect, it } from "vitest";
 import { assetHref, DEFAULT_GALLERY_ZOOM, fileUrl, filterAssets, imageKey, filterChoices, formatMs, gallerySearch, parseGalleryQuery, pickZoom, summarize } from "../app/lib/assets.ts";
-import type { AssetRecord, AssetStatus } from "../server/services/index.ts";
+import { reviewBadge } from "../app/lib/reviews.ts";
+import type { AssetRecord, AssetStatus, Verdict, VerdictStatus } from "../server/services/index.ts";
 
-type Row = Pick<AssetRecord, "id" | "pack" | "kind" | "status" | "clips">;
+type Row = Pick<AssetRecord, "id" | "pack" | "kind" | "status" | "clips" | "review">;
 
-function row(id: string, kind: string | null, status: AssetStatus, clips: string[] = []): Row {
-  return { id, pack: id.slice(0, id.indexOf("/")), kind, status, clips: clips.map((name) => ({ name, frames: 1, durations: [100], loop: true })) };
+function verdict(status: VerdictStatus, outputHash: string): Verdict {
+  return { id: `v-${status}`, at: "2026-10-07T01:00:00Z", status, outputHash, sourceHash: "s", variant: null, tags: [], comment: "", frame: null };
+}
+
+function row(id: string, kind: string | null, status: AssetStatus, clips: string[] = [], review: { status: VerdictStatus; changed: boolean } | null = null): Row {
+  const last = review === null ? null : verdict(review.status, review.changed ? "old" : "now");
+  return {
+    id,
+    pack: id.slice(0, id.indexOf("/")),
+    kind,
+    status,
+    clips: clips.map((name) => ({ name, frames: 1, durations: [100], loop: true })),
+    review: { status: last?.status ?? null, changed: review?.changed ?? false, count: last === null ? 0 : 1, last, verdicts: last === null ? [] : [last] },
+  };
 }
 
 const ASSETS: Row[] = [
-  row("props/crate", "sprite", "baked", ["idle"]),
-  row("props/lamp", "sprite", "stale", ["idle", "flicker"]),
+  row("props/crate", "sprite", "baked", ["idle"], { status: "approved", changed: false }),
+  row("props/lamp", "sprite", "stale", ["idle", "flicker"], { status: "rejected", changed: true }),
   row("props/new", null, "unbaked"),
-  row("ground/floor", "tiles", "baked", ["still"]),
+  row("ground/floor", "tiles", "baked", ["still"], { status: "comment", changed: false }),
   row("ground/broken", null, "error"),
-  row("rooms/shop", "scene", "baked", ["still"]),
+  row("rooms/shop", "scene", "baked", ["still"], { status: "approved", changed: true }),
 ];
 
 const ids = (rows: readonly Row[]): string[] => rows.map((asset) => asset.id);
@@ -25,8 +38,9 @@ const query = (text: string) => parseGalleryQuery(new URLSearchParams(text));
 
 describe("parseGalleryQuery and gallerySearch", () => {
   it("reads the filters and the zoom from the URL, with defaults", () => {
-    expect(query("")).toEqual({ pack: "", kind: "", status: "", q: "", zoom: DEFAULT_GALLERY_ZOOM });
-    expect(query("pack=props&kind=sprite&status=stale&q=%20lamp%20&zoom=2")).toEqual({ pack: "props", kind: "sprite", status: "stale", q: "lamp", zoom: 2 });
+    expect(query("")).toEqual({ pack: "", kind: "", status: "", review: "", q: "", zoom: DEFAULT_GALLERY_ZOOM });
+    expect(query("pack=props&kind=sprite&status=stale&review=rejected&q=%20lamp%20&zoom=2")).toEqual({ pack: "props", kind: "sprite", status: "stale", review: "rejected", q: "lamp", zoom: 2 });
+    expect(query("review=nope").review).toBe("");
   });
 
   it.each([["0"], ["5"], ["2.5"], ["-1"], ["big"], [""]])("falls back to the default zoom for zoom=%s (integer zooms 1 to 4 only)", (zoom) => {
@@ -37,7 +51,7 @@ describe("parseGalleryQuery and gallerySearch", () => {
     expect(gallerySearch(query(""))).toBe("");
     expect(gallerySearch({ status: "error" })).toBe("?status=error");
     expect(gallerySearch(query("pack=props&q=a+b&zoom=1"))).toBe("?pack=props&q=a+b&zoom=1");
-    expect(query(gallerySearch({ pack: "props", kind: "sprite", status: "baked", q: "x y", zoom: 3 }).slice(1))).toEqual({ pack: "props", kind: "sprite", status: "baked", q: "x y", zoom: 3 });
+    expect(query(gallerySearch({ pack: "props", kind: "sprite", status: "baked", review: "changed", q: "x y", zoom: 3 }).slice(1))).toEqual({ pack: "props", kind: "sprite", status: "baked", review: "changed", q: "x y", zoom: 3 });
   });
 });
 
@@ -53,6 +67,22 @@ describe("filterAssets", () => {
     expect(ids(filterAssets(ASSETS, query("status=baked")))).toEqual(["props/crate", "ground/floor", "rooms/shop"]);
     expect(ids(filterAssets(ASSETS, query("pack=props&status=baked")))).toEqual(["props/crate"]);
     expect(ids(filterAssets(ASSETS, query("pack=nope")))).toEqual([]);
+  });
+
+  it("filters by the owner's verdict: a status, none yet, or changed since the verdict", () => {
+    expect(ids(filterAssets(ASSETS, query("review=approved")))).toEqual(["props/crate", "rooms/shop"]);
+    expect(ids(filterAssets(ASSETS, query("review=rejected")))).toEqual(["props/lamp"]);
+    expect(ids(filterAssets(ASSETS, query("review=comment")))).toEqual(["ground/floor"]);
+    expect(ids(filterAssets(ASSETS, query("review=unreviewed")))).toEqual(["props/new", "ground/broken"]);
+    expect(ids(filterAssets(ASSETS, query("review=changed")))).toEqual(["props/lamp", "rooms/shop"]);
+    expect(ids(filterAssets(ASSETS, query("review=changed&status=baked")))).toEqual(["rooms/shop"]);
+  });
+
+  it("shows the verdict as a badge, and 'changed' over it when the output moved on", () => {
+    expect(reviewBadge(row("a/x", null, "baked").review)).toEqual({ kind: "none", text: "" });
+    expect(reviewBadge(row("a/x", null, "baked", [], { status: "approved", changed: false }).review)).toEqual({ kind: "approved", text: "approved" });
+    expect(reviewBadge(row("a/x", null, "baked", [], { status: "comment", changed: false }).review)).toEqual({ kind: "comment", text: "commented" });
+    expect(reviewBadge(row("a/x", null, "baked", [], { status: "rejected", changed: true }).review)).toEqual({ kind: "changed", text: "changed since rejected" });
   });
 
   it("matches text against the id, the kind and the clip names; every word must match", () => {

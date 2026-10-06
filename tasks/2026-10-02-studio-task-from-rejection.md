@@ -31,3 +31,19 @@ is in the MVP).
   and a queue row; creating it twice with the same slug creates a second, suffixed note and
   never overwrites (test).
 - `/implement-tasks` (once that skill exists) can pick the created note up as written.
+
+## From verdicts (2026-10-07)
+What `studio-verdicts` left for this note (see `docs/studio.md`, "Verdicts"):
+- A verdict is an entry of `assets/<pack>/<name>/review.json` (`format: "wz.review/1"`):
+  `id`, `at`, `status`, `outputHash`, `sourceHash`, `variant`, `tags`, `comment`, `frame`. The
+  service is `services.reviews` (`packages/studio/server/services/reviews.ts`): `add(id, input)`
+  appends one. There is no field for a task yet: linking a verdict to the created note means
+  a new optional field (`task: string | null`) on `Verdict`, written by this note's service
+  through the same serialized, atomic path (`appendVerdict` rewrites the whole file; a
+  "patch one verdict" step is new).
+- The pages read `record.review` (`status`, `changed`, `count`, `last`, `verdicts`); the panel
+  is `packages/studio/app/verdicts.tsx` (the history list is where "→ tasks/…" goes).
+- The inbox (`reviews/INBOX.md`) is rendered by `renderInbox` in the same service; a line per
+  rejected asset is where the note's path goes too.
+- A studio write outside `assets/` (a task note, `tasks/README.md`) is not watched: no echo
+  suppression is needed for it.

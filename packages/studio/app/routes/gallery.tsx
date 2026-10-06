@@ -8,7 +8,9 @@ import { Form, Link, useNavigate } from "react-router";
 import { BakeBanner, PixelImage, StatusBadge } from "../components.tsx";
 import { studioContext } from "../context.ts";
 import { assetHref, fileUrl, filterAssets, filterChoices, GALLERY_ZOOMS, gallerySearch, imageKey, kindOf, parseGalleryQuery, STATUSES } from "../lib/assets.ts";
+import { pickReviewFilter, REVIEW_FILTER_TEXT, REVIEW_FILTERS } from "../lib/reviews.ts";
 import { previewVariants } from "../lib/variants.ts";
+import { ReviewBadge, VerdictQuick } from "../verdicts.tsx";
 import { playingChoice, SourcePreview } from "../preview/preview.tsx";
 import type { GalleryQuery } from "../lib/assets.ts";
 import { galleryNeedsLoader } from "../lib/live.ts";
@@ -56,6 +58,7 @@ function Card({ loaded, revision, zoom }: { loaded: AssetRecord; revision: numbe
           </div>
           <div className="card-meta">
             <StatusBadge status={asset.status} />
+            <ReviewBadge review={asset.review} />
             {asset.size === null ? null : (
               <span>
                 {kindOf(asset)} · {asset.size[0]}×{asset.size[1]} · {asset.clips.length} {asset.clips.length === 1 ? "clip" : "clips"} · {asset.frameCount}{" "}
@@ -66,6 +69,7 @@ function Card({ loaded, revision, zoom }: { loaded: AssetRecord; revision: numbe
           {asset.error === null ? null : <pre className="error-text card-error">{asset.error}</pre>}
         </div>
       </Link>
+      <VerdictQuick asset={asset} />
     </li>
   );
 }
@@ -85,7 +89,7 @@ export default function Gallery({ loaderData }: Route.ComponentProps) {
   useEffect(() => {
     const fields = form.current?.elements;
     if (fields === undefined) return;
-    for (const name of ["pack", "kind", "status"] as const) (fields.namedItem(name) as HTMLSelectElement).value = query[name];
+    for (const name of ["pack", "kind", "status", "review"] as const) (fields.namedItem(name) as HTMLSelectElement).value = query[name];
     const search = fields.namedItem("q") as HTMLInputElement;
     if (document.activeElement !== search) search.value = query.q;
     for (const radio of form.current?.querySelectorAll<HTMLInputElement>('input[name="zoom"]') ?? []) radio.checked = Number(radio.value) === query.zoom;
@@ -94,7 +98,7 @@ export default function Gallery({ loaderData }: Route.ComponentProps) {
   const apply = (event: FormEvent<HTMLFormElement>): void => {
     const data = new FormData(event.currentTarget);
     const text = (name: string): string => String(data.get(name) ?? "");
-    const next: GalleryQuery = { pack: text("pack"), kind: text("kind"), status: text("status"), q: text("q").trim(), zoom: Number(text("zoom")) };
+    const next: GalleryQuery = { pack: text("pack"), kind: text("kind"), status: text("status"), review: pickReviewFilter(text("review")), q: text("q").trim(), zoom: Number(text("zoom")) };
     void navigate({ pathname: "/gallery", search: gallerySearch(next) }, { replace: true, preventScrollReset: true });
   };
 
@@ -137,6 +141,16 @@ export default function Gallery({ loaderData }: Route.ComponentProps) {
             <option value="">all</option>
             {STATUSES.map((status) => (
               <option key={status}>{status}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Verdict
+          <select name="review" defaultValue={query.review}>
+            {REVIEW_FILTERS.map((filter) => (
+              <option key={filter} value={filter}>
+                {REVIEW_FILTER_TEXT[filter]}
+              </option>
             ))}
           </select>
         </label>

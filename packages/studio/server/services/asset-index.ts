@@ -18,6 +18,8 @@ import type { Atlas } from "@whz/asset-kit";
 import { BAKE_ERROR_FORMAT, bakeDir, findAssets, loadPaletteFile, sourceHash } from "@whz/asset-kit/node";
 import type { AssetEntry, AssetProject } from "@whz/asset-kit/node";
 import { readPresets } from "./presets.ts";
+import { readReview, reviewState } from "./reviews.ts";
+import type { ReviewState } from "./reviews.ts";
 
 /** The `format` value of `.studio-cache/index.json`. */
 export const INDEX_FORMAT = "wz.studio-index/1";
@@ -104,6 +106,8 @@ export interface AssetRecord {
   readonly presetVariants: readonly IndexedPreset[];
   /** Why the presets could not be rendered, else null. */
   readonly presetError: string | null;
+  /** The owner's verdicts (reviews.ts): the last one, and whether the output changed since. */
+  readonly review: ReviewState;
 }
 
 /** The content of `.studio-cache/index.json`. */
@@ -213,11 +217,12 @@ export function readRecord(project: AssetProject, entry: AssetEntry): AssetRecor
     genFile: posix(relative(project.root, entry.genFile)),
     bakeDir: relDir,
   };
+  const review = readReview(entry);
   let source: string;
   try {
     source = sourceHash(entry);
   } catch (error) {
-    return { ...base, ...EMPTY, status: "error", error: `cannot read the asset's files: ${(error as Error).message}`, sourceHash: "", bakedSourceHash: null };
+    return { ...base, ...EMPTY, status: "error", error: `cannot read the asset's files: ${(error as Error).message}`, sourceHash: "", bakedSourceHash: null, review: reviewState(review, null) };
   }
   const failed = (message: string, bakedSourceHash: string | null = null): AssetRecord => ({
     ...base,
@@ -226,13 +231,14 @@ export function readRecord(project: AssetProject, entry: AssetEntry): AssetRecor
     error: message,
     sourceHash: source,
     bakedSourceHash,
+    review: reviewState(review, null),
   });
 
   try {
     const atlas = readJson(join(dir, "atlas.json"));
     if (atlas === undefined) {
       const error = readJson(join(dir, "error.json"));
-      if (error === undefined) return { ...base, ...EMPTY, status: "unbaked", error: null, sourceHash: source, bakedSourceHash: null };
+      if (error === undefined) return { ...base, ...EMPTY, status: "unbaked", error: null, sourceHash: source, bakedSourceHash: null, review: reviewState(review, null) };
       if (!isRecord(error) || error["format"] !== BAKE_ERROR_FORMAT) return failed(`${relDir}/error.json is not a ${BAKE_ERROR_FORMAT} file`);
       return failed(String(error["message"] ?? "the bake failed"), typeof error["sourceHash"] === "string" ? error["sourceHash"] : null);
     }
@@ -267,6 +273,7 @@ export function readRecord(project: AssetProject, entry: AssetEntry): AssetRecor
       variants,
       presetVariants: previews === null ? [] : previews.presets,
       presetError: previews?.error ?? null,
+      review: reviewState(review, combinedHash(variants)),
     };
   } catch (error) {
     // A file that is being written right now, or one that something else left there.

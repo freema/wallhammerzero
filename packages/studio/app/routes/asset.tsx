@@ -9,8 +9,11 @@ import { studioContext } from "../context.ts";
 import { fileUrl, formatMs, gallerySearch, kindOf } from "../lib/assets.ts";
 import { assetNeedsLoader } from "../lib/live.ts";
 import { pickPlayerZoom } from "../lib/player.ts";
+import { readVerdictForm } from "../lib/reviews.ts";
 import { useAsset, useLoaderOn, useLoaderRevision, useRunning } from "../live.tsx";
 import { PlayerSection } from "../preview/player.tsx";
+import { VerdictPanel } from "../verdicts.tsx";
+import type { VerdictResult } from "../verdicts.tsx";
 import type { Route } from "./+types/asset";
 
 export function meta({ params }: Route.MetaArgs) {
@@ -27,6 +30,33 @@ export function loader({ params, request, context }: Route.LoaderArgs) {
   const query = new URL(request.url).searchParams;
   const start = { zoom: pickPlayerZoom(query.get("zoom")), clip: query.get("clip") ?? "", facing: query.get("facing") ?? "" };
   return { asset, start, running: bake.state().running, revision: index.revision };
+}
+
+/**
+ * POST /asset/<id>: `intent=verdict` appends a verdict to the asset's review.json and rewrites
+ * the inbox. A bad input is answered with 400 and the reason; the page shows it.
+ */
+export async function action({ request, params, context }: Route.ActionArgs) {
+  const { reviews } = context.get(studioContext);
+  const sent = await request.formData();
+  if (sent.get("intent") !== "verdict") throw new Response("unknown intent", { status: 400 });
+  const form = readVerdictForm(sent);
+  const id = params["*"];
+  try {
+    const verdict = await reviews.add(id, {
+      status: form.status,
+      tags: form.tags,
+      comment: form.comment,
+      frame: form.frame,
+      variant: form.seed === null ? null : { seed: form.seed, preset: form.preset },
+      outputHash: form.outputHash,
+    });
+    const result: VerdictResult = { ok: true, error: null, verdict };
+    return result;
+  } catch (error) {
+    const result: VerdictResult = { ok: false, error: error instanceof Error ? error.message : String(error), verdict: null };
+    return data(result, { status: 400 });
+  }
 }
 
 export default function AssetPage({ loaderData }: Route.ComponentProps) {
@@ -194,7 +224,7 @@ export default function AssetPage({ loaderData }: Route.ComponentProps) {
         </section>
       )}
 
-      {asset.variants.length === 0 || asset.sheet === null ? null : <PlayerSection asset={asset} zoom={start.zoom} clip={start.clip} facing={start.facing} />}
+      {asset.variants.length === 0 || asset.sheet === null ? <VerdictPanel asset={asset} looking={null} /> : <PlayerSection asset={asset} zoom={start.zoom} clip={start.clip} facing={start.facing} />}
     </main>
   );
 }

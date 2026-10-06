@@ -6,10 +6,10 @@ official custom Node server template (Express), React 19 and Vite (D9). It runs 
 everything else (D16).
 
 So far it has the app shell, the asset index, the gallery, the asset page with the
-[animation player](#the-player), the bake button and [live reload](#live-reload): a file
-written under `assets/` is re-baked and shows in the open pages by itself. Verdicts and the
-other pages are later notes in [tasks/README.md](../tasks/README.md); each adds its own route
-and navigation entry.
+[animation player](#the-player) and the owner's [verdicts](#verdicts), the bake button and
+[live reload](#live-reload): a file written under `assets/` is re-baked and shows in the open
+pages by itself. The other pages are later notes in [tasks/README.md](../tasks/README.md);
+each adds its own route and navigation entry.
 
 ## Starting it
 
@@ -82,18 +82,19 @@ of them: it uses the defaults.
 | `build/assets/<id>/` | read; written by a bake | `atlas.json`, the sheets and frames, or `error.json` of a failed bake ([asset-pipeline.md](asset-pipeline.md#bake)). Served read-only under `/api/files/`. Removed when the asset's folder is removed. |
 | `build/studio/presets/<id>/` | written by the studio's bake | The preview sheet of every preset of the asset (`<preset>.png`, in the atlas's layout, rendered with the first variant seed) and `presets.json` (`format: "wz.studio-presets/1"`: the source and palette hashes it was made for, the seed, the sheets and their output hashes, or `error`). The command line's bake never writes it; the studio's does, after every successful bake of the asset. Removed with the asset's output. |
 | `.studio-cache/index.json` | written | A copy of the asset index (below). Derived and gitignored: delete it and it comes back. |
+| `assets/<pack>/<name>/review.json` | written by a verdict | The owner's verdicts on the asset ([verdicts](#verdicts)). The only file the studio writes under `assets/`; the watcher is told, so the write is not a change. Not in the asset's source hash. Committed. |
+| `reviews/INBOX.md` | written by a verdict, on start, and after every change of the index | The generated inbox: what is rejected, commented, changed since a verdict, approved. Claude reads it first (`CLAUDE.md`). Committed. |
 | `packages/studio/build/`, `packages/studio/.react-router/` | written by the package's build and typecheck | The built app and React Router's generated route types. Gitignored. |
 
-Nothing else is written. The studio does not touch `assets/` (verdict files come with the
-verdicts note).
+Nothing else is written.
 
 ## Pages
 
 | URL | What |
 |---|---|
 | `/` | Dashboard: asset counts by bake status and by kind, the **Bake all** button with the result of the last run, and the bake errors that are on disk now. |
-| `/gallery` | Every asset as a card: its first clip playing (first variant seed; the first frame as a still image until the sheet is loaded). A card follows its asset ([live reload](#live-reload)). Filters by pack, kind, bake status and text (every word must be in the id, the kind or a clip name), and the zoom: 1×, 2×, 3× or 4×. The filters and the zoom are in the URL (`/gallery?pack=examples&kind=sprite&q=dot&zoom=2`), so a view can be reloaded and scripted. An asset whose bake failed is an error card with the message; one without output says so. |
-| `/asset/<pack>/<name>` | One asset: meta (kind, size, pivot, hashes, params, presets), the palette, the clip table, and [the player](#the-player): the asset animated at an integer zoom, every variant seed and preset side by side, the pixel inspector. `?zoom=`, `?clip=` and `?facing=` choose where the player starts. The page follows its asset: after a re-bake it shows the new record and the new frames in place, and the player keeps its clip, time and zoom. |
+| `/gallery` | Every asset as a card: its first clip playing (first variant seed; the first frame as a still image until the sheet is loaded), its bake status and its verdict, and **Approve** / **Reject** under it. A card follows its asset ([live reload](#live-reload)). Filters by pack, kind, bake status, verdict (`review=`: `unreviewed`, `approved`, `rejected`, `comment`, `changed`) and text (every word must be in the id, the kind or a clip name), and the zoom: 1×, 2×, 3× or 4×. The filters and the zoom are in the URL (`/gallery?pack=examples&kind=sprite&review=rejected&q=dot&zoom=2`), so a view can be reloaded and scripted. An asset whose bake failed is an error card with the message; one without output says so. |
+| `/asset/<pack>/<name>` | One asset: meta (kind, size, pivot, hashes, params, presets), the palette, the clip table, [the player](#the-player): the asset animated at an integer zoom, every variant seed and preset side by side, the pixel inspector, and the [verdict panel](#verdicts). `?zoom=`, `?clip=` and `?facing=` choose where the player starts. The page follows its asset: after a re-bake it shows the new record and the new frames in place, and the player keeps its clip, time and zoom. `POST` with `intent=verdict` is a verdict. |
 | `/api/files/<path>` | A build output by its path relative to the checkout, read-only, e.g. `/api/files/build/assets/examples/blinking-dot/atlas.json`. With `?h=<key>` the answer is cached for good; without it the browser revalidates. The pages use `<output hash>.<palette hash>` as the key (`imageKey` in `packages/studio/app/lib/assets.ts`): the output hash alone does not change when only a palette's colours do. |
 | `/api/events` | The event stream of [live reload](#live-reload) (Server-Sent Events). |
 
@@ -168,6 +169,57 @@ __studio.player; // the model of the asset page: state(), time(), play(), pause(
 A preview's name is `main` for the player, the variant's id (`seed-<n>`, `preset-<name>`,
 `1x-<id>`) in the grids, and the asset id on a gallery card. `readNative` of a stepped frame
 is the frame's own PNG pixel for pixel; that is the check a verifier runs, never a screenshot.
+
+## Verdicts
+
+The owner's verdicts go back into the repo for the generator (D7, D21): approve, reject or
+comment, on the asset page (under the player) and on a gallery card (**Approve** / **Reject**,
+one click). Keys on the asset page: **A** approves what is shown, as it is; **R** and **C**
+open the form on reject or comment, with the cursor in the comment (⌘/Ctrl + Enter saves).
+The form carries the fixed reasons (readability, silhouette, palette, proportions, animation
+timing, style mismatch, other), the comment, and, when ticked, the frame the player is on.
+Every verdict records the variant in the player (its seed, and the preset when one is
+shown) and the **output hash the page showed**: a verdict is on what the owner saw, not on
+what is on disk when it is written.
+
+**`assets/<pack>/<name>/review.json`** is the source of truth, **written only by the studio**
+(`packages/studio/server/services/reviews.ts`): atomic (a temp file in the same folder,
+then a rename), append-only, one verdict after the other (two quick verdicts lose nothing):
+
+```json
+{
+  "format": "wz.review/1",
+  "asset": "examples/blinking-dot",
+  "verdicts": [
+    { "id": "v-20261007T013012-1", "at": "2026-10-07T01:30:12Z", "status": "rejected",
+      "outputHash": "9d7e2a6f0c1b4e58", "sourceHash": "3f2a9c1e7b6d0a44",
+      "variant": { "seed": 1, "preset": null }, "tags": ["palette", "silhouette"],
+      "comment": "Too dark; the sparkle merges with the dot.", "frame": 1 }
+  ]
+}
+```
+
+`status` is `approved`, `rejected` or `comment`. The file is not in the asset's source hash
+(it never makes the asset stale), and the watcher is told about the write (echo suppression),
+so a verdict is not a change. The index reads it with the asset: a record carries `review`
+(the status of the last verdict, `changed`, the count, the last verdict and the whole list),
+and the pages show the badge (`approved`, `rejected`, `commented`, or `changed since …`),
+the state and the history.
+
+**Changed since verdict:** the asset's output hash now is not the hash of its last verdict.
+A re-bake that leaves the pixels as they were (a comment in the program) changes nothing; one
+that changes them marks the asset until the owner looks again. An asset without output now
+is not "changed" (there is nothing to compare), but its last verdict still shows.
+
+**`reviews/INBOX.md`** is generated from every review file: the rejected with their reasons
+and comments, the comments, what changed since a verdict (the verdict's hash and the hash
+now), the approved (with "do not change without the owner's consent"). It is rewritten after
+every verdict, on start, and after every change of the index (a re-bake can make an asset
+"changed since verdict"); it is written only when its text differs, and "Updated" is the time
+of the latest verdict, not the clock, so the same files give the same text. Its header says it
+is generated and must not be edited. The rules for the generator are in `CLAUDE.md`
+("Verdicts"): read the inbox first, never write these files, never change an approved asset
+without the owner's consent, report a library change that alters approved outputs.
 
 **Bake status** of an asset: `baked` (the output was made from the current source files),
 `stale` (the source files changed since), `error` (the last bake failed) and `unbaked` (no
@@ -279,10 +331,10 @@ The light at the right of the top bar says `live`, **`Claude is writing…`** wh
 in flight (from the first changed file until its re-bake is done), `connecting…` without a
 connection, or `live reload off`.
 
-**Echo suppression.** A service that writes a file under `assets/` itself (the verdicts note
-is the first) calls `services.live.watcher?.wrote([path])` right after the write, before
-anything is awaited. The file's new state becomes the watcher's baseline, so the write is not
-reported back as a change. A later change of the same file by someone else is reported.
+**Echo suppression.** A service that writes a file under `assets/` itself (the review
+service is the one) calls `services.live.watcher?.wrote([path])` right after the write,
+before anything is awaited. The file's new state becomes the watcher's baseline, so the write
+is not reported back as a change. A later change of the same file by someone else is reported.
 
 ### Guards
 
@@ -322,6 +374,13 @@ typecheck of the app and of the server, ESLint, a production build, and the test
   everything, a generator that never returns becomes an error and the studio goes on, a
   changed palette or stamp re-bakes its users only; and the page's store
   (`app-live.test.ts`);
+- verdicts (`reviews.test.ts`): review.json as written (every field, append-only, no temp
+  file left, a bad input refused before writing), the state and "changed since verdict", the
+  inbox text (sections, deterministic), and the service in a running studio: a verdict lands in
+  the file, the inbox and the index without waking the watcher; three verdicts at once lose
+  nothing; a generator change that changes the pixels marks the asset changed and one that
+  does not, does not; the inbox is rewritten on start; the gallery's verdict filter
+  (`app-lib.test.ts`);
 - the player: its model with the time passed in (`app-player.test.ts`: frames, speeds,
   stepping, the end of a clip, the keys, what a re-bake keeps); what a preview draws, through
   the runtime's CPU backend over a baked fixture (`app-scene.test.ts`: every frame of every
@@ -331,8 +390,11 @@ typecheck of the app and of the server, ESLint, a production build, and the test
 - `server.test.ts`: the real `server.ts` as a process in production mode over the fixture
   assets, read through its HTML: the gallery lists every asset, the broken fixture is an error
   card, the filters and zooms, the asset page with the player as rendered (the start from the
-  URL, the variants, one preview per thing), the dashboard and **Bake all**, the greeting of
-  `/api/events` and a bake run pushed to an open stream;
+  URL, the variants, one preview per thing), a verdict posted to the asset page (the file, the
+  inbox, the badge on the page and the card, the verdict filter; refused without the studio's
+  own `Origin`, and with the reason for a bad one), the dashboard and **Bake all**, the
+  greeting of `/api/events` and a bake run pushed to an open stream (the fixture assets are
+  copied into the temp checkout, so the verdicts land there);
 - `dev-server.test.ts`: the real `server.ts` as a process in dev mode: which source files Vite
   hands to a browser (the four workspace packages and the studio's own code) and which it
   refuses (everything else of the checkout).

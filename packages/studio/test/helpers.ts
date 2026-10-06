@@ -1,7 +1,7 @@
 // Shared by the studio's server tests: the fixture folders, temp checkouts, and asset programs
 // written on the fly.
 
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -51,6 +51,27 @@ export function writeAsset(root: string, id: string, slot = "gold.1", palette = 
     ].join("\n"),
   );
   return file;
+}
+
+/**
+ * Copies the fixture assets into `<root>/assets` (for a studio that writes into its assets
+ * folder: verdicts). A temp folder has no node_modules and is not in the repo, so the
+ * programs' imports of the kit and of the palette are made absolute. Returns the folder.
+ */
+export function copyFixtures(root: string): string {
+  const dir = join(root, "assets");
+  cpSync(FIXTURE_ASSETS, dir, { recursive: true });
+  const rewrite = (folder: string): void => {
+    for (const entry of readdirSync(folder, { withFileTypes: true })) {
+      const path = join(folder, entry.name);
+      if (entry.isDirectory()) rewrite(path);
+      else if (entry.name.endsWith(".ts")) {
+        writeFileSync(path, readFileSync(path, "utf8").replace(/"@whz\/asset-kit"/g, JSON.stringify(KIT)).replace(/"(?:\.\.\/)+assets\/palettes\/example\.json"/g, JSON.stringify(PALETTE)));
+      }
+    }
+  };
+  rewrite(dir);
+  return dir;
 }
 
 /** Every file under a folder with its content, as `relative path -> hex`. */

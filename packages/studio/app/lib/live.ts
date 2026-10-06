@@ -154,10 +154,10 @@ export function pickRunning(loaded: BakeProgress | null, status: LiveStatus): Ba
  * changed (it may match now, or no longer); or a record has a kind the Kind filter does not
  * offer yet (`kinds` are its choices). Otherwise a changed record only patches its own card.
  */
-export function galleryNeedsLoader(event: AssetsEvent, query: Pick<GalleryQuery, "pack" | "kind" | "status" | "q">, kinds: readonly string[]): boolean {
+export function galleryNeedsLoader(event: AssetsEvent, query: Pick<GalleryQuery, "pack" | "kind" | "status" | "review" | "q">, kinds: readonly string[]): boolean {
   if (event.type !== "changed") return false;
   if (event.added.length > 0 || event.removed.length > 0) return true;
-  const filtered = query.kind !== "" || query.status !== "" || query.q !== "";
+  const filtered = query.kind !== "" || query.status !== "" || query.review !== "" || query.q !== "";
   if (filtered && event.changed.length > 0) return true;
   return event.changed.some((record) => !kinds.includes(kindOf(record)));
 }
