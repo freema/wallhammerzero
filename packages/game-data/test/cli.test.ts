@@ -62,7 +62,7 @@ describe("list", () => {
 
   it("still lists a game whose game.json is broken", async () => {
     const result = await run(["list", "--games", FIXTURES]);
-    expect(result.out.split("\n")).toHaveLength(12);
+    expect(result.out.split("\n")).toHaveLength(13);
     expect(result.out).toContain(`ok-shop\t${FIXTURES}/ok-shop\tFixture`);
   });
 
@@ -101,7 +101,7 @@ describe("validate", () => {
     const result = await run(["validate", "--games", FIXTURES, "--all"]);
     expect(result.code).toBe(1);
     expect(result.out).toContain(`ok ok-shop (${FIXTURES}/ok-shop): 1 system, 2 tables, 2 locales, 4 strings, simDataHash `);
-    expect(result.out.split("\n").at(-1)).toBe("validate: 11 of 12 games failed");
+    expect(result.out.split("\n").at(-1)).toBe("validate: 12 of 13 games failed");
   });
 });
 

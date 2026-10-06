@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "dangling-row",
+  "title": "Fixture",
+  "resolution": {
+    "width": 320,
+    "height": 180
+  },
+  "palette": "example",
+  "systems": [
+    "lab"
+  ]
+}

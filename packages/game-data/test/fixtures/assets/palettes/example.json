@@ -1,0 +1,11 @@
+{
+  "format": "wz.palette/1",
+  "id": "example",
+  "about": "Fixture: the smallest palette. The pack tests use this folder as the assets folder of a project.",
+  "slots": [
+    { "name": "transparent", "rgb": "#000000" },
+    { "name": "ink", "rgb": "#3b2f4a" },
+    { "name": "shadow", "rgb": "#1c1626" }
+  ],
+  "ramps": {}
+}

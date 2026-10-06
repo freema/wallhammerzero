@@ -9,9 +9,7 @@ tool disagree, the tool wins. Format:
 ## Now
 
 - **In flight:** nothing.
-- **Last finished:** `runtime-sprite-core`, `studio-skeleton-gallery`, `voxel-sprite-baker`,
-  `game-package-format` and `audio-synth-core` (2026-10-02), built in parallel and integrated on
-  the `implementation` branch.
+- **Last finished:** `hardening-after-first-waves` (2026-10-06).
 - **Next:** #8 `studio-live-reload` (#18 and #32 are open too).
 
 ## Blocked on the owner
@@ -25,6 +23,6 @@ tool disagree, the tool wins. Format:
 
 ## Open questions for the owner
 
-- Review `.claude/skills/implement-tasks/SKILL.md` before the first `/loop`. It was adapted from
-  the pixelforge `implement-tasks` skill and changes how work is done here (no rounds, the
-  Docker gate, the queue tool). A single `/implement-tasks` run is a good first look.
+- `.claude/skills/implement-tasks/SKILL.md` has `disable-model-invocation: true`, so a session
+  cannot start the skill through the Skill tool. The `/loop` the owner started on 2026-10-06 ran
+  by reading `SKILL.md` and following it. Keep the flag (the session reads the file) or drop it?

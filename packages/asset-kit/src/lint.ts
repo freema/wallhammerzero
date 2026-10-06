@@ -553,7 +553,9 @@ export function lintAsset(asset: AnyAsset, options: LintOptions = {}): LintRepor
       findings.push(...result.findings);
       frames.push(...result.frames);
       clips.push(...result.clips);
-      return { ...subject, outputHash: outputHash(output) };
+      // Frames that break the contract have no output hash: the finding above says why.
+      const broken = result.findings.some((finding) => finding.rule === "frame-size" || finding.rule === "palette-index");
+      return { ...subject, outputHash: broken ? null : outputHash(output) };
     } catch (error) {
       findings.push({ rule: "render", severity: "error", message: (error as Error).message, ...subject });
       return { ...subject, outputHash: null };

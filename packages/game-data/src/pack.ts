@@ -4,7 +4,7 @@
 //   game.json            the manifest: the game's own fields, `simDataHash`, `assetManifest`
 //   sim.json             { systems, tables }: exactly what the sim gets, and nothing else
 //   locales/<lang>.json  display text by string id
-//   palettes/<id>.json   the palettes the game names
+//   palettes/<id>.json   the palette game.json names, and the palette of every asset below
 //   assets/<id>/...      the baked atlas and sheets of every asset the game refers to
 //   scenes/, ui/, fx.json, audio.json   presentation documents
 //

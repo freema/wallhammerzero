@@ -30,7 +30,10 @@ tools/skill-intake/scan.sh [-r] [--name <name>] [--out <dir>] [--baseline <file>
 | 2 | The scan did not run or its report is unusable. This is never a clean result. |
 
 - `-r` scans each direct subfolder that has a `SKILL.md` as its own skill (a `skills/` folder).
-- Reports go to `.tools/skill-intake/reports/<name>/` unless `--out` names another folder.
+- Reports go to `.tools/skill-intake/reports/<name>-<checksum>/` unless `--out` names another
+  folder. The checksum is of the scanned folder's absolute path, so two sources whose folders
+  have the same name (two repos with a `skills/` folder) never overwrite each other's reports,
+  and a second scan of one folder replaces its own. The command prints where the reports are.
   `.tools/` is gitignored; the reports worth keeping are copied into the evidence folder (below).
 - The counts of a report on their own: `./dev node tools/skill-intake/summary.mjs <report.json>`.
   A finding is one issue record of the report.

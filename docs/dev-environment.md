@@ -13,6 +13,7 @@ and every tool through one wrapper, `./dev`.
 | `./dev -p <port> <cmd> ...` | The same, with the container port published on `127.0.0.1:<port>`. For a short-lived server that the host browser must reach. |
 | `./dev compose <args...>` | `docker compose <args...>` for this checkout, e.g. `./dev compose up studio`, `./dev compose down --volumes`. |
 | `tools/dev-env/watch-probe.sh` | The file-watch probe (runs on the host; see below). |
+| `tools/dev-env/self-test.sh` | The self-test of the `./dev` wrapper (runs on the host; see [below](#self-test-of-the-wrapper)). |
 
 `./dev` keeps the caller's folder: called from `tools/check`, the command runs in
 `/work/tools/check`. Run the gate from the repo root; in a workspace folder, `npm run check` is
@@ -39,6 +40,36 @@ The wrapper keeps Compose quiet, so stdout holds only the command's output. Mess
 wrapper and the entrypoint start with `[dev]` and go to stderr, as does the output of an
 automatic `npm ci`. `COMPOSE_PROGRESS=auto ./dev ...` shows Compose's own progress (for example
 an image pull).
+
+### Self-test of the wrapper
+
+The gate runs inside the container, so it cannot test the wrapper that starts the container.
+[`tools/dev-env/self-test.sh`](../tools/dev-env/self-test.sh) does that from outside:
+
+```sh
+tools/dev-env/self-test.sh             # on the host; about half a minute; needs Docker
+```
+
+It prints `ok` or `FAIL` per case and exits 0 only if every case passed. What it covers:
+
+- **exit codes pass through:** 0, 1, 7, 42 from Node, 127 for a command that does not exist,
+  also after `--` and with `-p`;
+- **the output is the command's:** stdout holds nothing else, stderr stays stderr, stdin
+  reaches the command;
+- **where and as whom the command runs:** the caller's folder under `/work`, the host user,
+  inside the container;
+- **usage errors are exit 2,** with the reason on stderr and nothing on stdout; `--help` is
+  exit 0;
+- **`./dev compose`** runs Compose for this checkout and passes a failure on, and plain
+  `docker compose` stops with the message to use `./dev`;
+- **a failing check exits non-zero:** the gate's aggregator on a scratch repo whose only check
+  fails (and exit 0 on one whose check passes), and `./dev npm run check -- <unknown check>` is
+  exit 2 through npm and the wrapper.
+
+It writes only to `.tools/dev-self-test/` (gitignored) and removes the folder when it ends.
+The `-p` case publishes port 4101 for a moment; `WHZ_SELF_TEST_PORT=<port>` picks another.
+**It is not part of the gate** (the gate has no Docker to call). Run it after changing `dev`,
+`compose.yaml` or `tools/dev-env/entrypoint.sh`.
 
 ## The container
 
@@ -137,7 +168,9 @@ A filtered run is for iterating. Only the full `./dev npm run check` is the gate
 
 The tools' checks are plain `node --test`:
 
-- `@whz/check`: tests of the aggregator itself (a failing check fails the gate, and so on).
+- `@whz/check`: tests of the aggregator itself (a failing check fails the gate, and so on), and
+  that every package that runs Vitest takes the shared timeouts (see
+  [TypeScript packages](#typescript-packages)).
 - `@whz/dev-env`: the smoke test of the environment (runs in the container, Node is the pinned
   24.x, runs as the host user, bind-mount files belong to the host user, `node_modules` and the
   npm cache are volumes, dependencies are in sync), the `compose.yaml` lint and the tests of the
@@ -187,8 +220,15 @@ ESLint with typescript-eslint, and Vitest. A package's `check` script chains all
   adds the Node types.
 - **[`eslint.config.js`](../eslint.config.js)** is the one ESLint config. A new package needs no
   change there unless it joins the determinism lint.
-- **Tests** are the `*.test.ts` files in a package's `test` folder, run by Vitest with no config
-  file.
+- **Tests** are the `*.test.ts` files in a package's `test` folder, run by Vitest. Every package
+  has the same small `vitest.config.ts` (copy `packages/det/vitest.config.ts`), which takes its
+  options from [`vitest.shared.ts`](../vitest.shared.ts) in the repo root: a test timeout and a
+  hook timeout of 120 s in place of Vitest's 5 s and 10 s. Several gates can share the Docker VM
+  (worktrees, a studio that bakes), and the tests that bake every fixture, render audio or
+  replay a sim then take several times longer; the limit only ends a test that hangs. A package
+  sets no timeout of its own, and a package that runs Vitest without this config fails the gate
+  (`tools/check/test/vitest-config.test.mjs`). Add `vitest.config.ts` to the `include` of the
+  package's `tsconfig.test.json`.
 - **Asset programs** are not a workspace. The root script `check:assets` typechecks `assets/`
   (`assets/tsconfig.json`), lints the code with ESLint, and runs the asset lints on every asset
   (`asset lint --all --no-write`; the rules are in [asset-pipeline.md](asset-pipeline.md#lint)).
@@ -198,16 +238,26 @@ ESLint with typescript-eslint, and Vitest. A package's `check` script chains all
 Code that must give the same result on every engine and in a later port may not use clocks,
 unseeded randomness or floating-point `Math`: `Math.random`, `Date`, `performance`,
 `Math.sin/cos/tan/exp/log/pow`, `Math.round`, `Math.sqrt` and every other `Math` member except
-the exact integer helpers, `**`, `parseFloat`, timers, `globalThis` and `node:` imports. The
+the exact integer helpers, `**`, `parseFloat`, timers and `globalThis`. It has no back doors
+either: inline `eslint-disable` comments have no effect in these files, and `eval`, `Function`,
+`import()`, `require`, `process`, `import.meta`, Node built-in imports (`fs` and `node:fs`
+alike) and the Node-side entry points of our own packages are banned. The
 replacements are in [`@whz/det`](../packages/det/README.md). The rules and their messages are in
 [`tools/lint/determinism.js`](../tools/lint/determinism.js) (ESLint core rules only), and the
 list of files under them is `DETERMINISTIC` in `eslint.config.js`: today everything in
 `assets/`, `packages/det/src/`, `packages/asset-kit/src/`, `packages/sim/src/`,
-`packages/voxel-kit/src/`, `packages/audio/src/` and `packages/runtime/src/` (for the runtime
-the lint is also what keeps frame callbacks and clocks out: the host passes the time in). Tests,
+`packages/voxel-kit/src/`, `packages/audio/src/`, `packages/runtime/src/` (for the runtime
+the lint is also what keeps frame callbacks and clocks out: the host passes the time in) and
+`packages/game-data/src/` (the pack output must be byte-identical on every machine). Tests,
 build scripts, the Node-side entry points (`src/node/`) and the audio analysis
 (`packages/audio/src/analysis/`, which measures rendered sound in floats) are exempt. A later
-package joins by adding its source glob to that list.
+package joins by adding its source glob to that list. In `packages/sim/src/systems/` a second
+rule set bans importing `createRng` and `Rng`: a system draws only from `ctx.rng`
+([sim.md](sim.md)).
+
+The lint reads syntax, so it cannot see a float literal or a plain `/` division that leaves a
+fraction. What it cannot catch, and the integer checks and golden hashes that guard it instead,
+is in [`tools/lint/README.md`](../tools/lint/README.md).
 
 ## Several checkouts at once (git worktrees)
 
@@ -318,24 +368,35 @@ pattern with higher latencies: single writes up to 273 ms, a 100-file create bur
 219 ms, an append burst up to 700 ms and a scan at 0.11 ms per entry. Replace bursts lost the
 event for 1 to 40 of 100 files there, and in one run a single replace out of 20 was missed.
 
+**A run under load, 2026-10-06** (the same machine, while three full gates ran in three
+checkouts): single writes and the create bursts as in the table (single create up to 52 ms),
+append bursts up to 249 ms, folder bursts up to 437 ms. The three replace bursts saw 98, 81 and
+76 of 100 files, with latencies up to 957 ms. In the third, 24 files had no event under their
+own name, and **3 of those had no event under the temporary name either**: nothing at all
+arrived for them. The reports of the verification runs of 2026-10-02, with more containers
+running, also name events that arrived later than 2 s; this run did not reproduce that.
+
 **What this means:**
 
-- **Native events are reliable for created and modified files and for new folders:** no event
-  was lost in any run, bursts included, and the events arrive well inside the studio's 2 s
-  budget.
-- **A replaced file (write a temp file, then rename it over the target) can lose its event.**
-  In a burst, up to 40 of 100 files got no event under their own name. In the runs that
-  recorded it (all but the first), every such file did get an event under the *temporary* name,
-  in the same folder. Many tools write this way.
-- So a watcher must treat an event as "this folder changed", not as "this file changed": on
-  any event, re-`stat` the files of that folder and compare mtime, size and hash (the pipeline
-  of research/studio-stack.md §2.2 already stats and hashes after the debounce). It must not
-  drop events whose file name it does not know before that rescan.
-- **Polling fallback.** A `stat` from the container saw every host write, replaced files
-  included. If native events turn out unreliable on another machine or Docker version, the
-  studio switches its watcher to polling at a **500 ms interval** (chokidar:
-  `usePolling: true, interval: 500`). At 0.04–0.11 ms per entry, a sweep over 2,000 watched
-  files costs about 0.1–0.2 s of one core, and the worst-case delay stays under the 2 s budget.
+- **Native events were reliable for created and modified files and for new folders:** no such
+  event was lost in any run, bursts included. They usually arrive well inside the studio's 2 s
+  budget, but the latency grows with the load on the Docker VM, and nothing bounds it.
+- **A replaced file (write a temp file, then rename it over the target) can lose its event,**
+  in a burst (up to 40 of 100 files) and also as a single write (1 of 20 in one run). Many
+  tools write this way.
+- **The event under the temporary name is not guaranteed either.** Most files that lose their
+  own event still get one under the temporary name, in the same folder, but under load some
+  get no event at all.
+- So events alone are not enough, in two ways. A watcher must treat an event as "this folder
+  changed", not as "this file changed": on any event, re-`stat` the files of that folder and
+  compare mtime, size and hash (the pipeline of research/studio-stack.md §2.2 already stats and
+  hashes after the debounce), and never drop an event whose file name it does not know. And it
+  **must also rescan or poll on a timer**, because a change can arrive with no event, or with
+  one that is late: a periodic sweep of the watched folders is what bounds the delay.
+- **Polling.** A `stat` from the container saw every host write, replaced files included, in
+  every run. A sweep at a **500 ms interval** (chokidar: `usePolling: true, interval: 500`, or
+  the watcher's own rescan) costs about 0.1–0.2 s of one core for 2,000 watched files at
+  0.04–0.11 ms per entry, and keeps the worst-case delay under the 2 s budget.
   Re-run the probe after a Docker Desktop upgrade.
 
 ## Known limits

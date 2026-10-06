@@ -231,9 +231,21 @@ describe("bakeAll", () => {
 
     const results = await bakeAll(project);
     expect(results.map((result) => result.id)).toEqual(findAssets(project).map((entry) => entry.id));
-    expect(results.length).toBe(15);
-    // A lint defect is still a drawing: only the two that cannot be rendered fail to bake.
-    expect(results.filter((result) => !result.ok).map((result) => result.id)).toEqual(["defects/off-palette", "defects/wrong-frame-size"]);
+    expect(results.length).toBe(18);
+    // A lint defect is still a drawing: only the four whose frames break the contract fail to
+    // bake (two are refused when they render, two when their unchecked frames are hashed and encoded).
+    expect(results.filter((result) => !result.ok).map((result) => result.id)).toEqual([
+      "defects/off-palette",
+      "defects/raw-frame-size",
+      "defects/raw-palette-index",
+      "defects/wrong-frame-size",
+    ]);
+    const raw = (id: string): string => {
+      const result = results.find((candidate) => candidate.id === id);
+      return result !== undefined && !result.ok ? result.error : "baked";
+    };
+    expect(raw("defects/raw-frame-size")).toBe('outputHash: frame 3 of asset "defects/raw-frame-size" is not 20 x 22');
+    expect(raw("defects/raw-palette-index")).toBe("encodeIndexedPng: pixel 1222 has index 200, but the palette has only 17 slots");
 
     const failed = results.find((result) => result.id === "defects/wrong-frame-size");
     expect(failed !== undefined && !failed.ok && failed.error).toMatch(/19 x 22/);

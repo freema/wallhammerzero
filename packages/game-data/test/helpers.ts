@@ -19,6 +19,8 @@ export const here = (path: string): string => fileURLToPath(new URL(path, import
 export const REPO = here("../../../");
 export const EXAMPLE = "games/examples/counter-shop";
 export const FIXTURES = "packages/game-data/test/fixtures/games";
+/** A small assets folder (one palette, three assets) for the pack tests. */
+export const FIXTURE_ASSETS = "packages/game-data/test/fixtures/assets";
 export const GOLDEN_REPLAY = join(REPO, "packages/sim/golden/counter-shop.replay.json");
 export const GOLDEN_DATA = join(REPO, "packages/sim/golden/counter-shop.data.json");
 

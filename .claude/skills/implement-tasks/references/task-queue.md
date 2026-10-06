@@ -29,6 +29,7 @@ git log --diff-filter=D --name-only -- 'tasks/*.md'     # the history of finishe
 | 22 | [Runtime tilemap and scene](2026-10-02-runtime-tilemap-scene.md) | OC-A2-pick | #18, #20 |
 | 34 | [Mobile wrapper](2026-10-02-mobile-wrapper.md) | none (iOS build: OC-B4) | #30, #25, #23 |
 <!-- queue:end (the studio inserts new rows above this line) -->
+<!-- queue:last-number #34 (the highest row number ever given: a new row takes the next one and writes it here) -->
 ```
 
 - **Order** is the priority: the first row that can be taken is taken.
@@ -37,8 +38,9 @@ git log --diff-filter=D --name-only -- 'tasks/*.md'     # the history of finishe
 - **Depends on:** row numbers (`#4`) or note topics (`asset-kit-core`). Text in parentheses is a
   comment. **A dependency is done when its note is gone** (no row, no file).
 - **`#`** is the row's name, used by "Depends on" and by the "queue by track" table. A new row
-  takes the tool's `NEW ROW NUMBER` (one more than every number the README still mentions), so a
-  number that something still points at is never given to another note.
+  takes the tool's `NEW ROW NUMBER` and writes that number into the `queue:last-number` line under
+  the table, in the same commit. The line keeps the highest number ever given (a finished note
+  takes its row with it), so no number is given twice; the gate fails when a row is above it.
 - The `<!-- queue:end … -->` line stays directly under the last row. New rows go above it.
 
 ## The queue tool
@@ -133,8 +135,8 @@ that needs its own pass, a placeholder that must become real.
   the next iteration never hears of it.
 - File: `tasks/<today>-<topic>.md`, in the note format of `tasks/README.md`. `## Origin` names
   the note and the place that surfaced it (`file:line`).
-- Row: above the `queue:end` marker, numbered with the tool's `NEW ROW NUMBER`, Gate and
-  Depends on filled in.
+- Row: above the `queue:end` marker, numbered with the tool's `NEW ROW NUMBER` (write the
+  number into the `queue:last-number` line too), Gate and Depends on filled in.
 - **Never executed in the same commit.** Name it in the report; the queue decides when it runs.
 - Same topic already has a note ⇒ append to that note instead. No duplicates.
 - **Not a way to ship half a task.** The docs, the tests and "the rest of the same feature"

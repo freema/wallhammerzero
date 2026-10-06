@@ -6,7 +6,7 @@
 
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
-import { determinism } from "./tools/lint/determinism.js";
+import { determinism, simSystems } from "./tools/lint/determinism.js";
 
 /**
  * Code that must give the same result on every engine and in a later port: no clocks, no
@@ -21,6 +21,8 @@ const DETERMINISTIC = [
   "packages/runtime/src/**/*.ts",
   "packages/voxel-kit/src/**/*.ts",
   "packages/audio/src/**/*.ts",
+  // The pack output must be byte-identical on every machine: canonical JSON, the two hashes.
+  "packages/game-data/src/**/*.ts",
 ];
 
 /**
@@ -33,6 +35,7 @@ const DETERMINISTIC_EXCEPT = [
   "packages/runtime/src/node/**",
   "packages/audio/src/node/**",
   "packages/audio/src/analysis/**",
+  "packages/game-data/src/node/**",
 ];
 
 const TYPESCRIPT = ["**/*.ts", "**/*.tsx"];
@@ -59,4 +62,6 @@ export default [
     },
   },
   determinism({ files: DETERMINISTIC, ignores: DETERMINISTIC_EXCEPT }),
+  // A sim system has one random stream, the one the kernel gives it (docs/sim.md).
+  simSystems({ files: ["packages/sim/src/systems/**/*.ts"] }),
 ];

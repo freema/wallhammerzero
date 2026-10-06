@@ -27,6 +27,7 @@ async function run(...argv: string[]): Promise<{ code: number; out: string; err:
 const DEFECTS = [
   "area-pop",
   "bad-timing",
+  "bbox-jump",
   "clipped-prop",
   "dark-scene",
   "detached-group",
@@ -35,6 +36,8 @@ const DEFECTS = [
   "orphan-pixel",
   "outline-gap",
   "pivot-jump",
+  "raw-frame-size",
+  "raw-palette-index",
   "too-many-colors",
   "wrong-frame-size",
   "wrong-slot",
@@ -90,7 +93,7 @@ describe("list", () => {
     const result = await run("list", "--json", "--assets", FIXTURES);
     expect(result.code).toBe(0);
     const rows = JSON.parse(result.out) as { id: string; kind: string }[];
-    expect(rows.length).toBe(15);
+    expect(rows.length).toBe(18);
     expect(rows[1]).toEqual({ id: "clean/walker", kind: "sprite", size: [20, 22], clips: [{ name: "walk", frames: 4 }], facings: ["default"], variants: [1], presets: [] });
   });
 });
@@ -124,7 +127,7 @@ describe("bake", () => {
     const result = await run("bake", "--all", "--assets", FIXTURES, "--out", out);
     expect(result.code).toBe(1);
     expect(result.out).toContain('bake defects/wrong-frame-size: FAILED: asset "defects/wrong-frame-size": clip "walk", facing "default", frame 3: render returned 19 x 22, but "size" is 20 x 22');
-    expect(result.out).toMatch(/\n13 asset\(s\) baked, 2 FAILED$/);
+    expect(result.out).toMatch(/\n14 asset\(s\) baked, 4 FAILED$/);
     expect(existsSync(join(out, "assets", "clean", "walker", "atlas.json"))).toBe(true);
     expect(readdirSync(join(out, "assets", "defects", "off-palette"))).toEqual(["error.json"]);
   });
@@ -159,7 +162,10 @@ describe("lint", () => {
     expect(result.code).toBe(1);
     expect(result.out).toContain("  error orphan-pixels  seed 1, 2 walk/default frame 0: 1 orphan pixel(s), 0 allowed: the first is (9, 13) in gold.2, with no pixel of its colour around it");
     expect(result.out).toContain("  error timing  walk frame 1: frame 1 is shown for 5 ms: shorter than 16 ms cannot be seen");
-    expect(result.out).toMatch(/\n2 of 15 asset\(s\) pass the lints$/);
+    expect(result.out).toContain("  error bbox-change  seed 1, 2 walk/default frame 1: the right edge of the bounding box moves 3 px between frames 0 and 1 (2 px allowed)");
+    expect(result.out).toContain("  error frame-size  seed 1, 2 walk/default frame 3: the frame is 19 x 22, but the asset's size is 20 x 22");
+    expect(result.out).toContain('  error palette-index  seed 1, 2 walk/default frame 1: pixel (10, 13) has index 200, but palette "example" has only 17 slots');
+    expect(result.out).toMatch(/\n2 of 18 asset\(s\) pass the lints$/);
     for (const name of DEFECTS) expect(existsSync(join(out, "review", "defects", name, "lint.json")), name).toBe(true);
     expect(existsSync(join(out, "assets"))).toBe(false);
   });
@@ -168,6 +174,30 @@ describe("lint", () => {
     const out = join(temp, "lint-dry");
     expect((await run("lint", "--all", "--assets", FIXTURES, "--out", out, "--no-write")).code).toBe(1);
     expect(existsSync(out)).toBe(false);
+  });
+});
+
+describe("lint: every rule can turn the gate red", () => {
+  // The gate lints the real assets with `lint --all --no-write` (check:assets). Each rule that
+  // has no other fixture is shown here to make that command exit non-zero by itself.
+  it.each([
+    ["bbox-jump", "bbox-change"],
+    ["raw-frame-size", "frame-size"],
+    ["raw-palette-index", "palette-index"],
+  ])("defects/%s alone: exit code 1, and every error is the rule %s", async (name, rule) => {
+    const result = await run("lint", `defects/${name}`, "--assets", FIXTURES, "--no-write");
+    expect(result.code).toBe(1);
+    const errors = result.out.split("\n").filter((line) => line.startsWith("  error "));
+    expect(errors.length).toBeGreaterThan(0);
+    for (const line of errors) expect(line.startsWith(`  error ${rule}  `), line).toBe(true);
+    expect(result.out).toMatch(/\n0 of 1 asset\(s\) pass the lints$/);
+  });
+
+  it("the real entry point exits 1 on each of them", () => {
+    for (const name of ["bbox-jump", "raw-frame-size", "raw-palette-index"]) {
+      const result = spawnSync(process.execPath, [BIN, "lint", `defects/${name}`, "--assets", FIXTURES, "--no-write"], { cwd: REPO, encoding: "utf8" });
+      expect([name, result.status]).toEqual([name, 1]);
+    }
   });
 });
 
@@ -201,7 +231,7 @@ describe("review", () => {
     const defects = await run("review", "--pack", "defects/", "--assets", FIXTURES, "--out", out);
     expect(defects.code).toBe(1);
     expect(defects.out).toContain("  ERROR defects/off-palette: ");
-    // 13 rows of walkers at 8x do not fit one image: the sheet has two pages.
+    // The rows of walkers at 8x do not fit one image: the sheet has two pages.
     expect(readdirSync(join(out, "review", "defects")).sort()).toEqual(["pack-1.png", "pack-2.png"]);
     const none = await run("review", "--pack", "nothing", "--assets", FIXTURES, "--out", out);
     expect(none.code).toBe(1);

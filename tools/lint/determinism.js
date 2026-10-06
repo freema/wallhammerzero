@@ -17,9 +17,18 @@
 //   Intl, localeCompare, toLocale*       compare ASCII ids with < and > (compareId in @whz/sim)
 //   fetch, storage, document, navigator  nothing: I/O is the host's job (host adapters)
 //   globalThis, window, self, global     a back door to all of the above
-//   node:* imports                       an asset program or a sim system does no I/O
+//   eval, Function, import(), require    code made or loaded at run time: the lint cannot read it
+//   process, import.meta                 the machine, the environment and the path of the checkout
+//   Node built-ins (fs, node:fs, ...)    an asset program or a sim system does no I/O
+//   <package>/node, .../src/node/...     the Node-side entry points of our own packages: I/O again
 //
-// The root eslint.config.js lists the files it applies to.
+// Inline configuration comments (eslint-disable and the rest) are switched off for these files
+// (`noInlineConfig`), so a rule cannot be silenced next to the line that breaks it.
+//
+// The root eslint.config.js lists the files it applies to. What the lint cannot catch, and
+// what guards that instead, is in README.md beside this file.
+
+import { builtinModules } from "node:module";
 
 /** The members of `Math` that are exact on integers and the same in every engine. */
 export const ALLOWED_MATH = ["abs", "ceil", "clz32", "floor", "imul", "max", "min", "sign", "trunc"];
@@ -64,9 +73,33 @@ const GLOBALS = {
   window: "window reaches Math, Date and the rest without the lint seeing it.",
   self: "self reaches Math, Date and the rest without the lint seeing it.",
   global: "global reaches Math, Date and the rest without the lint seeing it.",
+  eval: "eval runs code the lint cannot read.",
+  Function: "Function makes code from text, which the lint cannot read.",
+  require: "require loads a module at run time: Node built-ins and files the lint cannot see. Use a static import.",
+  process: "process is the machine and its environment (and process.getBuiltinModule reaches every Node built-in). Deterministic code gets everything as arguments.",
 };
 
+/** The Node built-in modules without the `node:` prefix (`fs`, `fs/promises`, `path`, ...). */
+const BARE_BUILTINS = builtinModules.filter((name) => !name.startsWith("node:")).sort();
+
+const NO_IO = "Deterministic code does no I/O and runs unchanged in Node and in the browser.";
+
 const notAllowed = [...ALLOWED_MATH, ...Object.keys(NAMED_MATH)].join("|");
+
+const IMPORT_PATHS = BARE_BUILTINS.map((name) => ({ name, message: `"${name}" is a Node built-in. ${NO_IO} ${HOW}` }));
+
+const IMPORT_PATTERNS = [
+  {
+    group: ["node:*"],
+    message: `${NO_IO} ${HOW}`,
+  },
+  {
+    group: ["@whz/*/node", "@whz/*/node/**", "**/src/node", "**/src/node/**"],
+    message: `This is a Node-side entry point of a package: it reads and writes files. ${NO_IO} ${HOW}`,
+  },
+];
+
+const OWN_STREAM = "A sim system draws from ctx.rng, its own stream, which is in the digest and in every snapshot. A stream it makes itself is in neither.";
 
 /** The rules, for use in any flat config object. */
 export const determinismRules = {
@@ -105,18 +138,16 @@ export const determinismRules = {
       selector: "BinaryExpression[operator='**'], AssignmentExpression[operator='**=']",
       message: `** is Math.pow, which engines may round differently. Multiply, or use a table from @whz/det. ${HOW}`,
     },
-  ],
-  "no-restricted-imports": [
-    "error",
     {
-      patterns: [
-        {
-          group: ["node:*"],
-          message: `Deterministic code does no I/O and runs unchanged in Node and in the browser. ${HOW}`,
-        },
-      ],
+      selector: "ImportExpression",
+      message: `import() loads a module at run time: the lint cannot see what it is, and it can be a Node built-in. Use a static import at the top of the file. ${HOW}`,
+    },
+    {
+      selector: "MetaProperty[meta.name='import'][property.name='meta']",
+      message: `import.meta is the path of the checkout and the host's module loader: the result would differ between machines. ${HOW}`,
     },
   ],
+  "no-restricted-imports": ["error", { paths: IMPORT_PATHS, patterns: IMPORT_PATTERNS }],
 };
 
 /**
@@ -128,6 +159,31 @@ export function determinism({ files, ignores = [] }) {
     name: "whz/determinism",
     files,
     ignores,
+    // No back door: `// eslint-disable-next-line` and every other inline configuration comment
+    // is ignored in these files. A rule that is wrong for a file is changed here, in review.
+    linterOptions: { noInlineConfig: true },
     rules: determinismRules,
+  };
+}
+
+/**
+ * A flat config object for sim systems, on top of `determinism`: a system may not import the
+ * generator of @whz/det, so the only random numbers it has are the draws of `ctx.rng`. Put it
+ * after `determinism(...)` in the config: it replaces the import rule with a stricter one.
+ * @param {{ files: string[] }} options
+ */
+export function simSystems({ files }) {
+  return {
+    name: "whz/determinism-sim-systems",
+    files,
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [...IMPORT_PATHS, { name: "@whz/det", importNames: ["createRng", "Rng"], message: `${OWN_STREAM} ${HOW}` }],
+          patterns: [...IMPORT_PATTERNS, { group: ["**/det/src/**"], message: `Import @whz/det by its name. ${OWN_STREAM} ${HOW}` }],
+        },
+      ],
+    },
   };
 }

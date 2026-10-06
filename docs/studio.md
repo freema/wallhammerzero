@@ -140,9 +140,13 @@ Both sit in front of the whole app, so a route added later is covered without do
   `-H "Origin: http://127.0.0.1:4100"`).
 
 In dev mode Vite also serves source files to the browser (its `/@fs/` URLs). It may serve only
-`packages/studio` and `node_modules` (`server.fs.allow` in `packages/studio/vite.config.ts`),
-not the rest of the checkout. A note that imports another workspace package into browser code
-adds that package's folder there.
+`packages/studio`, `node_modules` and the four workspace packages the browser side is built
+from (`packages/runtime`, `packages/asset-kit`, `packages/voxel-kit`, `packages/det`); the list
+is `server.fs.allow` in `packages/studio/vite.config.ts`. A workspace package is a symlink in
+`node_modules` that Vite serves from its real folder, so each one is named there. The rest of
+the checkout (the task notes, `CLAUDE.md`, the other packages, the tools) is refused with 403.
+A note that imports another workspace package into browser code adds that package's folder to
+the list and to `packages/studio/test/dev-server.test.ts`.
 
 ## Checks
 
@@ -155,7 +159,10 @@ typecheck of the app and of the server, ESLint, a production build, and the test
   HTTP;
 - `server.test.ts`: the real `server.ts` as a process in production mode over the fixture
   assets, read through its HTML: the gallery lists every asset, the broken fixture is an error
-  card, the filters and zooms, the asset page, the dashboard and **Bake all**.
+  card, the filters and zooms, the asset page, the dashboard and **Bake all**;
+- `dev-server.test.ts`: the real `server.ts` as a process in dev mode: which source files Vite
+  hands to a browser (the four workspace packages and the studio's own code) and which it
+  refuses (everything else of the checkout).
 
 What only a browser shows (HMR, the console, that images are sharp) is checked in the host's
 Chrome through the Chrome DevTools MCP tools against a studio on a `127.0.0.1` port

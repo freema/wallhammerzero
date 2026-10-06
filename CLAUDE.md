@@ -10,11 +10,15 @@ There are two game types:
 - **Kairosoft-style 2D pixel-art sims**: first.
 - **Voxel games**: later, also rendered as pixel art.
 
-Status: the Docker dev environment and the gate exist
-([docs/dev-environment.md](docs/dev-environment.md)); no engine or studio code yet. The queue for
-the whole studio and engine is in `tasks/` (D23): the studio MVP and the art spikes first, then
-the engine, audio, the rest of the studio and the wrappers. The first real game is parked by the
-owner (D26): don't ask about it.
+Status: the first layer of the engine and the studio exists. Everything runs in Docker through
+`./dev`, and the gate is `./dev npm run check` ([docs/dev-environment.md](docs/dev-environment.md)).
+The code so far: `packages/det`, `packages/asset-kit` (`./dev npm run asset`),
+`packages/voxel-kit`, `packages/sim` (`./dev npm run sim`), `packages/runtime`,
+`packages/game-data` (`./dev npm run game`) with one example game under `games/`,
+`packages/audio` (`./dev npm run audio`) and the studio skeleton with the asset gallery
+(`packages/studio`). There is no player and no real game yet. The rest of the queue is in
+`tasks/` (D23): the studio MVP and the art spikes first, then the engine, audio, the rest of the
+studio and the wrappers. The first real game is parked by the owner (D26): don't ask about it.
 
 Read in this order: [docs/DECISIONS.md](docs/DECISIONS.md) → [tasks/README.md](tasks/README.md) →
 [research/README.md](research/README.md). Where ideas come from and how others do it:

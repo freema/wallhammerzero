@@ -46,7 +46,7 @@ const czech = JSON.parse(new TextDecoder().decode(opened.files.get("locales/cs.j
 | `openGameProject({ root?, games?, assets?, out? })` → `GameProject` | The folders the commands use. Defaults: the current folder, `games`, `assets`, `build`. |
 | `findGames(project)`, `findGame(project, idOrFolder)` → `GameEntry` | The games of a checkout: `{ id, folder, dir }`. A folder with a `game.json` is a game; two games with one id throw. |
 | `validateGameDir(project, entry)` → `{ problems, game }` | Reads the folder, loads the assets the game refers to, validates. |
-| `packGame(project, entry)` → `PackResult` | Validates, bakes the referenced assets, and writes `build/games/<id>/package/` (`packageDir`). What was written is read back and verified. |
+| `packGame(project, entry)` → `PackResult` | Validates, bakes the referenced assets, and writes `build/games/<id>/package/` (`packageDir`): with the palette `game.json` names and the palette of every referenced asset. What was written is read back and verified. |
 | `readPackageDir(dir)`, `writePackageDir(dir, built)` | A package folder as `Map<path, bytes>`, and the writer (empties the folder first, writes `game.json` last). |
 | `readGameFiles(entry)`, `loadCatalog(project, assetIds)` | The two inputs of `validateGame`, from disk. |
 | `runCli(argv, io, commands?)`, `GAME_COMMANDS`, `GameCommand`, `selectGames`, `UsageError` | The `game` CLI as a function, and its command table. |

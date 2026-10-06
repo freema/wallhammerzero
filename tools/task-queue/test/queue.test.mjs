@@ -21,8 +21,12 @@ const here = dirname(fileURLToPath(import.meta.url));
 const cli = join(here, "..", "cli.mjs");
 const repoRoot = join(here, "..", "..", "..");
 
-/** A tasks/README.md with the given rows: [number, file, gate, dependsOn]. */
-function readme(rows, { marker = true } = {}) {
+/**
+ * A tasks/README.md with the given rows: [number, file, gate, dependsOn]. `lastNumber` is the
+ * number in the queue:last-number line: by default the highest row number (as in a README that
+ * was kept right), `null` for a README without the line.
+ */
+function readme(rows, { marker = true, lastNumber = Math.max(1, ...rows.map(([number]) => (Number.isInteger(number) ? number : 0))) } = {}) {
   const lines = [
     "# tasks/",
     "",
@@ -35,6 +39,7 @@ function readme(rows, { marker = true } = {}) {
     ...rows.map(([number, file, gate, dependsOn]) => `| ${number} | [Title of ${slugOf(file)}](${file}) | ${gate} | ${dependsOn} |`),
   ];
   if (marker) lines.push("<!-- queue:end (the studio inserts new rows above this line) -->");
+  if (lastNumber !== null) lines.push(`<!-- queue:last-number #${lastNumber} (the highest row number ever given: a new row takes the next one and writes it here) -->`);
   lines.push("", "### The queue by track", "", "| Track | Notes |", "|---|---|", "| Infra | #1 Docker is done |", "");
   return lines.join("\n");
 }
@@ -75,6 +80,55 @@ test("parseQueue reads the rows, the marker and the next free row number", () =>
   // one more than every number the README mentions, so the number of a finished note is not reused
   assert.equal(parsed.nextNumber, 23);
   assert.equal(parseQueue(readme([[3, "2026-10-02-a.md", "none", "#40"]])).nextNumber, 41);
+});
+
+test("a new row never gets a number that was used before: closing the highest-numbered note gives a fresh number", () => {
+  const rows = [OWNER_CALLS, [34, "2026-10-02-mobile.md", "none", "none"], [35, "2026-10-02-hardening.md", "none", "none"]];
+  const notes = { ...ownerCallsNote, "2026-10-02-mobile.md": note(), "2026-10-02-hardening.md": note() };
+  const before = analyseQueue({ readme: readme(rows), notes });
+  assert.deepEqual(before.warnings, []);
+  assert.equal(before.lastNumber, 35);
+  assert.equal(before.nextNumber, 36);
+
+  // #35 is finished: its note is deleted and its row removed. Nothing else in the README names
+  // #35 any more; only the queue:last-number line remembers it.
+  const closedReadme = readme(rows.slice(0, 2), { lastNumber: 35 });
+  assert.doesNotMatch(closedReadme.replace(/<!-- queue:last-number.*-->/, ""), /35/);
+  const { "2026-10-02-hardening.md": _closed, ...left } = notes;
+  const after = analyseQueue({ readme: closedReadme, notes: left });
+  assert.deepEqual(after.errors, []);
+  assert.deepEqual(after.warnings, []);
+  assert.equal(after.nextNumber, 36, "the number of the closed note must not be given again");
+  assert.match(formatReport(after), /^NEW ROW NUMBER: 36$/m);
+
+  // Closing every note still does not free a number.
+  const empty = analyseQueue({ readme: readme([], { lastNumber: 35 }), notes: {} });
+  assert.equal(empty.nextNumber, 36);
+  // A new row takes 36 and writes it into the line; closing it again gives 37.
+  const next = analyseQueue({ readme: readme([[36, "2026-10-03-new.md", "none", "none"]], { lastNumber: 36 }), notes: { "2026-10-03-new.md": note() } });
+  assert.deepEqual(next.warnings, []);
+  assert.equal(analyseQueue({ readme: readme([], { lastNumber: 36 }), notes: {} }).nextNumber, 37);
+});
+
+test("the queue:last-number line: missing, behind a row, or unreadable is a warning that says what to do", () => {
+  const rows = [[34, "2026-10-02-mobile.md", "none", "none"], [35, "2026-10-02-hardening.md", "none", "none"]];
+  const notes = { "2026-10-02-mobile.md": note(), "2026-10-02-hardening.md": note() };
+
+  const missing = analyseQueue({ readme: readme(rows, { lastNumber: null }), notes });
+  assert.equal(missing.lastNumber, null);
+  assert.equal(missing.nextNumber, 36);
+  assert.match(missing.warnings.join("\n"), /queue:last-number #35 .* line is missing/);
+  assert.match(formatReport(missing), /^WARNING: .*queue:last-number/m);
+
+  const behind = analyseQueue({ readme: readme(rows, { lastNumber: 34 }), notes });
+  assert.equal(behind.nextNumber, 36);
+  assert.match(behind.warnings.join("\n"), /row #35 is above the queue:last-number line \(#34\): set it to #35/);
+
+  const unreadable = analyseQueue({ readme: readme(rows, { lastNumber: null }) + "<!-- queue:last-number thirty-five -->\n", notes });
+  assert.match(unreadable.warnings.join("\n"), /queue:last-number line has no row number/);
+
+  // The line counts wherever the number is highest: a hand-lowered table cannot lower it.
+  assert.equal(analyseQueue({ readme: readme(rows, { lastNumber: 90 }), notes }).nextNumber, 91);
 });
 
 test("a table that cannot be trusted is an error, and nothing is selected from it", () => {
@@ -390,6 +444,10 @@ test("the repo's own queue can be read", () => {
   const analysis = analyseQueue(readQueueFiles(repoRoot));
   assert.deepEqual(analysis.errors, []);
   assert.notEqual(analysis.endMarkerLine, null, "the queue:end marker is in place");
+  assert.notEqual(analysis.lastNumber, null, "the queue:last-number line is in place");
+  assert.deepEqual(analysis.warnings.filter((warning) => warning.includes("queue:last-number")), []);
+  assert.ok(analysis.nextNumber > analysis.lastNumber);
+  for (const row of analysis.rows) assert.ok(row.number <= analysis.lastNumber, `row #${row.number} is above the queue:last-number line`);
   assert.match(formatReport(analysis), /^NEXT: /m);
 });
 

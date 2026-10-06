@@ -5,7 +5,9 @@
 #
 #   -r, --recursive      scan each direct subfolder that has a SKILL.md as its own skill
 #   --name <name>        name of the report files (default: the folder's name)
-#   --out <dir>          where the reports go (default: .tools/skill-intake/reports/<name>/)
+#   --out <dir>          where the reports go (default:
+#                        .tools/skill-intake/reports/<name>-<checksum of the folder's path>/,
+#                        so two sources whose folders have one name never share a report folder)
 #   --baseline <file>    our own baseline of accepted findings (never the skill author's)
 #
 # Writes <name>.json and <name>.md, then prints the counts of the findings.
@@ -21,7 +23,7 @@
 set -eu
 
 usage() {
-  sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 fail() {
@@ -98,7 +100,10 @@ fi
 
 # The scanned folder is never written to: check the report folder before creating it, and
 # again once symlinks are resolved.
-[ -n "$out" ] || out="$root/.tools/skill-intake/reports/$name"
+# The default report folder is unique per scanned source: its name and a checksum of its
+# absolute path. "skills" of one repo and "skills" of another do not overwrite each other, and
+# a second scan of the same folder goes to the same place.
+[ -n "$out" ] || out="$root/.tools/skill-intake/reports/$name-$(printf '%s' "$target" | cksum | cut -d ' ' -f 1)"
 case "$out" in
   /*) ;;
   *) out="$(pwd -P)/$out" ;;

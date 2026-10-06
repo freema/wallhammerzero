@@ -74,6 +74,8 @@ export const BASE = {
     "| 0 | [Owner calls](2026-01-01-owner-calls.md) | owner answers | none |",
     "| 1 | [Build the thing](2026-01-02-build-thing.md) | none | none |",
     "<!-- queue:end (the studio inserts new rows above this line) -->",
+    // Rows up to #9 were given before: #2 to #9 are finished notes, gone from the table.
+    "<!-- queue:last-number #9 (the highest row number ever given: a new row takes the next one and writes it here) -->",
   ),
   "tasks/2026-01-01-owner-calls.md": lines(
     "# OWNER CALLS (2026-01-01)",

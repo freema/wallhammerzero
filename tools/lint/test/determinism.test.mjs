@@ -1,7 +1,9 @@
 // Proves that the determinism lint fires: fixture asset programs that call Math.random() or
 // Math.sin() and a fixture sim system that calls Math.random() fail ESLint, the real assets
 // and packages pass, and each banned construct is caught in every place the root
-// eslint.config.js puts under the lint, and nowhere else.
+// eslint.config.js puts under the lint, and nowhere else. It also proves that the lint has no
+// back door: an inline eslint-disable comment has no effect, and eval, new Function, import()
+// and imports of Node built-ins are refused.
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -39,6 +41,9 @@ const UNDER_LINT = [
   "packages/sim/src/systems/extra.ts",
   "packages/runtime/src/extra.ts",
   "packages/runtime/src/webgl/extra.ts",
+  "packages/voxel-kit/src/extra.ts",
+  "packages/audio/src/extra.ts",
+  "packages/game-data/src/extra.ts",
 ];
 /** Where it does not: tests, scripts and the Node-side loader. */
 const NOT_UNDER_LINT = [
@@ -51,6 +56,14 @@ const NOT_UNDER_LINT = [
   "packages/runtime/test/extra.test.ts",
   "packages/runtime/dev/extra.ts",
   "packages/runtime/src/node/extra.ts",
+  "packages/voxel-kit/test/extra.test.ts",
+  "packages/audio/test/extra.test.ts",
+  "packages/audio/src/node/extra.ts",
+  "packages/audio/src/analysis/extra.ts",
+  "packages/game-data/test/extra.test.ts",
+  "packages/game-data/src/node/extra.ts",
+  "packages/studio/server/extra.ts",
+  "tools/check/extra.ts",
 ];
 
 test("a fixture asset that calls Math.random() fails ESLint", async () => {
@@ -77,6 +90,77 @@ test("a fixture sim system that calls Math.random() fails ESLint", async () => {
   assert.match(messages[0].message, /Math\.random is not seeded\. Use createRng\(seed, stream\)/);
 });
 
+/** The fixtures that try a back door, and the rule and message that must stop each. */
+const BACK_DOORS = {
+  "bad-disable": [["no-restricted-properties", /Math\.random is not seeded/]],
+  "bad-eval": [
+    ["no-restricted-globals", /eval runs code the lint cannot read/],
+    ["no-restricted-globals", /Function makes code from text/],
+  ],
+  "bad-dynamic-import": [["no-restricted-syntax", /import\(\) loads a module at run time/]],
+  "bad-fs-import": [
+    ["no-restricted-imports", /"fs" is a Node built-in/],
+    ["no-restricted-imports", /'node:os' import is restricted.*does no I\/O/],
+  ],
+};
+
+for (const [name, expected] of Object.entries(BACK_DOORS)) {
+  test(`the fixture asset ${name} fails ESLint`, async () => {
+    const messages = await lintAs(`assets/lint-fixtures/${name}/gen.ts`, fixture(name));
+    assert.equal(messages.length, expected.length, JSON.stringify(messages));
+    expected.forEach(([ruleId, pattern], i) => {
+      assert.equal(messages[i].severity, 2);
+      assert.equal(messages[i].ruleId, ruleId);
+      assert.match(messages[i].message, pattern);
+      assert.match(messages[i].message, /tools\/lint\/determinism\.js/);
+    });
+  });
+}
+
+test("the fixture with eslint-disable-next-line is told that the comment has no effect", async () => {
+  const [result] = await eslint.lintText(fixture("bad-disable"), { filePath: join(root, "assets/lint-fixtures/bad-disable/gen.ts") });
+  assert.equal(result.errorCount, 1, JSON.stringify(result.messages));
+  const note = result.messages.find((message) => message.ruleId === null);
+  assert.match(note?.message ?? "", /eslint-disable-next-line' has no effect because you have 'noInlineConfig'/);
+});
+
+test("inline configuration still works outside the lint, and for no rule at all inside it", async () => {
+  const code = "export const x: any = 1; // eslint-disable-line @typescript-eslint/no-explicit-any\n";
+  const lint = async (path) => (await eslint.lintText(code, { filePath: join(root, path) }))[0];
+  for (const path of NOT_UNDER_LINT) {
+    assert.deepEqual((await lint(path)).messages, [], path);
+  }
+  for (const path of UNDER_LINT) {
+    const result = await lint(path);
+    assert.deepEqual(result.messages.filter((message) => message.severity === 2).map((message) => message.ruleId), ["@typescript-eslint/no-explicit-any"], path);
+  }
+});
+
+test("a fixture sim system that makes its own random stream fails ESLint, and only as a system", async () => {
+  const messages = await lintAs("packages/sim/src/systems/own-stream.ts", simFixture("own-stream"));
+  assert.equal(messages.length, 1, JSON.stringify(messages));
+  assert.equal(messages[0].severity, 2);
+  assert.equal(messages[0].ruleId, "no-restricted-imports");
+  assert.match(messages[0].message, /A sim system draws from ctx\.rng, its own stream.*tools\/lint\/determinism\.js/);
+
+  const others = {
+    "the generator class": 'import { Rng } from "@whz/det";\nexport const x = new Rng(1, "a");',
+    "the whole kit as one name": 'import * as det from "@whz/det";\nexport const x = det.createRng(1, "a");',
+    "the generator's file": 'import { createRng } from "../../../det/src/rng.ts";\nexport const x = createRng(1, "a");',
+  };
+  for (const [name, code] of Object.entries(others)) {
+    assert.ok((await lintAs("packages/sim/src/systems/extra.ts", code)).length >= 1, `${name} was not caught`);
+  }
+  // The rest of the kit stays open to a system, and the built-ins stay banned.
+  assert.deepEqual(await lintAs("packages/sim/src/systems/extra.ts", 'import { hash32, mulDivRound } from "@whz/det";\nexport const x = mulDivRound(hash32(1, 2, 3), 1, 2);'), []);
+  assert.equal((await lintAs("packages/sim/src/systems/extra.ts", 'import { readFileSync } from "fs";\nexport const x = readFileSync;')).length, 1);
+  assert.equal((await lintAs("packages/sim/src/systems/extra.ts", 'import { readFileSync } from "node:fs";\nexport const x = readFileSync;')).length, 1);
+  // The kernel makes the streams, and an asset program has no kernel: both may import createRng.
+  for (const path of ["packages/sim/src/kernel.ts", "assets/some-pack/some-asset/gen.ts", "packages/asset-kit/src/extra.ts"]) {
+    assert.deepEqual(await lintAs(path, 'import { createRng } from "@whz/det";\nexport const x = createRng(1, "a").int(6);'), [], path);
+  }
+});
+
 test("the eslint command exits non-zero on the fixtures and zero on the real assets", () => {
   const bin = join(root, "node_modules", "eslint", "bin", "eslint.js");
   const run = (args, input) => spawnSync(process.execPath, [bin, ...args], { cwd: root, input, encoding: "utf8" });
@@ -85,6 +169,11 @@ test("the eslint command exits non-zero on the fixtures and zero on the real ass
     const bad = run(["--stdin", "--stdin-filename", `assets/lint-fixtures/${name}/gen.ts`], fixture(name));
     assert.equal(bad.status, 1, `${name}: ${bad.stdout}${bad.stderr}`);
     assert.match(bad.stdout, /no-restricted-properties/);
+  }
+  for (const [name, expected] of Object.entries(BACK_DOORS)) {
+    const bad = run(["--stdin", "--stdin-filename", `assets/lint-fixtures/${name}/gen.ts`], fixture(name));
+    assert.equal(bad.status, 1, `${name}: ${bad.stdout}${bad.stderr}`);
+    for (const [ruleId] of expected) assert.ok(bad.stdout.includes(ruleId), `${name}: ${bad.stdout}`);
   }
 
   const badSystem = run(["--stdin", "--stdin-filename", "packages/sim/src/systems/bad-random.ts"], simFixture("bad-random"));
@@ -99,8 +188,19 @@ test("the eslint command exits non-zero on the fixtures and zero on the real ass
 });
 
 test("the example asset and the kits are clean under the lint", async () => {
-  const results = await eslint.lintFiles(["assets", "packages/det/src", "packages/asset-kit/src", "packages/sim/src", "packages/runtime/src"]);
+  const results = await eslint.lintFiles([
+    "assets",
+    "packages/det/src",
+    "packages/asset-kit/src",
+    "packages/sim/src",
+    "packages/runtime/src",
+    "packages/voxel-kit/src",
+    "packages/audio/src",
+    "packages/game-data/src",
+  ]);
   assert.ok(results.length >= 10, `only ${results.length} files were linted`);
+  assert.ok(results.some((result) => result.filePath.endsWith("packages/game-data/src/pack.ts")));
+  assert.ok(results.some((result) => result.filePath.endsWith("packages/game-data/src/canonical.ts")));
   assert.ok(results.some((result) => result.filePath.endsWith("assets/examples/blinking-dot/gen.ts")));
   assert.ok(results.some((result) => result.filePath.endsWith("packages/sim/src/kernel.ts")));
   assert.ok(results.some((result) => result.filePath.endsWith("packages/sim/src/systems/counter-shop.ts")));
@@ -153,7 +253,44 @@ const BANNED = {
   "globalThis": "export const x = globalThis.Math.random();",
   "window": "export const x = window.Math.random();",
   "a node: import": 'import { readFileSync } from "node:fs";\nexport const x = readFileSync;',
+  "a Node built-in without the prefix": 'import { readFileSync } from "fs";\nexport const x = readFileSync;',
+  "a Node built-in subpath": 'import { readFile } from "fs/promises";\nexport const x = readFile;',
+  "a Node built-in for its side effect": 'import "child_process";\nexport {};',
+  "a Node built-in re-exported": 'export { readFileSync } from "fs";',
+  "the Node side of a package": 'import { loadAsset } from "@whz/asset-kit/node";\nexport const x = loadAsset;',
+  "the Node side of a package by path": 'import { loadAsset } from "../../asset-kit/src/node/index.ts";\nexport const x = loadAsset;',
+  "eval": 'export const x = eval("1 + 1") as number;',
+  "eval called indirectly": 'export const x = (0, eval)("1 + 1") as number;',
+  "new Function": 'export const x = new Function("return 1")() as number;',
+  "Function without new": 'export const x = Function("return 1")() as number;',
+  "a dynamic import": 'export const x = await import("./other.ts");',
+  "a dynamic import of a built-in": 'export async function f(): Promise<unknown> {\n  return import("node:fs");\n}',
+  "import.meta": "export const x = import.meta.url;",
+  "process": 'export const x = process.env["HOME"];',
+  "process.getBuiltinModule": 'export const x = process.getBuiltinModule("fs");',
+  "require": 'export const x = require("fs") as unknown;',
 };
+
+/** Every way to write an inline configuration comment that would silence `Math.random()`. */
+const INLINE_CONFIG = {
+  "eslint-disable-next-line": "// eslint-disable-next-line\nexport const x = Math.random();",
+  "eslint-disable-next-line with the rule": "// eslint-disable-next-line no-restricted-properties\nexport const x = Math.random();",
+  "eslint-disable-line": "export const x = Math.random(); // eslint-disable-line",
+  "a block eslint-disable": "/* eslint-disable */\nexport const x = Math.random();",
+  "a block eslint-disable with the rule": "/* eslint-disable no-restricted-properties */\nexport const x = Math.random();",
+  "a rule set to off": '/* eslint no-restricted-properties: "off" */\nexport const x = Math.random();',
+};
+
+test("an inline configuration comment silences nothing wherever the lint applies", async () => {
+  for (const path of UNDER_LINT) {
+    for (const [name, code] of Object.entries(INLINE_CONFIG)) {
+      const messages = await lintAs(path, code);
+      assert.equal(messages.length, 1, `${name} in ${path}: ${JSON.stringify(messages)}`);
+      assert.equal(messages[0].severity, 2, `${name} in ${path}`);
+      assert.match(messages[0].message, /Math\.random is not seeded/);
+    }
+  }
+});
 
 test("every banned construct is caught wherever the lint applies", async () => {
   for (const path of UNDER_LINT) {
@@ -191,6 +328,8 @@ test("exact integer code passes: the allowed Math helpers, integer operators, @w
   ];
   for (const path of UNDER_LINT) {
     for (const code of allowed) {
+      // A sim system has ctx.rng and may not make a stream (the test above).
+      if (path.startsWith("packages/sim/src/systems/") && code.includes("createRng")) continue;
       assert.deepEqual(await lintAs(path, code), [], `${JSON.stringify(code)} in ${path}`);
     }
   }

@@ -8,7 +8,7 @@
 // in a sheet of these walkers, to measure at which zoom a model sees them.
 
 import { compose, defineAsset, IndexedBuffer, parsePalette } from "@whz/asset-kit";
-import type { AnyAsset, Layer, LintConfig } from "@whz/asset-kit";
+import type { AnyAsset, Layer, LintConfig, RenderRequest } from "@whz/asset-kit";
 import paletteJson from "../../../../assets/palettes/example.json" with { type: "json" };
 
 export const WALKER_DEFECTS = [
@@ -22,6 +22,7 @@ export const WALKER_DEFECTS = [
   "area-pop", // one frame is much larger than its neighbours
   "loop-seam", // the clip drifts and snaps back at the loop
   "clipped-prop", // a staff leaves the frame in one pose
+  "bbox-jump", // a staff is thrust out sideways for one frame
   "bad-timing", // a frame that is shown for 5 ms
   "wrong-frame-size", // one frame has another size than the meta says
   "off-palette", // an index the palette does not have
@@ -111,7 +112,14 @@ export function describeDefect(defect: WalkerDefect, pick = 0): string {
 export function makeWalker(id: string, defect: WalkerDefect | null = null, pick = 0): AnyAsset {
   const wrong = defect === "wrong-slot" ? (WRONG_SLOTS[pick % WRONG_SLOTS.length] as (typeof WRONG_SLOTS)[number]) : null;
   const swap = (slot: number, part: string): number => (wrong !== null && wrong.part === part && wrong.from === slot ? palette.slot(wrong.to) : slot);
-  const lint: LintConfig = { allowedSlots: ALLOWED, ...(defect === "too-many-colors" ? { maxColors: 6 } : {}) };
+  const lint: LintConfig = {
+    allowedSlots: ALLOWED,
+    ...(defect === "too-many-colors" ? { maxColors: 6 } : {}),
+    // The walker fills half of its 20 px frame, so no prop can move an edge by the default 25 %
+    // (5 px) and stay inside the frame. This asset allows itself 10 % (2 px), as a small
+    // character would; the clean walk stays inside that.
+    ...(defect === "bbox-jump" ? { maxBboxChange: 10 } : {}),
+  };
 
   return defineAsset({
     id,
@@ -145,6 +153,11 @@ export function makeWalker(id: string, defect: WalkerDefect | null = null, pick 
         const top = frame === 1 ? -2 : 4;
         layers.push({ part: new IndexedBuffer(2, 15).fill(0, 0, 2, 15, SHOE), x: 16, y: top });
       }
+      if (defect === "bbox-jump" && frame === 1) {
+        // A short staff in the right hand, thrust out sideways in this frame only: the right
+        // edge of the bounding box moves 3 px and comes back.
+        layers.push({ part: new IndexedBuffer(3, 2).fill(0, 0, 3, 2, SHOE), x: 15, y: 13 });
+      }
       layers.push(
         { part: leg(lifted === "left", swap(SHOE, "legs")), x: 7, y: 16 },
         { part: leg(lifted === "right", swap(SHOE, "legs")), x: 11, y: 16 },
@@ -171,4 +184,30 @@ export function makeWalker(id: string, defect: WalkerDefect | null = null, pick 
       return out;
     },
   });
+}
+
+/**
+ * An asset whose frames skip the kit's contract check. `defineAsset` checks every frame it
+ * renders (its size, its indices), so a program that breaks the contract fails with the rule
+ * `render`. An Asset object that a caller builds itself has no such check: then the lint's own
+ * rules `frame-size` and `palette-index` are what catches a bad frame. This wraps a defined
+ * asset in such an object; `change` gets every checked frame and may return anything.
+ */
+export function withUncheckedFrames(asset: AnyAsset, change: (frame: IndexedBuffer, request: RenderRequest) => IndexedBuffer): AnyAsset {
+  const raw: AnyAsset = {
+    format: asset.format,
+    meta: asset.meta,
+    palette: asset.palette,
+    params: asset.params,
+    presets: asset.presets,
+    variantSeeds: asset.variantSeeds,
+    reviewSeeds: asset.reviewSeeds,
+    stampFiles: asset.stampFiles,
+    stampsBound: asset.stampsBound,
+    lint: asset.lint,
+    resolveParams: (choice) => asset.resolveParams(choice),
+    render: (request) => change(asset.render(request), request),
+    withStamps: () => raw,
+  };
+  return raw;
 }

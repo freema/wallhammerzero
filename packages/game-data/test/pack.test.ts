@@ -4,6 +4,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fnv1a64Hex } from "@whz/det";
+import { paletteHash, parsePalette } from "@whz/asset-kit";
 import { decodePng } from "@whz/asset-kit/node";
 import { canonicalJson, checkReplay, createSim, hashSimData } from "@whz/sim";
 import type { SimData } from "@whz/sim";
@@ -22,9 +23,9 @@ import {
   validateGame,
 } from "../src/index.ts";
 import type { PackageManifest } from "../src/index.ts";
-import { findGame, packageDir, packGame, readPackageDir } from "../src/node/index.ts";
+import { findGame, openGameProject, packageDir, packGame, readPackageDir } from "../src/node/index.ts";
 import type { GameProject, PackResult } from "../src/node/index.ts";
-import { CATALOG, exampleCopy, GOLDEN_DATA, GOLDEN_REPLAY, mini, replaceInFile, scratch, TEST_SLOTS } from "./helpers.ts";
+import { CATALOG, exampleCopy, FIXTURE_ASSETS, GOLDEN_DATA, GOLDEN_REPLAY, mini, replaceInFile, REPO, scratch, TEST_SLOTS } from "./helpers.ts";
 
 type Packed = Extract<PackResult, { ok: true }>;
 
@@ -193,6 +194,64 @@ describe("assets in the package", () => {
 
     const again = await packGame(project, entry, options);
     expect(sameBytes(readPackageDir((again as Packed).dir), files)).toBe(true);
+  });
+
+  it("packs the palette of every asset the game refers to, not only the palette game.json names", async () => {
+    // The game's palette is `example`; the crate is drawn with `voxel-example`.
+    const view = { bindings: [{ kind: "student", sprite: "examples/blinking-dot", clip: "blink" }, { kind: "tourist", sprite: "examples/voxel-crate", clip: "idle" }] };
+    const project = exampleCopy(dir, (game) => writeFileSync(join(game, "view.json"), JSON.stringify(view)));
+    const entry = findGame(project, "counter-shop");
+    const result = await packGame(project, entry, options);
+    expect(result.ok).toBe(true);
+    const { manifest } = result as Packed;
+    const files = readPackageDir((result as Packed).dir);
+
+    expect(manifest.palette).toBe("example");
+    const palettes = manifest.assetManifest.files.filter((file) => file.kind === "palette");
+    expect(palettes.map((file) => file.path)).toEqual(["palettes/example.json", "palettes/voxel-example.json"]);
+    for (const file of palettes) {
+      const bytes = files.get(file.path) as Uint8Array;
+      expect([file.path, file.bytes, file.hash]).toEqual([file.path, bytes.length, contentHash(bytes)]);
+    }
+
+    // The packed palette is the file under assets/palettes, and the one the packed atlas was baked with.
+    const packed = JSON.parse(utf8Text(files.get("palettes/voxel-example.json") as Uint8Array)) as unknown;
+    expect(packed).toEqual(JSON.parse(readFileSync(join(REPO, "assets/palettes/voxel-example.json"), "utf8")));
+    for (const [asset, palette] of [["examples/blinking-dot", "example"], ["examples/voxel-crate", "voxel-example"]] as const) {
+      const atlas = JSON.parse(utf8Text(files.get(`assets/${asset}/atlas.json`) as Uint8Array)) as { palette: { id: string; hash: string } };
+      const file = parsePalette(JSON.parse(utf8Text(files.get(`palettes/${palette}.json`) as Uint8Array)));
+      expect([asset, atlas.palette.id, atlas.palette.hash]).toEqual([asset, palette, paletteHash(file)]);
+    }
+
+    // Without the crate the second palette is not packed: a package holds what the game uses.
+    const plain = await pack(exampleCopy(scratch("pack-one-palette")));
+    expect(plain.manifest.assetManifest.files.filter((file) => file.kind === "palette").map((file) => file.path)).toEqual(["palettes/example.json"]);
+
+    const again = await packGame(project, entry, options);
+    expect(sameBytes(readPackageDir((again as Packed).dir), files)).toBe(true);
+    expect(openPackage(files).problems).toEqual([]);
+  });
+
+  it("refuses an asset whose palette has no file, or is not the file of its id", async () => {
+    // A project whose assets folder is test/fixtures/assets: one palette file, three small assets.
+    const withSprite = (sprite: string): GameProject => {
+      const view = { bindings: [{ kind: "student", sprite, clip: "idle" }] };
+      const copy = exampleCopy(dir, (game) => writeFileSync(join(game, "view.json"), JSON.stringify(view)));
+      return openGameProject({ root: REPO, games: copy.gamesDir, assets: FIXTURE_ASSETS, out: copy.outDir });
+    };
+    const problems = async (sprite: string): Promise<string[]> => {
+      const project = withSprite(sprite);
+      const result = await packGame(project, findGame(project, "counter-shop"), options);
+      return result.ok ? [] : result.problems.map((problem) => `${problem.file}: ${problem.message} [${problem.rule}]`);
+    };
+
+    expect(await problems("odd/fine")).toEqual([]);
+    expect(await problems("odd/no-file")).toEqual([
+      `${FIXTURE_ASSETS}/odd/no-file/gen.ts: the asset "odd/no-file" is drawn with the palette "ghost", and ${FIXTURE_ASSETS}/palettes/ghost.json does not exist: a package holds the palette of every asset [ref]`,
+    ]);
+    expect(await problems("odd/other-colors")).toEqual([
+      `${FIXTURE_ASSETS}/odd/other-colors/gen.ts: the asset "odd/other-colors" is drawn with a palette "example" that is not ${FIXTURE_ASSETS}/palettes/example.json (other slots or colours) [ref]`,
+    ]);
   });
 
   it("does not pack a game that refers to a clip the asset does not have", async () => {

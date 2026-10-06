@@ -1,5 +1,6 @@
-// The lints: every defect fixture fails with its own rule and nothing else, the clean
-// fixtures and the example asset pass, and the numbers in the stats tables are right.
+// The lints: every defect fixture fails with its own rule and nothing else, every rule has
+// such a fixture, the clean fixtures and the example asset pass, and the numbers in the stats
+// tables are right.
 
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -50,6 +51,7 @@ function framesWith(asset: AnyAsset, replace: number, buffer: IndexedBuffer): Re
 const DEFECT_RULE: Record<string, LintRule> = {
   "area-pop": "area-change",
   "bad-timing": "timing",
+  "bbox-jump": "bbox-change",
   "clipped-prop": "fits-frame",
   "dark-scene": "scene-luminance",
   "detached-group": "detached-groups",
@@ -58,6 +60,8 @@ const DEFECT_RULE: Record<string, LintRule> = {
   "orphan-pixel": "orphan-pixels",
   "outline-gap": "outline-gaps",
   "pivot-jump": "baseline-drift",
+  "raw-frame-size": "frame-size",
+  "raw-palette-index": "palette-index",
   "too-many-colors": "color-count",
   "wrong-frame-size": "render",
   "wrong-slot": "allowed-slots",
@@ -85,6 +89,25 @@ describe("the defect fixtures (test/lint-fixtures)", () => {
     const result = await lintToDisk(project, findAsset(project, id), { write: false });
     expect(result.ok).toBe(true);
     expect(result.report?.findings).toEqual([]);
+  });
+
+  it("every lint rule has a defect fixture that fails with it", () => {
+    expect(LINT_RULES.filter((rule) => !Object.values(DEFECT_RULE).includes(rule))).toEqual([]);
+  });
+
+  it("frames that break the contract have no output hash, and are reported once, by their own rule", async () => {
+    for (const [name, message] of [
+      ["raw-frame-size", "the frame is 19 x 22, but the asset's size is 20 x 22"],
+      ["raw-palette-index", 'pixel (10, 13) has index 200, but palette "example" has only 17 slots'],
+    ] as const) {
+      const result = await lintToDisk(project, findAsset(project, `defects/${name}`), { write: false });
+      const report = result.report as LintReport;
+      expect(report.findings.map((finding) => [finding.rule, finding.seed, finding.message])).toEqual([
+        [DEFECT_RULE[name], 1, message],
+        [DEFECT_RULE[name], 2, message],
+      ]);
+      expect(report.subjects.map((subject) => subject.outputHash)).toEqual([null, null]);
+    }
   });
 
   it("every lintable walker defect has a fixture (twinned arms are for eyes only)", () => {

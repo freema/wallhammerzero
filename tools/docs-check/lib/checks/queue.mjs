@@ -1,6 +1,7 @@
 // The work queue is consistent: every note in tasks/ has exactly one row in the Queue table
-// of tasks/README.md, every row has a note, the `queue:end` marker closes the table, and every
-// note follows the note format. The format is not repeated here: the header labels and the
+// of tasks/README.md, every row has a note, the `queue:end` marker closes the table, the
+// `queue:last-number` line under it is not behind any row, and every note follows the note
+// format. The format is not repeated here: the header labels and the
 // sections are read from the template under "## Note format" in tasks/README.md.
 
 import { posix } from "node:path";
@@ -12,6 +13,10 @@ const NOTE_NAME = /^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 const TITLE = /^# \S.* \(\d{4}-\d{2}-\d{2}\)$/;
 // The marker is a line of its own; a sentence that only mentions it is not the marker.
 const MARKER = /^\s*<!--\s*queue:end\b/;
+// The highest row number ever given: `<!-- queue:last-number #35 (...) -->`, right under the
+// end marker. A finished note takes its row with it, so only this line keeps a closed note's
+// number from being given to a new row (tools/task-queue/queue.mjs reads it).
+const LAST_NUMBER = /^\s*<!--\s*queue:last-number\b(?:\s+#(\d+)\b)?/;
 /** The owner-calls note lists calls, not a task: it needs the header line and the first section only. */
 export const OWNER_CALLS = /-owner-calls\.md$/;
 
@@ -89,6 +94,26 @@ export function checkQueue(ctx) {
     fail(README, marker, "the queue:end marker must be on the line right after the last row of the Queue table");
   }
 
+  // The queue:last-number line: once, right under the end marker, with a number.
+  const lastNumberLines = readme.lines.flatMap((line, index) => (!readme.fenced[index] && LAST_NUMBER.test(line) ? [index + 1] : []));
+  /** @type {number | null} */
+  let lastNumber = null;
+  if (heading !== undefined && lastNumberLines.length === 0) {
+    fail(
+      README,
+      marker ?? heading.line,
+      "the `<!-- queue:last-number #N ... -->` line is missing (right after the queue:end marker): it holds the highest row number ever given, so a new row never reuses one",
+    );
+  }
+  for (const line of lastNumberLines.slice(1)) fail(README, line, `a second queue:last-number line (the first is on line ${lastNumberLines[0]})`);
+  if (lastNumberLines.length > 0) {
+    const line = lastNumberLines[0];
+    const number = LAST_NUMBER.exec(readme.lines[line - 1])?.[1];
+    if (number === undefined) fail(README, line, "the queue:last-number line needs a row number, like `<!-- queue:last-number #35 ... -->`");
+    else lastNumber = Number(number);
+    if (marker !== undefined && line !== marker + 1) fail(README, line, "the queue:last-number line must be on the line right after the queue:end marker");
+  }
+
   // Rows: each links to one note in tasks/, and no number or note appears twice.
   const notes = taskNotes(ctx);
   /** @type {Map<string, number>} */
@@ -102,7 +127,12 @@ export function checkQueue(ctx) {
       if (!/^\d+$/.test(number)) fail(README, row.line, `the "#" of a queue row must be a number, not "${number}"`);
       else if (rowOfNumber.has(number)) {
         fail(README, row.line, `queue row #${number} appears twice (first on line ${rowOfNumber.get(number)})`);
-      } else rowOfNumber.set(number, row.line);
+      } else {
+        rowOfNumber.set(number, row.line);
+        if (lastNumber !== null && Number(number) > lastNumber) {
+          fail(README, row.line, `queue row #${number} is above the queue:last-number line (#${lastNumber}): a new row writes its number there, so no number is given twice`);
+        }
+      }
 
       const target = /\[[^\]]*\]\(([^)\s]+)\)/.exec(row.cells[noteColumn] ?? "")?.[1];
       const note = target === undefined ? null : normalize(posix.join("tasks", target.replace(/[#?].*$/, "")));

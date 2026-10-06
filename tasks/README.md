@@ -68,6 +68,11 @@ dependencies are done. The studio MVP and the art spikes (#1–#14, D22) go firs
 studio and the engine follow (D23). The gate checks this table against the notes in `tasks/`,
 and every note against the format above ([docs/docs-check.md](../docs/docs-check.md)).
 
+**A row number is never given twice.** A finished note takes its row with it, so the line
+under the table (`queue:last-number`) keeps the highest number ever given. A new row takes the
+tool's `NEW ROW NUMBER` and writes that number into the line, in the same commit. The gate fails
+when a row is above the line or the line is missing.
+
 | # | Note | Gate | Depends on |
 |---|---|---|---|
 | 0 | [Owner calls](2026-10-02-owner-calls.md) | owner answers | none |
@@ -93,8 +98,8 @@ and every note against the format above ([docs/docs-check.md](../docs/docs-check
 | 32 | [Sim conformance on QuickJS](2026-10-02-sim-conformance-quickjs.md) | none | #17 |
 | 33 | [Desktop wrapper](2026-10-02-desktop-wrapper.md) | none | #30, #23 |
 | 34 | [Mobile wrapper](2026-10-02-mobile-wrapper.md) | none (iOS build: OC-B4) | #30, #25, #23 |
-| 35 | [Hardening after the first waves](2026-10-02-hardening-after-first-waves.md) | none | none |
 <!-- queue:end (the studio inserts new rows above this line) -->
+<!-- queue:last-number #35 (the highest row number ever given: a new row takes the next one and writes it here) -->
 
 ### The queue by track
 

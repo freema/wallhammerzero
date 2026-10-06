@@ -5,15 +5,24 @@
 // Rules (tasks/README.md, "Queue"): the table order is the priority. A note is taken when its
 // gate is open and its dependencies are done. A dependency is done when its note is gone: a
 // finished note is deleted and its row removed in the commit that did the work.
+//
+// Row numbers are never given twice. A finished note takes its row with it, so the table alone
+// forgets the highest number once that note is closed. The line under the table remembers it:
+//   <!-- queue:last-number #35 (...) -->
+// A new row takes NEW ROW NUMBER (one more than every number the README mentions, this line
+// included) and writes its number into that line. The docs check (the gate) fails when a row is
+// above the line or the line is gone.
 
 export const QUEUE_END_MARKER = "<!-- queue:end";
+export const QUEUE_LAST_NUMBER_MARKER = "<!-- queue:last-number";
+const LAST_NUMBER_LINE = /^\s*<!--\s*queue:last-number\b(?:\s+#(\d+)\b)?/;
 
 const HEADER_CELLS = ["#", "note", "gate", "depends on"];
 const DATE_PREFIX = /^\d{4}-\d{2}-\d{2}-/;
 
 /**
  * @typedef {{number: number, title: string, file: string, gate: string, dependsOn: string, line: number}} QueueRow
- * @typedef {{rows: QueueRow[], errors: string[], warnings: string[], endMarkerLine: number | null, nextNumber: number}} ParsedQueue
+ * @typedef {{rows: QueueRow[], errors: string[], warnings: string[], endMarkerLine: number | null, lastNumber: number | null, nextNumber: number}} ParsedQueue
  */
 
 /** "2026-10-02-sim-core.md" or "tasks/2026-10-02-sim-core.md" → "sim-core" */
@@ -55,14 +64,32 @@ export function parseQueue(readme) {
   const rows = [];
   let endMarkerLine = null;
 
+  // The highest number ever given, from the queue:last-number line (see the top of this file).
+  /** @type {number | null} */
+  let lastNumber = null;
+  let lastNumberLines = 0;
+  for (const line of lines) {
+    const match = LAST_NUMBER_LINE.exec(line);
+    if (match === null) continue;
+    lastNumberLines += 1;
+    if (match[1] !== undefined) lastNumber = Math.max(lastNumber ?? -1, Number(match[1]));
+  }
+
   const mentioned = [...readme.matchAll(/#(\d+)\b/g)].map((match) => Number(match[1]));
-  const result = () => ({
-    rows,
-    errors,
-    warnings,
-    endMarkerLine,
-    nextNumber: Math.max(-1, ...mentioned, ...rows.map((row) => row.number)) + 1,
-  });
+  const result = () => {
+    const highestRow = Math.max(-1, ...rows.map((row) => row.number));
+    const nextNumber = Math.max(-1, lastNumber ?? -1, ...mentioned, highestRow) + 1;
+    if (lastNumberLines === 0) {
+      warnings.push(
+        `the "${QUEUE_LAST_NUMBER_MARKER} #${nextNumber - 1} ... -->" line is missing under the queue:end marker: without it the number of a closed note can be given again`,
+      );
+    } else if (lastNumber === null) {
+      warnings.push(`the queue:last-number line has no row number: write it as "${QUEUE_LAST_NUMBER_MARKER} #${nextNumber - 1} ... -->"`);
+    } else if (highestRow > lastNumber) {
+      warnings.push(`row #${highestRow} is above the queue:last-number line (#${lastNumber}): set it to #${highestRow}, so the number is never given again`);
+    }
+    return { rows, errors, warnings, endMarkerLine, lastNumber, nextNumber };
+  };
 
   const heading = lines.findIndex((line) => /^##\s+Queue\s*$/.test(line));
   if (heading < 0) {
@@ -342,6 +369,8 @@ export function analyseQueue({ readme, notes }) {
     ownerCallsNote: rows.find((row) => row.state === "owner-calls")?.path ?? null,
     orphans,
     endMarkerLine: parsed.endMarkerLine,
+    /** the highest row number ever given (the queue:last-number line), or null without the line */
+    lastNumber: parsed.lastNumber,
     nextNumber: parsed.nextNumber,
   };
 }

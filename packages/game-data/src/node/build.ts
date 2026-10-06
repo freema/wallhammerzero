@@ -2,9 +2,10 @@
 // functions, so a package built from the studio is byte for byte the package of the command
 // line.
 
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { bakeAsset, parsePalette } from "@whz/asset-kit";
+import { bakeAsset, paletteHash, parsePalette } from "@whz/asset-kit";
+import type { Palette } from "@whz/asset-kit";
 import { encodeIndexedPng, loadEntry, sourceHash } from "@whz/asset-kit/node";
 import type { SystemDef } from "@whz/sim";
 import {
@@ -48,25 +49,24 @@ export type PackResult =
 const message = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
 /**
- * The files of a package that come from outside the game: the palettes it names, and the baked
- * atlas and sheets of every asset it refers to. The per-frame PNGs of a bake are not packed: a
- * player draws from the sheets.
+ * The files of a package that come from outside the game: the baked atlas and sheets of every
+ * asset it refers to, and the palettes: the one game.json names and the palette of every one of
+ * those assets (an asset is drawn with its own palette, which need not be the game's). The
+ * per-frame PNGs of a bake are not packed: a player draws from the sheets.
  */
 async function externalFiles(project: GameProject, game: { palettes: readonly string[]; assets: readonly string[] }, problems: Problem[]): Promise<ExternalFile[]> {
   const out: ExternalFile[] = [];
   const fail = (file: string, text: string): void => {
     problems.push({ file: shownPath(project, file), line: 0, col: 0, path: "", rule: "ref", message: text });
   };
-  for (const id of game.palettes) {
-    const file = join(project.assetsDir, "palettes", `${id}.json`);
-    try {
-      const value = nodeValue(parseJson(new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(readFileSync(file))));
-      parsePalette(value);
-      out.push({ path: `palettes/${id}.json`, kind: "palette", bytes: canonicalBytes(value) });
-    } catch (error) {
-      fail(file, `the palette cannot be packed: ${message(error)}`);
-    }
-  }
+  const paletteFile = (id: string): string => join(project.assetsDir, "palettes", `${id}.json`);
+  const readPalette = (id: string): { value: unknown; palette: Palette } => {
+    const value = nodeValue(parseJson(new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(readFileSync(paletteFile(id)))));
+    return { value, palette: parsePalette(value) };
+  };
+
+  /** The palettes to pack, and for the palette of an asset: the asset and the colours it was drawn with. */
+  const palettes = new Map<string, { asset: string; genFile: string; hash: string } | null>(game.palettes.map((id) => [id, null]));
   for (const id of game.assets) {
     const entry = assetEntry(project, id);
     try {
@@ -80,8 +80,30 @@ async function externalFiles(project: GameProject, game: { palettes: readonly st
         const sheet = (baked.atlas.variants[index] as { sheet: string }).sheet;
         out.push({ path: `assets/${id}/${sheet}`, kind, bytes: encodeIndexedPng(variant.sheet, colors) });
       });
+      // The first asset that uses a palette stands for it in a message.
+      if ((palettes.get(asset.palette.id) ?? null) === null) {
+        palettes.set(asset.palette.id, { asset: id, genFile: entry.genFile, hash: paletteHash(asset.palette) });
+      }
     } catch (error) {
       fail(entry.genFile, `the asset cannot be packed: ${message(error)}`);
+    }
+  }
+  for (const id of [...palettes.keys()].sort()) {
+    const user = palettes.get(id) ?? null;
+    const file = paletteFile(id);
+    if (user !== null && !existsSync(file)) {
+      fail(user.genFile, `the asset "${user.asset}" is drawn with the palette "${id}", and ${shownPath(project, file)} does not exist: a package holds the palette of every asset`);
+      continue;
+    }
+    try {
+      const { value, palette } = readPalette(id);
+      if (user !== null && paletteHash(palette) !== user.hash) {
+        fail(user.genFile, `the asset "${user.asset}" is drawn with a palette "${id}" that is not ${shownPath(project, file)} (other slots or colours)`);
+        continue;
+      }
+      out.push({ path: `palettes/${id}.json`, kind: "palette", bytes: canonicalBytes(value) });
+    } catch (error) {
+      fail(file, `the palette cannot be packed: ${message(error)}`);
     }
   }
   return out;

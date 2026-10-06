@@ -69,7 +69,11 @@ export interface CommandDecl<F extends Fields = Fields> {
   apply(ctx: SystemContext, payload: Readonly<RowOf<F>>): string | void;
 }
 
-/** The random numbers a system may draw: its own stream, and no way to make another. */
+/**
+ * The random numbers a system may draw: its own stream, and no way to make another. At run
+ * time this is a frozen object with exactly these methods (not the generator of `@whz/det`), so
+ * code that casts it finds no `fork`, no `state` and no `restore` either.
+ */
 export interface SimRng {
   /** The next unsigned 32-bit integer. */
   next(): number;

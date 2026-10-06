@@ -130,7 +130,8 @@ const pack: GameCommand = {
   help: [
     "pack <id>... | --all        validate, then write build/games/<id>/package/: canonical JSON,",
     "                            game.json with simDataHash and assetManifest, sim.json, locales,",
-    "                            palettes, and the baked atlas of every asset the game refers to",
+    "                            the baked atlas of every asset the game refers to, and the palettes",
+    "                            (the game's own and the palette of each of those assets)",
   ],
   async run(args, io) {
     const entries = selectGames("pack", args);

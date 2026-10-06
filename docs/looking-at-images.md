@@ -77,7 +77,9 @@ rows after it.)
 
 **Protocol:** the model (Claude Fable 5.1, `claude-fable-5-1`, in Claude Code) opened every sheet
 with Read, wrote for each row "clean" or the defect and its frame into a file, and only then
-opened the key. Two runs, seeds 7391 and 48213, 16 sheets, 88 rows.
+opened the key. Two runs, seeds 7391 and 48213, 16 sheets, 88 rows: the first run with six
+rows a sheet (48 rows), the second with five (40 rows). The two 12x sheets of the first run
+are the resampled ones of the last column.
 
 **Result** (hits / trials; a hit names the right defect on the right row, and for an orphan
 pixel or a jump also the right frame):
@@ -89,7 +91,8 @@ pixel or a jump also the right frame):
 | Pivot jump, 1 px | 1 / 4 | 4 / 4 | 4 / 4 | 2 / 2 | 2 / 2 |
 | Twinned limbs | 0 / 4 | 4 / 4 | 3 / 4 | 2 / 2 | 2 / 2 |
 | False alarms on clean rows | 0 / 6 | 0 / 6 | 3 / 6 | 0 / 2 | 0 / 4 |
-| Sheet size | 358 x 472 | 358 x 934 | 655 x 1550 | 975 x 1861 | 975 x 2166 → 900 x 2000 |
+| Sheet size, first run (six rows) | 358 x 472 | 358 x 934 | 655 x 1550 | not in this column | 975 x 2166 → 900 x 2000 |
+| Sheet size, second run (five rows) | 358 x 409 | 358 x 805 | 655 x 1333 | 975 x 1861 | none |
 
 What the numbers say, and what they do not:
 

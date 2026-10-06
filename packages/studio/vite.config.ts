@@ -15,10 +15,12 @@ export default defineConfig({
   plugins: [reactRouter()],
   server: {
     fs: {
-      // What the dev server may serve as source (its /@fs/ URLs): this package and the
-      // dependencies. By default it would be the whole checkout. A note that imports another
-      // workspace package into the browser code (the runtime) adds that package's folder here.
-      allow: [".", "../../node_modules"],
+      // What the dev server may serve as source (its /@fs/ URLs). By default it would be the
+      // whole checkout. It is this package, the dependencies, and the four workspace packages
+      // the browser side is built from: a workspace package is a symlink in node_modules, and
+      // Vite serves it from its real folder, so each one must be named. Nothing else of the
+      // checkout (test/dev-server.test.ts); a new package for the browser is added here.
+      allow: [".", "../../node_modules", "../runtime", "../asset-kit", "../voxel-kit", "../det"],
     },
   },
 });

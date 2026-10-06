@@ -78,6 +78,11 @@ The context (`SystemContext`) is everything a system can touch:
 - `ctx.rng` (`next`, `int`, `range`, `chance`, `pick`, `weighted`, `shuffle`), `ctx.emit(event,
   payload)` and `ctx.tick`.
 
+`ctx.rng` is a frozen handle on the system's own stream, not the generator of `@whz/det`: it has
+no `fork`, `state` or `restore`, also at run time, and the context holds the kernel in a
+`#private` field. A system file may not import `createRng` or `Rng` (the lint bans it under
+`src/systems/`): a stream of its own would be in no digest and no snapshot.
+
 Rules the kernel enforces: a table, command or event must be declared by a system in use (the
 declaration object is the handle); rows hold exactly their declared fields within their bounds
 (checked after every tick; a violation stops the sim for good); a command's `apply` returns
@@ -109,5 +114,6 @@ exists to exercise the kernel and to be the example game's sim; it is not a genr
 `./dev npm run check -- @whz/sim` runs the type checks, the lint, the tests and the golden
 replay: the kernel and its ordering rules, declarations and data validation, the digest layout
 against an independent encoder, snapshot → restore (and heavy mode) against uninterrupted runs,
-stream independence, the replay runner's exit codes, design-intent invariants of the toy shop
+stream independence, what a system can reach of the random streams at run time
+(`test/rng-handle.test.ts`), the replay runner's exit codes, design-intent invariants of the toy shop
 over 10,000 ticks, and a fuzz of 1,000 random command sequences.

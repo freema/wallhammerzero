@@ -137,12 +137,25 @@ Those are for the review images and the owner's verdict in the studio.
 ### The defect fixtures
 
 `packages/asset-kit/test/lint-fixtures/` holds a clean walker and a clean scene, and one asset
-per defect, each failing exactly one rule. The tests run them, and so can a session that
-changes a rule:
+per defect, each failing exactly one rule. **Every rule has a fixture that makes `lint` exit
+non-zero through that rule** (a test fails when a rule has none). The tests run them, and so can
+a session that changes a rule:
 
 ```sh
 ./dev npm run asset -- lint --all --assets packages/asset-kit/test/lint-fixtures --out build/fixtures
 ```
+
+Three of them are worth knowing:
+
+- `defects/wrong-frame-size` and `defects/off-palette` are programs made with `defineAsset`,
+  which checks every frame it renders: they fail with `render`.
+- `defects/raw-frame-size` and `defects/raw-palette-index` are Asset objects whose frames skip
+  that check (`withUncheckedFrames` in the fixtures' `walker.ts`): they fail with `frame-size`
+  and `palette-index`, the two rules that exist for frames that did not come through
+  `defineAsset`. Such frames have no output hash in `lint.json`, and a bake of them fails.
+- `defects/bbox-jump` fails with `bbox-change`. Its walker fills half of a 20 px frame, so it
+  sets `maxBboxChange` to 10 % (2 px) in its `lint` field; the default 25 % cannot be exceeded
+  inside so small a frame.
 
 ## As a library
 

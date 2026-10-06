@@ -36,8 +36,17 @@ sim.digestHex();                             // "0a7b53df"
   and dangling refs are refused when the sim is created. `hashSimData(data)` is the
   `simDataHash`.
 - **Random numbers.** One stream per system, `createRng(seed, <system name>)` from `@whz/det`.
-  A system cannot reach another stream or make a new one, so adding a system or a data row
-  never shifts what another system draws.
+  The kernel keeps the generators. A system gets `ctx.rng`, a frozen object with the seven draws
+  (`next`, `int`, `range`, `chance`, `pick`, `weighted`, `shuffle`) and nothing else. That holds
+  when the code runs, not only in the types: the handle has no `fork`, no `state` and no
+  `restore`, and the context shows neither the kernel nor another system (they are `#private`
+  fields, and the context is frozen). So a system cannot reach another stream, rewind its own
+  or make a new one from what it is given, and adding a system or a data row never shifts what
+  another system draws (`packages/sim/test/rng-handle.test.ts`,
+  `packages/sim/test/streams.test.ts`).
+  The handle cannot stop a system file from importing `createRng` itself; the lint does (the
+  import is banned in `packages/sim/src/systems/`). Such a stream would be in no digest and in
+  no snapshot.
 
 ## Ordering rules
 
@@ -86,14 +95,17 @@ sim.digestHex();                             // "0a7b53df"
 
 ## What is banned in the sim, and why
 
-`packages/sim/src` is under the determinism lint (`tools/lint/determinism.js`) and is compiled
-without DOM or Node types, so most of this does not even type-check. The Node runner in
+`packages/sim/src` is under the determinism lint (`tools/lint/determinism.js`; what the lint
+cannot catch is in [tools/lint/README.md](../tools/lint/README.md)) and is compiled without DOM
+or Node types, so most of this does not even type-check. The Node runner in
 `packages/sim/src/node/` is the only part that touches files.
 
 | Banned | Why | Instead |
 |---|---|---|
 | `dt`, `Date`, `performance`, timers | Wall-clock time differs on every run | integer ticks |
 | `Math.random`, `crypto` | Not seeded | `ctx.rng`, the system's stream |
+| `createRng` and `Rng` in a system (`packages/sim/src/systems/`) | A stream of its own is not in the digest or in a snapshot | `ctx.rng` |
+| `eval`, `Function`, `import()`, `require`, `process`, `import.meta`, inline `eslint-disable` | Back doors: code the lint cannot read, the machine, a silenced rule | static imports; a rule changes in `eslint.config.js` |
 | `Math.sin/cos/pow/exp/log/sqrt`, `**`, `Math.round` | Engines differ in the last bit; JS and Godot round halves differently | `@whz/det`: `isin`, `ease`, `mulDivRound`, `isqrt`, tables in game data |
 | Floats in state, data, commands, events | Formatting and rounding differ between players | bounded integers (basis points, fixed point) |
 | DOM, WebGL, `fetch`, storage, `node:*` | The sim is headless; I/O is a host adapter | commands in, events out |

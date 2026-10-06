@@ -133,6 +133,44 @@ test("scan.sh: the scanner runs offline, static only, with a read-only view of t
   assert.match(result.stdout, /^exit: +0 /m);
 });
 
+test("scan.sh: without --out, two folders with the same name get their own report folders", (t) => {
+  // Two sources that both call their folder "some-skill" (every world() does), scanned one
+  // after the other with the default report folder.
+  const first = world(t, { report: singleReport() });
+  const second = world(t, { report: multiReport() });
+  const reportOf = (result) => /^reports: +(\S+\.json)$/m.exec(result.stdout)?.[1];
+  const folders = [];
+  t.after(() => folders.forEach((folder) => rmSync(folder, { recursive: true, force: true })));
+
+  const a = first.run([first.target]);
+  assert.equal(a.status, 0, a.stderr);
+  const reportA = reportOf(a);
+  folders.push(dirname(reportA));
+  const b = second.run(["-r", second.target]);
+  assert.equal(b.status, 0, b.stderr);
+  const reportB = reportOf(b);
+  folders.push(dirname(reportB));
+
+  // Under .tools/skill-intake/reports/ of this checkout, named after the folder and its path.
+  const reports = join(here, "..", "..", "..", ".tools", "skill-intake", "reports");
+  for (const report of [reportA, reportB]) {
+    assert.equal(dirname(dirname(report)), reports);
+    assert.match(report, /\/some-skill-\d+\/some-skill\.json$/);
+  }
+  assert.notEqual(dirname(reportA), dirname(reportB), "two sources share one report folder");
+  // The second scan did not overwrite the first report.
+  assert.deepEqual(JSON.parse(readFileSync(reportA, "utf8")), singleReport());
+  assert.deepEqual(JSON.parse(readFileSync(reportB, "utf8")), multiReport());
+  assert.ok(existsSync(reportA.replace(/\.json$/, ".md")));
+
+  // The same source again goes to the same folder, and --name names the files, not the source.
+  assert.equal(reportOf(first.run([first.target])), reportA);
+  const named = first.run(["--name", "intake", first.target]);
+  assert.equal(named.status, 0, named.stderr);
+  assert.equal(reportOf(named), join(dirname(reportA), "intake.json").replace(/some-skill-(\d+)/, "intake-$1"));
+  folders.push(dirname(reportOf(named)));
+});
+
 test("scan.sh: no variable of the host reaches the scanner, so no API key can", (t) => {
   const { target, out, run } = world(t);
   const result = run(["--out", out, target], {

@@ -26,6 +26,7 @@ import type {
   MapDecl,
   MapRow,
   OneDecl,
+  SimRng,
   StateTableDecl,
   SystemContext,
   SystemDef,
@@ -177,92 +178,116 @@ function keyName(table: CompiledStateTable): "id" | "key" | null {
   return table.decl.shape === "entities" ? "id" : table.decl.shape === "map" ? "key" : null;
 }
 
+/**
+ * What a system gets of its random stream: the draws, as a frozen object of closures. The
+ * generator itself stays with the kernel, so at run time (not only in the types) a system has
+ * no `fork`, no `state` and no `restore`: it cannot make a stream, rewind its own, or hold an
+ * object that leads to another one.
+ */
+function rngHandle(rng: Rng): SimRng {
+  return Object.freeze({
+    next: (): number => rng.next(),
+    int: (n: number): number => rng.int(n),
+    range: (lo: number, hi: number): number => rng.range(lo, hi),
+    chance: (num: number, den: number): boolean => rng.chance(num, den),
+    pick: <T>(items: ArrayLike<T>): T => rng.pick(items),
+    weighted: (weights: ArrayLike<number>): number => rng.weighted(weights),
+    shuffle: <T>(items: T[]): T[] => rng.shuffle(items),
+  });
+}
+
+/**
+ * The kernel and the system are `#private` (hidden by the language, not by the type checker)
+ * and the object is frozen: a system that casts its context still finds only `rng`, `tick` and
+ * the methods, and cannot swap any of them.
+ */
 class Context implements SystemContext {
-  private readonly kernel: Kernel;
-  private readonly system: CompiledSystem;
-  readonly rng: Rng;
+  readonly #kernel: Kernel;
+  readonly #system: CompiledSystem;
+  readonly rng: SimRng;
 
   constructor(kernel: Kernel, system: CompiledSystem, rng: Rng) {
-    this.kernel = kernel;
-    this.system = system;
-    this.rng = rng;
+    this.#kernel = kernel;
+    this.#system = system;
+    this.rng = rngHandle(rng);
+    Object.freeze(this);
   }
 
   get tick(): number {
-    return this.kernel.currentTick;
+    return this.#kernel.currentTick;
   }
 
-  private loaded(decl: DataRecordDecl | DataRowsDecl) {
-    const table = this.kernel.program.dataTables.get(decl.name);
+  #loaded(decl: DataRecordDecl | DataRowsDecl) {
+    const table = this.#kernel.program.dataTables.get(decl.name);
     if (table === undefined || table.decl !== decl) {
-      throw new SimError(`system "${this.system.name}": the data table "${decl.name}" is not declared by a system in use`);
+      throw new SimError(`system "${this.#system.name}": the data table "${decl.name}" is not declared by a system in use`);
     }
-    const data = this.kernel.program.data.get(decl.name);
+    const data = this.#kernel.program.data.get(decl.name);
     if (data === undefined) throw new SimError(`the data table "${decl.name}" is not loaded`);
     return data;
   }
 
   config<F extends Fields>(table: DataRecordDecl<F>): Readonly<RowOf<F>> {
-    return this.loaded(table).record as Readonly<RowOf<F>>;
+    return this.#loaded(table).record as Readonly<RowOf<F>>;
   }
 
   table<F extends Fields>(table: DataRowsDecl<F>): readonly DataRow<F>[] {
-    return this.loaded(table).rows as readonly DataRow<F>[];
+    return this.#loaded(table).rows as readonly DataRow<F>[];
   }
 
   row<F extends Fields>(table: DataRowsDecl<F>, id: string): DataRow<F> {
-    const row = this.loaded(table).byId.get(id);
+    const row = this.#loaded(table).byId.get(id);
     if (row === undefined) {
-      throw new SimError(`system "${this.system.name}": the data table "${table.name}" has no row "${id}"`);
+      throw new SimError(`system "${this.#system.name}": the data table "${table.name}" has no row "${id}"`);
     }
     return row as DataRow<F>;
   }
 
-  private store(decl: StateTableDecl): { table: CompiledStateTable; rows: Row[] } {
-    const table = this.kernel.program.stateTables.get(decl.name);
+  #store(decl: StateTableDecl): { table: CompiledStateTable; rows: Row[] } {
+    const table = this.#kernel.program.stateTables.get(decl.name);
     if (table === undefined || table.decl !== decl) {
-      throw new SimError(`system "${this.system.name}": the state table "${decl.name}" is not declared by a system in use`);
+      throw new SimError(`system "${this.#system.name}": the state table "${decl.name}" is not declared by a system in use`);
     }
-    return { table, rows: this.kernel.rowsOf(decl.name) };
+    return { table, rows: this.#kernel.rowsOf(decl.name) };
   }
 
   one<F extends Fields>(table: OneDecl<F>): RowOf<F> {
-    return this.store(table).rows[0] as RowOf<F>;
+    return this.#store(table).rows[0] as RowOf<F>;
   }
 
   all<F extends Fields>(table: EntitiesDecl<F>): readonly EntityRow<F>[];
   all<F extends Fields>(table: MapDecl<F>): readonly MapRow<F>[];
   all(table: EntitiesDecl | MapDecl): readonly Row[] {
-    return this.store(table).rows.slice();
+    return this.#store(table).rows.slice();
   }
 
   get<F extends Fields>(table: EntitiesDecl<F>, id: number): EntityRow<F> | undefined;
   get<F extends Fields>(table: MapDecl<F>, key: string): MapRow<F> | undefined;
   get(table: EntitiesDecl | MapDecl, key: number | string): Row | undefined {
-    const { rows } = this.store(table);
+    const { rows } = this.#store(table);
     const at = find(rows, table.shape === "entities" ? "id" : "key", key);
     return at.found ? rows[at.index] : undefined;
   }
 
   count(table: EntitiesDecl | MapDecl): number {
-    return this.store(table).rows.length;
+    return this.#store(table).rows.length;
   }
 
   spawn<F extends Fields>(decl: EntitiesDecl<F>, fields: Readonly<RowOf<F>>): EntityRow<F> {
-    const { table, rows } = this.store(decl);
-    const problem = rowProblem(table.fields, fields, this.kernel.program.refs);
-    if (problem !== null) throw new SimError(`system "${this.system.name}": spawn in "${decl.name}": ${problem}`);
-    const row = copyFields(table.fields, fields, { id: this.kernel.takeId() });
+    const { table, rows } = this.#store(decl);
+    const problem = rowProblem(table.fields, fields, this.#kernel.program.refs);
+    if (problem !== null) throw new SimError(`system "${this.#system.name}": spawn in "${decl.name}": ${problem}`);
+    const row = copyFields(table.fields, fields, { id: this.#kernel.takeId() });
     // Ids only grow, so the newest row belongs at the end.
     rows.push(row);
     return row as EntityRow<F>;
   }
 
   put<F extends Fields>(decl: MapDecl<F>, key: string, fields: Readonly<RowOf<F>>): MapRow<F> {
-    const { table, rows } = this.store(decl);
-    if (!isId(key)) throw new SimError(`system "${this.system.name}": put in "${decl.name}": the key ${JSON.stringify(key)} is not an id`);
-    const problem = rowProblem(table.fields, fields, this.kernel.program.refs);
-    if (problem !== null) throw new SimError(`system "${this.system.name}": put in "${decl.name}": ${problem}`);
+    const { table, rows } = this.#store(decl);
+    if (!isId(key)) throw new SimError(`system "${this.#system.name}": put in "${decl.name}": the key ${JSON.stringify(key)} is not an id`);
+    const problem = rowProblem(table.fields, fields, this.#kernel.program.refs);
+    if (problem !== null) throw new SimError(`system "${this.#system.name}": put in "${decl.name}": ${problem}`);
     const at = find(rows, "key", key);
     if (at.found) return copyFields(table.fields, fields, rows[at.index] as Row) as MapRow<F>;
     const row = copyFields(table.fields, fields, { key });
@@ -273,14 +298,14 @@ class Context implements SystemContext {
   remove(table: EntitiesDecl, id: number): boolean;
   remove(table: MapDecl, key: string): boolean;
   remove(table: EntitiesDecl | MapDecl, key: number | string): boolean {
-    const { rows } = this.store(table);
+    const { rows } = this.#store(table);
     const at = find(rows, table.shape === "entities" ? "id" : "key", key);
     if (at.found) rows.splice(at.index, 1);
     return at.found;
   }
 
   emit<F extends Fields>(decl: EventDecl<F>, payload: Readonly<RowOf<F>>): void {
-    this.kernel.emit(decl, payload, this.system.name);
+    this.#kernel.emit(decl, payload, this.#system.name);
   }
 }
 

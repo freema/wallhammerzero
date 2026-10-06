@@ -137,7 +137,7 @@ One line per problem, with the file, the line and column, the JSON path and the 
 ```text
 games/x/data/items.json:3:22: $[1].price: 6.5 is not an integer: an integer from 1 to 100000 is declared, written without a fraction or an exponent [schema]
 games/x/data/items.json:4:11: $[2].id: the string "items.cake.name" is missing in the locale "cs" (locales/cs.json) [string]
-games/x/game.json:6:14: $.palette: no palette "exmaple": assets/palettes/exmaple.json does not exist (palettes: example) [ref]
+games/x/game.json:6:14: $.palette: no palette "exmaple": assets/palettes/exmaple.json does not exist (palettes: example, voxel-example) [ref]
 ```
 
 | Rule | What fails |
@@ -155,7 +155,8 @@ game; palettes, assets and clips resolve against `assets/` (an asset program is 
 when a game refers to it). Sounds resolve against nothing yet: the audio notes add them.
 
 `packages/game-data/test/fixtures/games/` holds one small game per defect, and the tests expect
-the exact line for each. A session can run them:
+the exact line for each (its `README.md` lists them; `dangling-row` runs on a system only the
+tests have). A session can run them:
 
 ```sh
 ./dev npm run game -- validate --games packages/game-data/test/fixtures/games --all
@@ -171,7 +172,7 @@ game.json              the manifest: the fields of the source game.json, plus
                        format ("wz.game-package/1"), locales, simDataHash, assetManifest
 sim.json               { "systems": [...], "tables": {...} }: exactly what the sim gets
 locales/<lang>.json    display text
-palettes/<id>.json     the palettes the game names
+palettes/<id>.json     the palette game.json names, and the palette of every asset below
 assets/<id>/           atlas.json and the sheets (seed-<n>.png) of every asset the game refers to
 scenes/, ui/, fx.json, audio.json    presentation documents
 ```
@@ -182,6 +183,11 @@ scenes/, ui/, fx.json, audio.json    presentation documents
   refused. **Packing the same game twice gives the same bytes.**
 - The folder is emptied first and `game.json` is written last: a reader that finds a manifest
   finds complete files.
+- **Palettes.** An asset is drawn with its own palette, which need not be the game's (the voxel
+  examples use `voxel-example`). The package holds the palette `game.json` names and the palette
+  of every asset the game refers to, each listed in the `assetManifest` with the kind `palette`,
+  so a player has the colours of every sheet it loads. `pack` refuses an asset whose palette has
+  no file under `assets/palettes/`, or whose colours are not the ones of that file.
 - A package is never edited by hand. `openPackage` (what a player calls) refuses a package
   whose manifest does not fit its schema, whose JSON is not canonical, or whose files are not
   exactly the ones the manifest lists.

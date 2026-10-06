@@ -179,9 +179,35 @@ test("the queue:end marker must exist, once, right after the last row", () => {
     ["tasks/README.md:33: the queue:end marker must be on the line right after the last row", /./],
   ]);
   assertProblems(problemsOf({ "tasks/README.md": append("<!-- queue:end -->") }), [
-    ["tasks/README.md:33: a second queue:end marker (the first is on line 32)", /./],
+    ["tasks/README.md:34: a second queue:end marker (the first is on line 32)", /./],
   ]);
   assert.deepEqual(problemsOf({ "tasks/README.md": append("", "New rows go above the `<!-- queue:end -->` line.") }), []);
+});
+
+test("the queue:last-number line must exist, once, right after the end marker, and no row may be above it", () => {
+  const LINE = "<!-- queue:last-number #9 (the highest row number ever given: a new row takes the next one and writes it here) -->\n";
+  assertProblems(problemsOf({ "tasks/README.md": swap(LINE, "") }), [
+    ["tasks/README.md:32: the `<!-- queue:last-number #N ... -->` line is missing (right after the queue:end marker)", /so a new row never reuses one \[queue\]$/],
+  ]);
+  assertProblems(problemsOf({ "tasks/README.md": swap("queue:last-number #9 ", "queue:last-number ") }), [
+    ["tasks/README.md:33: the queue:last-number line needs a row number, like `<!-- queue:last-number #35 ... -->`", /./],
+  ]);
+  assertProblems(problemsOf({ "tasks/README.md": swap(LINE, `\n${LINE}`) }), [
+    ["tasks/README.md:34: the queue:last-number line must be on the line right after the queue:end marker", /./],
+  ]);
+  assertProblems(problemsOf({ "tasks/README.md": append("<!-- queue:last-number #12 -->") }), [
+    ["tasks/README.md:34: a second queue:last-number line (the first is on line 33)", /./],
+  ]);
+  // A new row that did not write its number into the line: the gate is red until it does.
+  const note = "# NEW THING (2026-01-03)\n\n**GATE:** none · **Priority:** P2 · **Size:** S · **Depends on:** none\n\n## Origin\n\n## Read first\n\n## Scope\n\n## Out of scope\n\n## Acceptance\n";
+  const addRow = swap("<!-- queue:end", "| 10 | [New thing](2026-01-03-new-thing.md) | none | none |\n<!-- queue:end");
+  assertProblems(problemsOf({ "tasks/README.md": addRow, "tasks/2026-01-03-new-thing.md": note }), [
+    ["tasks/README.md:32: queue row #10 is above the queue:last-number line (#9): a new row writes its number there, so no number is given twice", /./],
+  ]);
+  const raise = swap("queue:last-number #9", "queue:last-number #10");
+  assert.deepEqual(problemsOf({ "tasks/README.md": (text) => raise(addRow(text)), "tasks/2026-01-03-new-thing.md": note }), []);
+  // A sentence about the line is not the line, and the line inside a code fence is an example.
+  assert.deepEqual(problemsOf({ "tasks/README.md": append("", "The `<!-- queue:last-number #3 -->` line keeps the number.", "", "```markdown", "<!-- queue:last-number #3 -->", "```") }), []);
 });
 
 test("a note needs the header line with all four labels", () => {

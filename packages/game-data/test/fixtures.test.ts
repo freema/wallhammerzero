@@ -6,7 +6,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { formatProblem } from "../src/index.ts";
 import { findGame, findGames, openGameProject, readGameFiles, validateGameDir } from "../src/node/index.ts";
-import { EXAMPLE, exampleCopy, FIXTURES, REPO, scratch } from "./helpers.ts";
+import type { ValidateOptions } from "../src/node/index.ts";
+import { EXAMPLE, exampleCopy, FIXTURES, LAB_SYSTEMS, replaceInFile, REPO, scratch } from "./helpers.ts";
 
 const repo = openGameProject({ root: REPO });
 const fixtures = openGameProject({ root: REPO, games: FIXTURES });
@@ -24,6 +25,7 @@ const PALETTES = readdirSync(join(REPO, "assets/palettes"))
 
 /** Every fixture and the one line `validate` must print for it (two for unknown-file). */
 const DEFECTS: Readonly<Record<string, readonly string[]>> = {
+  "dangling-row": [at("dangling-row", 'data/recipes.json:2:46: $[0].output: no row "ingot" in the data table "kinds" (data/kinds.json has: bar, ore) [ref]')],
   "dangling-palette": [at("dangling-palette", 'game.json:9:14: $.palette: no palette "no-such-palette": assets/palettes/no-such-palette.json does not exist (palettes: ' + PALETTES + ") [ref]")],
   "dangling-scene": [at("dangling-scene", 'game.json:18:17: $.entryScene: "shop" does not resolve: scenes/shop.json does not exist [ref]')],
   "dangling-system": [at("dangling-system", 'game.json:12:5: $.systems[1]: unknown system "shop.delivery" (the engine has: shop.arrivals, shop.counter) [ref]')],
@@ -45,6 +47,15 @@ const DEFECTS: Readonly<Record<string, readonly string[]>> = {
       "notes.txt: unknown file: it is not a file of a game (a game holds: game.json, data/<table>.json, locales/<lang>.json, scenes/<id>.json, ui/<id>.json, fx.json, audio.json, *.md) [layout]",
     ),
   ],
+};
+
+/**
+ * The fixtures that need a system the engine does not have. A dangling row id needs a table
+ * with a `field.ref`, and no engine system declares one yet, so `dangling-row` is a game on the
+ * tests' own "lab" system (helpers.ts).
+ */
+const TEST_SYSTEMS: Readonly<Record<string, ValidateOptions>> = {
+  "dangling-row": { systems: LAB_SYSTEMS },
 };
 
 describe("the example game", () => {
@@ -88,9 +99,24 @@ describe("the defect fixtures", () => {
   });
 
   it.each(Object.keys(DEFECTS))("%s fails with its defect, the file and the JSON path", async (name) => {
-    const { problems, game } = await validateGameDir(fixtures, findGame(fixtures, name));
+    const { problems, game } = await validateGameDir(fixtures, findGame(fixtures, name), TEST_SYSTEMS[name]);
     expect(problems.map(formatProblem)).toEqual(DEFECTS[name]);
     expect(game).toBeNull();
+  });
+
+  it("dangling-row is the lab game with one row id changed: with the id put right it validates", async () => {
+    const dir = scratch("dangling-row");
+    cpSync(join(REPO, FIXTURES, "dangling-row"), join(dir, "games", "dangling-row"), { recursive: true });
+    replaceInFile(join(dir, "games", "dangling-row", "data/recipes.json"), '"ingot"', '"bar"');
+    const project = openGameProject({ root: REPO, games: join(dir, "games") });
+    const { problems, game } = await validateGameDir(project, findGame(project, "dangling-row"), TEST_SYSTEMS["dangling-row"]);
+    expect(problems.map(formatProblem)).toEqual([]);
+    expect(game).not.toBeNull();
+  });
+
+  it("without the test's system, the command line reports dangling-row as a game on an unknown system", async () => {
+    const { problems } = await validateGameDir(fixtures, findGame(fixtures, "dangling-row"));
+    expect(problems.map(formatProblem)).toEqual([at("dangling-row", 'game.json:11:5: $.systems[0]: unknown system "lab" (the engine has: shop.arrivals, shop.counter) [ref]')]);
   });
 });
 

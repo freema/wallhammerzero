@@ -1,0 +1,3 @@
+[
+  { "id": "smelt", "input": "ore", "output": "ingot", "ticks": 5 }
+]
