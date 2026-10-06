@@ -17,8 +17,8 @@ import { BAKE_ERROR_FORMAT, bakeDir, findAssets, pruneBakes, sourceHash } from "
 import type { AssetProject } from "@whz/asset-kit/node";
 import type { BakeJob, BakeMessage } from "./bake-worker.ts";
 
-/** Why a run started: the server came up, or the owner pressed the button. */
-export type BakeReason = "start" | "manual";
+/** Why a run started: the server came up, the owner pressed the button, or a watched file changed. */
+export type BakeReason = "start" | "manual" | "watch";
 
 /** The outcome of one asset in a run. */
 export interface BakeItem {
@@ -79,6 +79,11 @@ export interface BakeServiceOptions {
   readonly timeoutMs: number;
   /** Called after every run, before its promise resolves (the server rescans the index here). */
   readonly onRun?: (run: BakeRun) => void;
+  /**
+   * Called whenever the run in flight moves: it starts, the worker takes an asset, an asset is
+   * done, and with null when the run is over (after `onRun`).
+   */
+  readonly onProgress?: (running: BakeProgress | null) => void;
 }
 
 /** The heap a worker may use. An asset program that needs more is a bug. */
@@ -110,6 +115,7 @@ export function createBakeService(options: BakeServiceOptions): BakeService {
   let runs = 0;
   let active: Worker | null = null;
   let closed = false;
+  const progress = (): void => options.onProgress?.(running === null ? null : { ...running });
 
   /**
    * One worker over `ids`. Resolves with one item per asset it got through, in order. If the
@@ -140,12 +146,14 @@ export function createBakeService(options: BakeServiceOptions): BakeService {
       worker.on("message", (message: BakeMessage) => {
         if (message.type === "start") {
           if (running !== null) running.current = message.id;
+          progress();
         } else if (message.type === "done") {
           items.push({ id: message.id, ok: message.ok, error: message.error, ms: message.ms, timedOut: false });
           if (running !== null) {
             running.done += 1;
             running.current = null;
           }
+          progress();
           arm();
         } else {
           ended = true;
@@ -171,6 +179,7 @@ export function createBakeService(options: BakeServiceOptions): BakeService {
             running.done += 1;
             running.current = null;
           }
+          progress();
         }
         resolve(items);
       });
@@ -182,6 +191,7 @@ export function createBakeService(options: BakeServiceOptions): BakeService {
     const started = performance.now();
     const todo = ids === null ? findAssets(project).map((entry) => entry.id) : [...new Set(ids)];
     running = { reason, total: todo.length, done: 0, current: null };
+    progress();
     const items: BakeItem[] = [];
     let pruned: string[] = [];
     try {
@@ -198,6 +208,7 @@ export function createBakeService(options: BakeServiceOptions): BakeService {
     const run: BakeRun = { number: runs, reason, all: ids === null, startedAt, ms: Math.round(performance.now() - started), items, pruned };
     last = run;
     options.onRun?.(run);
+    progress();
     return run;
   };
 

@@ -1,10 +1,13 @@
 // /asset/<pack>/<name>: one asset. Its meta, clips, variants and the baked sheet of every
-// variant as a still image. (The animation player replaces the still sheet later.)
+// variant as a still image. (The animation player replaces the still sheet later.) The page
+// follows its asset: after a re-bake it shows the new record and the new sheets by itself.
 
 import { data, Link } from "react-router";
-import { BakeBanner, PixelImage, StatusBadge, useBakePolling } from "../components.tsx";
+import { BakeBanner, PixelImage, StatusBadge } from "../components.tsx";
 import { studioContext } from "../context.ts";
-import { DEFAULT_SHEET_ZOOM, fileUrl, formatMs, gallerySearch, kindOf, pickZoom, SHEET_ZOOMS } from "../lib/assets.ts";
+import { DEFAULT_SHEET_ZOOM, fileUrl, formatMs, gallerySearch, imageKey, kindOf, pickZoom, SHEET_ZOOMS } from "../lib/assets.ts";
+import { assetNeedsLoader } from "../lib/live.ts";
+import { useAsset, useLoaderOn, useLoaderRevision, useRunning } from "../live.tsx";
 import type { Route } from "./+types/asset";
 
 export function meta({ params }: Route.MetaArgs) {
@@ -18,12 +21,15 @@ export function loader({ params, request, context }: Route.LoaderArgs) {
   const asset = index.get(id);
   if (asset === undefined) throw data(`There is no asset ${JSON.stringify(id)} under the assets folder.`, { status: 404 });
   const zoom = pickZoom(new URL(request.url).searchParams.get("zoom"), SHEET_ZOOMS, DEFAULT_SHEET_ZOOM);
-  return { asset, zoom, running: bake.state().running };
+  return { asset, zoom, running: bake.state().running, revision: index.revision };
 }
 
 export default function AssetPage({ loaderData }: Route.ComponentProps) {
-  const { asset, zoom, running } = loaderData;
-  useBakePolling(running !== null);
+  const { zoom, revision } = loaderData;
+  const asset = useAsset(loaderData.asset, revision);
+  const running = useRunning(loaderData.running);
+  useLoaderRevision(revision);
+  useLoaderOn((event) => assetNeedsLoader(event, asset.id));
   const rows = asset.clips.flatMap((clip) => asset.facings.map((facing) => `${clip.name}${asset.facings.length > 1 ? ` (${facing})` : ""}`));
 
   return (
@@ -42,8 +48,8 @@ export default function AssetPage({ loaderData }: Route.ComponentProps) {
           <pre className="error-text">{asset.error}</pre>
         </section>
       )}
-      {asset.status === "unbaked" ? <p className="empty">This asset has no output yet. Bake it from the dashboard.</p> : null}
-      {asset.status === "stale" ? <p className="note">The source files changed since this output was baked. Bake again from the dashboard to see the current drawing.</p> : null}
+      {asset.status === "unbaked" ? <p className="empty">This asset has no output yet. It is baked when one of its files changes, or by Bake all on the dashboard.</p> : null}
+      {asset.status === "stale" ? <p className="note">The source files changed since this output was baked. The new drawing appears here when its bake is done.</p> : null}
 
       <section>
         <h2>Meta</h2>
@@ -206,11 +212,11 @@ export default function AssetPage({ loaderData }: Route.ComponentProps) {
                 <div className="variant-head">
                   <strong>seed {variant.seed}</strong>
                   <span className="sub">
-                    output hash <code>{variant.outputHash}</code> · <a href={fileUrl(variant.sheet, variant.outputHash)}>PNG</a>
+                    output hash <code>{variant.outputHash}</code> · <a href={fileUrl(variant.sheet, imageKey(asset, variant))}>PNG</a>
                   </span>
                 </div>
                 <div className="sheet checker">
-                  <PixelImage src={fileUrl(variant.sheet, variant.outputHash)} w={asset.sheet?.w ?? 0} h={asset.sheet?.h ?? 0} zoom={zoom} alt={`${asset.id}, sheet of seed ${variant.seed}`} />
+                  <PixelImage src={fileUrl(variant.sheet, imageKey(asset, variant))} w={asset.sheet?.w ?? 0} h={asset.sheet?.h ?? 0} zoom={zoom} alt={`${asset.id}, sheet of seed ${variant.seed}`} />
                 </div>
               </li>
             ))}

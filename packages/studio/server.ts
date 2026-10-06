@@ -20,7 +20,7 @@ import { fileURLToPath } from "node:url";
 import express from "express";
 import type { RequestHandler } from "express";
 import { readConfig } from "./server/services/config.ts";
-import { filesHandler, hostGuard, writeGuard } from "./server/services/http.ts";
+import { eventsHandler, filesHandler, hostGuard, writeGuard } from "./server/services/http.ts";
 import { createServices } from "./server/services/index.ts";
 
 const PACKAGE_DIR = fileURLToPath(new URL(".", import.meta.url));
@@ -36,6 +36,7 @@ const server = createServer(app);
 app.use(hostGuard(config.allowedHosts));
 app.use(writeGuard());
 app.use("/api/files", filesHandler(services.files.resolve));
+app.use("/api/events", eventsHandler(services.events, () => services.live.state()));
 app.use((_req, res, next) => {
   res.locals["studio"] = services;
   next();
@@ -74,6 +75,7 @@ server.listen(config.port, config.host, () => {
   console.log(`[studio] ${config.dev ? "dev" : "production"} server on ${where}`);
   console.log(`[studio] assets: ${config.assetsDir}`);
   console.log(`[studio] outputs: ${config.outDir}`);
+  console.log(`[studio] live reload: ${config.watch ? `watching the assets folder (a sweep every ${config.watchPollMs} ms)` : "off (WHZ_STUDIO_WATCH=0)"}`);
   services.start();
 });
 

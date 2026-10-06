@@ -79,7 +79,7 @@ describe("/gallery", () => {
 
     // First-frame thumbnails at the default 4x: integer multiples of the frame size.
     const images = [...html.matchAll(/<img class="pixel" src="([^"]+)"[^>]*width="(\d+)" height="(\d+)" data-native-size="([^"]+)" data-zoom="(\d+)"/g)].map((match) => match.slice(1, 6));
-    expect(images.map(([src, w, h, native, zoom]) => [text(src ?? "").replace(/\?h=[0-9a-f]{16}$/, "?h=<hash>"), w, h, native, zoom])).toEqual([
+    expect(images.map(([src, w, h, native, zoom]) => [text(src ?? "").replace(/\?h=[0-9a-f]{16}\.[0-9a-f]{16}$/, "?h=<hash>"), w, h, native, zoom])).toEqual([
       ["/api/files/build/assets/ground/floor/frames/seed-1/still.default.0.png?h=<hash>", "64", "64", "16x16", "4"],
       ["/api/files/build/assets/shapes/square/frames/seed-1/idle.default.0.png?h=<hash>", "40", "40", "10x10", "4"],
     ]);
@@ -120,7 +120,7 @@ describe("/asset/:id", () => {
     expect(html).toContain('<tr data-clip="pulse">');
     expect([...html.matchAll(/<li data-seed="(\d+)"/g)].map((match) => match[1])).toEqual(["1", "2"]);
     // The sheet is 23 x 23 px, shown at 4x by default and at the zoom of the URL.
-    expect(html).toMatch(/src="\/api\/files\/build\/assets\/shapes\/square\/seed-1\.png\?h=[0-9a-f]{16}"[^>]*width="92" height="92" data-native-size="23x23" data-zoom="4"/);
+    expect(html).toMatch(/src="\/api\/files\/build\/assets\/shapes\/square\/seed-1\.png\?h=[0-9a-f]{16}\.[0-9a-f]{16}"[^>]*width="92" height="92" data-native-size="23x23" data-zoom="4"/);
     expect((await page("/asset/shapes/square?zoom=8")).html).toMatch(/width="184" height="184" data-native-size="23x23" data-zoom="8"/);
     // The zoom control links to the same page; the default zoom has no query.
     expect([...html.matchAll(/href="(\/asset\/shapes\/square(?:\?zoom=\d)?)"/g)].map((match) => match[1])).toEqual([
@@ -180,6 +180,69 @@ describe("/ (dashboard)", () => {
   });
 });
 
+describe("live reload", () => {
+  /** Opens the event stream. `until(ready)` resolves with the text so far once it satisfies `ready`. */
+  async function events(path: string): Promise<{ response: Response; until: (ready: (text: string) => boolean) => Promise<string>; close: () => Promise<void> }> {
+    const stop = new AbortController();
+    const response = await fetch(`${origin}${path}`, { signal: stop.signal });
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+    let text = "";
+    return {
+      response,
+      async until(ready) {
+        while (!ready(text)) {
+          const chunk = await reader?.read();
+          if (chunk === undefined || chunk.done) throw new Error(`the event stream ended early:\n${text}`);
+          text += decoder.decode(chunk.value, { stream: true });
+        }
+        return text;
+      },
+      async close() {
+        stop.abort();
+        await reader?.cancel().catch(() => undefined);
+      },
+    };
+  }
+
+  /** The `data` of every event named `name` in the stream text, parsed. */
+  const dataOf = (stream: string, name: string): unknown[] => [...stream.matchAll(new RegExp(`^event: ${name}\\ndata: (.*)$`, "gm"))].map((match) => JSON.parse(match[1] as string) as unknown);
+
+  it("every page carries the live light, and /api/events greets with the state of the server", async () => {
+    for (const path of ["/", "/gallery", "/asset/shapes/square"]) expect([path, (await page(path)).html.includes('<span class="live" data-live="offline" role="status"')]).toEqual([path, true]);
+
+    const stream = await events("/api/events?topics=assets");
+    expect(stream.response.status).toBe(200);
+    expect(stream.response.headers.get("content-type")).toBe("text/event-stream; charset=utf-8");
+    const start = await stream.until((now) => now.includes("event: hello") && now.endsWith("\n\n"));
+    expect(start.startsWith("retry: 1000\n\n")).toBe(true);
+    const [hello] = dataOf(start, "hello") as [{ boot: string; state: { writing: boolean; running: unknown; revision: number; watching: boolean } }];
+    expect(hello.boot).toMatch(/^[a-z0-9]{8,}$/);
+    expect(hello.state).toMatchObject({ writing: false, running: null, watching: true });
+    expect(hello.state.revision).toBeGreaterThan(0);
+    await stream.close();
+
+    expect((await page("/api/events?topics=nope")).status).toBe(400);
+  });
+
+  it("a bake run is pushed to an open page: its progress, and at the end that nothing runs", async () => {
+    const stream = await events("/api/events");
+    await stream.until((now) => now.includes("event: hello"));
+    const done = await page("/?index", { method: "POST", body: new URLSearchParams({ intent: "bake-all" }), headers: { "Content-Type": "application/x-www-form-urlencoded", Origin: origin } });
+    expect(done.status).toBe(200);
+
+    const finished = (now: string): boolean => {
+      const bakes = dataOf(now, "assets").filter((event) => (event as { type: string }).type === "bake") as { running: { done: number; total: number; current: string | null } | null }[];
+      return bakes.length > 1 && bakes.at(-1)?.running === null;
+    };
+    const bakes = (dataOf(await stream.until(finished), "assets") as { type: string; running: { reason: string; done: number; total: number; current: string | null } | null }[]).filter((event) => event.type === "bake");
+    expect(bakes[0]?.running).toMatchObject({ reason: "manual", total: 3, done: 0 });
+    expect(bakes.map((event) => event.running?.current).filter((id) => typeof id === "string")).toEqual(expect.arrayContaining(["ground/floor", "shapes/broken", "shapes/square"]));
+    expect(bakes.at(-1)?.running).toBeNull();
+    await stream.close();
+  });
+});
+
 describe("the guards in front of the app", () => {
   it("refuses a request for another host name, for pages and for files", async () => {
     // fetch does not let a caller set Host, so this goes through a raw request.
@@ -196,6 +259,7 @@ describe("the guards in front of the app", () => {
       });
     expect(await status("/gallery")).toBe(403);
     expect(await status("/api/files/build/assets/shapes/square/atlas.json")).toBe(403);
+    expect(await status("/api/events")).toBe(403);
   });
 
   it("serves build outputs only", async () => {

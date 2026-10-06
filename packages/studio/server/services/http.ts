@@ -1,10 +1,12 @@
-// The Express side of the services: the guards as middleware, and the read-only files
-// endpoint. They sit in front of Vite and React Router in server.ts, and the tests mount them
-// on a bare Express app.
+// The Express side of the services: the guards as middleware, the read-only files endpoint
+// and the event stream. They sit in front of Vite and React Router in server.ts, and the
+// tests mount them on a bare Express app.
 
 import { readFileSync } from "node:fs";
 import { extname } from "node:path";
 import type { NextFunction, Request, RequestHandler, Response } from "express";
+import { formatSse, parseTopics } from "./events.ts";
+import type { EventHub } from "./events.ts";
 import { checkHost, checkSameOrigin } from "./guard.ts";
 import type { GuardVerdict } from "./guard.ts";
 import type { SafePath } from "./safe-path.ts";
@@ -85,5 +87,61 @@ export function filesHandler(resolve: (requestPath: string) => SafePath): Reques
     }
     res.setHeader("Content-Length", content.length);
     res.end(req.method === "HEAD" ? undefined : content);
+  };
+}
+
+/** How often an idle stream gets a comment line, so nothing between the server and the page closes it. */
+const HEARTBEAT_MS = 20_000;
+
+/**
+ * `GET /api/events`: the event stream (Server-Sent Events), one per page. Mount it at
+ * `/api/events`.
+ *
+ *   ?topics=assets            only these topics (default: all)
+ *   Last-Event-ID: <id>       sent by the browser when it reconnects (or `?lastEventId=<id>`)
+ *
+ * The stream begins with `hello` (the state now: `state()`), then either the events the page
+ * missed or one `reset` (it must load its data again), then every event as it is published.
+ * The SSE event name is the topic; `data` is one line of JSON; `id` is the hub's event id.
+ */
+export function eventsHandler(hub: EventHub, state: () => unknown): RequestHandler {
+  return (req: Request, res: Response) => {
+    if (req.method !== "GET") {
+      res.setHeader("Allow", "GET");
+      res.status(405).type("text/plain").send("the event stream is read-only\n");
+      return;
+    }
+    const topics = parseTopics(typeof req.query["topics"] === "string" ? req.query["topics"] : undefined);
+    if (!topics.ok) {
+      res.status(400).type("text/plain").send(`${topics.message}\n`);
+      return;
+    }
+    const header = req.headers["last-event-id"];
+    const query = req.query["lastEventId"];
+    const lastEventId = typeof header === "string" && header !== "" ? header : typeof query === "string" && query !== "" ? query : null;
+
+    res.status(200);
+    res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+    // no-transform: nothing on the way may buffer or compress the stream.
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.flushHeaders();
+
+    const subscription = hub.subscribe((event) => res.write(formatSse({ id: event.id, event: event.topic, data: event.data })), { lastEventId, topics: topics.topics });
+    res.write("retry: 1000\n\n");
+    res.write(formatSse({ event: "hello", data: { boot: hub.boot, state: state() } }));
+    if (subscription.greeting.type === "reset") {
+      // The id moves the page's Last-Event-ID to now (an empty id clears it), so the next
+      // reconnect is judged from here.
+      res.write(formatSse({ id: subscription.lastId ?? "", event: "reset", data: { reason: subscription.greeting.reason } }));
+    } else {
+      for (const event of subscription.greeting.events) res.write(formatSse({ id: event.id, event: event.topic, data: event.data }));
+    }
+    const heartbeat = setInterval(() => res.write(": ping\n\n"), HEARTBEAT_MS);
+    req.on("close", () => {
+      clearInterval(heartbeat);
+      subscription.unsubscribe();
+    });
   };
 }

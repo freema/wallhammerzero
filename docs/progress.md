@@ -9,8 +9,8 @@ tool disagree, the tool wins. Format:
 ## Now
 
 - **In flight:** nothing.
-- **Last finished:** `hardening-after-first-waves` (2026-10-06).
-- **Next:** #8 `studio-live-reload` (#18 and #32 are open too).
+- **Last finished:** `studio-live-reload` (2026-10-06).
+- **Next:** #9 `studio-animation-player` (#10, #18 and #32 are open too).
 
 ## Blocked on the owner
 

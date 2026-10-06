@@ -20,6 +20,8 @@ describe("readConfig", () => {
       bakeTimeoutMs: 30_000,
       dev: true,
       bakeOnStart: true,
+      watch: true,
+      watchPollMs: 500,
     });
   });
 
@@ -38,6 +40,8 @@ describe("readConfig", () => {
       WHZ_STUDIO_ALLOWED_HOSTS: "Studio.test, other.test,",
       WHZ_STUDIO_BAKE_TIMEOUT_MS: "5000",
       WHZ_STUDIO_BAKE_ON_START: "0",
+      WHZ_STUDIO_WATCH: "0",
+      WHZ_STUDIO_WATCH_POLL_MS: "50",
       NODE_ENV: "production",
     });
     expect(config).toEqual({
@@ -51,11 +55,17 @@ describe("readConfig", () => {
       bakeTimeoutMs: 5000,
       dev: false,
       bakeOnStart: false,
+      watch: false,
+      watchPollMs: 50,
     });
   });
 
   it.each([["-1"], ["65536"], ["41o7"], ["4107.5"]])("refuses the port %j", (port) => {
     expect(() => readConfig({ WHZ_STUDIO_PORT: port })).toThrow(/WHZ_STUDIO_PORT must be a whole number from 0 to 65535/);
+  });
+
+  it.each([["19"], ["60001"], ["fast"]])("refuses the watch poll time %j", (ms) => {
+    expect(() => readConfig({ WHZ_STUDIO_WATCH_POLL_MS: ms })).toThrow(/WHZ_STUDIO_WATCH_POLL_MS must be a whole number from 20 to 60000/);
   });
 
   it("refuses an output or cache folder outside the checkout: the files endpoint serves the output folder", () => {

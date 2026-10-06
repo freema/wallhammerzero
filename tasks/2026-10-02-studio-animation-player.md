@@ -43,3 +43,13 @@ runtime (D10), so what the owner approves is what the game draws.
   errors.
 - Changing the generator while the player is open updates the frames and keeps the current zoom
   and clip.
+
+## From live reload (2026-10-06)
+What `studio-live-reload` left for this note (see `docs/studio.md`, "Live reload"):
+- The asset page and the gallery cards get the record of their asset through
+  `useAsset(record, revision)` (`packages/studio/app/live.tsx`): after a re-bake the same
+  component renders again with the new record, without a navigation, so component state (zoom,
+  clip, time) survives if the player keeps it in the component.
+- The URL key of a baked file is `imageKey(asset, variant)`
+  (`packages/studio/app/lib/assets.ts`): the output hash and the palette hash. The output hash
+  alone does not change when only a palette's colours do.

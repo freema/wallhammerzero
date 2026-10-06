@@ -44,3 +44,16 @@ D7 (verdicts are written back into the repo for Claude to read) and D21 (per-ass
   a change that leaves pixels identical does not.
 - Two quick verdicts in a row lose nothing (concurrency test).
 - A request without a same-origin `Origin` header is refused.
+
+## From live reload (2026-10-06)
+What `studio-live-reload` left for this note (see `docs/studio.md`, "Live reload"):
+- Echo suppression is `services.live.watcher?.wrote([path])`, called right after the write and
+  before anything is awaited (the watcher is null when `WHZ_STUDIO_WATCH=0`). The path is
+  absolute or relative to the assets folder.
+- `review.json` and Markdown files are not in an asset's source hash, so writing them never
+  makes the asset stale. Without `wrote()` the write is still one watcher batch (the
+  "Claude is writing…" light blinks and the index is scanned).
+- A new topic of `/api/events` (`reviews`) is one more name in `TOPICS` in
+  `packages/studio/server/services/events.ts` and a `hub.publish("reviews", data)`.
+- A gallery card and the asset page read their asset with `useAsset(record, revision)`
+  (`packages/studio/app/live.tsx`); a page that shows data per asset follows that pattern.

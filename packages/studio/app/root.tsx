@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { isRouteErrorResponse, Link, Links, Meta, NavLink, Outlet, Scripts, ScrollRestoration } from "react-router";
 import type { Route } from "./+types/root";
+import { LiveEvents, LiveIndicator } from "./live.tsx";
 import "./app.css";
 
 /** The navigation. A later note that adds a page adds its entry here. */
@@ -35,7 +36,9 @@ export function Layout({ children }: { children: ReactNode }) {
               </NavLink>
             ))}
           </nav>
+          <LiveIndicator />
         </header>
+        <LiveEvents />
         {children}
         <ScrollRestoration />
         <Scripts />

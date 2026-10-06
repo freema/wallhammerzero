@@ -5,10 +5,12 @@
 import { useEffect, useRef } from "react";
 import type { FormEvent } from "react";
 import { Form, Link, useNavigate } from "react-router";
-import { BakeBanner, PixelImage, StatusBadge, useBakePolling } from "../components.tsx";
+import { BakeBanner, PixelImage, StatusBadge } from "../components.tsx";
 import { studioContext } from "../context.ts";
-import { assetHref, fileUrl, filterAssets, filterChoices, GALLERY_ZOOMS, gallerySearch, kindOf, parseGalleryQuery, STATUSES } from "../lib/assets.ts";
+import { assetHref, fileUrl, filterAssets, filterChoices, GALLERY_ZOOMS, gallerySearch, imageKey, kindOf, parseGalleryQuery, STATUSES } from "../lib/assets.ts";
 import type { GalleryQuery } from "../lib/assets.ts";
+import { galleryNeedsLoader } from "../lib/live.ts";
+import { useAsset, useLoaderOn, useLoaderRevision, useRunning } from "../live.tsx";
 import type { AssetRecord } from "../../server/services/index.ts";
 import type { Route } from "./+types/gallery";
 
@@ -20,17 +22,22 @@ export function loader({ request, context }: Route.LoaderArgs) {
   const { index, bake } = context.get(studioContext);
   const all = index.refresh();
   const query = parseGalleryQuery(new URL(request.url).searchParams);
-  return { assets: filterAssets(all, query), total: all.length, choices: filterChoices(all), query, running: bake.state().running };
+  return { assets: filterAssets(all, query), total: all.length, choices: filterChoices(all), query, running: bake.state().running, revision: index.revision };
 }
 
-function Card({ asset, zoom }: { asset: AssetRecord; zoom: number }) {
+/**
+ * One card. `loaded` is the loader's record from the index at `revision`; an event about this
+ * asset replaces it, and then only this card renders again and only its image is fetched.
+ */
+function Card({ loaded, revision, zoom }: { loaded: AssetRecord; revision: number; zoom: number }) {
+  const asset = useAsset(loaded, revision);
   const variant = asset.variants[0];
   return (
     <li className={`card card-${asset.status}`} data-asset-id={asset.id} data-status={asset.status} data-kind={kindOf(asset)}>
       <Link to={assetHref(asset.id)} className="card-link">
         <div className="thumb checker">
           {variant !== undefined && asset.size !== null ? (
-            <PixelImage src={fileUrl(variant.firstFrame, variant.outputHash)} w={asset.size[0]} h={asset.size[1]} zoom={zoom} alt={`${asset.id}, first frame`} />
+            <PixelImage src={fileUrl(variant.firstFrame, imageKey(asset, variant))} w={asset.size[0]} h={asset.size[1]} zoom={zoom} alt={`${asset.id}, first frame`} />
           ) : (
             <span className="thumb-none">{asset.status === "error" ? "bake failed" : "not baked yet"}</span>
           )}
@@ -57,10 +64,13 @@ function Card({ asset, zoom }: { asset: AssetRecord; zoom: number }) {
 }
 
 export default function Gallery({ loaderData }: Route.ComponentProps) {
-  const { assets, total, choices, query, running } = loaderData;
+  const { assets, total, choices, query, revision } = loaderData;
+  const running = useRunning(loaderData.running);
   const navigate = useNavigate();
   const form = useRef<HTMLFormElement>(null);
-  useBakePolling(running !== null);
+  useLoaderRevision(revision);
+  // The list is loaded again only when it may have changed; a changed asset patches its own card.
+  useLoaderOn((event) => galleryNeedsLoader(event, query, choices.kinds));
 
   // The form is uncontrolled. After a navigation that did not come from it (back, forward, a
   // link from the dashboard), put the URL's values into the fields. The search box is left
@@ -155,7 +165,7 @@ export default function Gallery({ loaderData }: Route.ComponentProps) {
       ) : (
         <ul className="grid" data-zoom={query.zoom}>
           {assets.map((asset) => (
-            <Card key={asset.id} asset={asset} zoom={query.zoom} />
+            <Card key={asset.id} loaded={asset} revision={revision} zoom={query.zoom} />
           ))}
         </ul>
       )}

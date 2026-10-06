@@ -9,6 +9,8 @@ import { fileURLToPath } from "node:url";
 export const DEFAULT_PORT = 4100;
 /** How long one asset may bake before its worker is stopped. */
 export const DEFAULT_BAKE_TIMEOUT_MS = 30_000;
+/** How often the watcher sweeps the assets folder (docs/dev-environment.md, the file-watch probe). */
+export const DEFAULT_WATCH_POLL_MS = 500;
 
 /** The settings of one studio process. All paths are absolute. */
 export interface StudioConfig {
@@ -32,6 +34,10 @@ export interface StudioConfig {
   readonly dev: boolean;
   /** True: on start, bake the assets that have no current output. */
   readonly bakeOnStart: boolean;
+  /** True: watch the assets folder and re-bake what changes (live reload). */
+  readonly watch: boolean;
+  /** How often the watcher looks at the assets folder when no file event came, in milliseconds. */
+  readonly watchPollMs: number;
 }
 
 /** The repo root when the studio runs from its place in the repo: two folders above the package. */
@@ -65,6 +71,8 @@ export function isInside(folder: string, path: string): boolean {
  *   WHZ_STUDIO_ALLOWED_HOSTS    extra host names for the Host check, comma separated
  *   WHZ_STUDIO_BAKE_TIMEOUT_MS  the time one asset may bake (default 30000)
  *   WHZ_STUDIO_BAKE_ON_START    0: do not bake missing outputs on start (default 1)
+ *   WHZ_STUDIO_WATCH            0: do not watch the assets folder (default 1)
+ *   WHZ_STUDIO_WATCH_POLL_MS    the time between two sweeps of the assets folder (default 500)
  *   NODE_ENV                    `production` serves the built app; anything else is dev mode
  */
 export function readConfig(env: Readonly<Record<string, string | undefined>> = process.env): StudioConfig {
@@ -88,5 +96,7 @@ export function readConfig(env: Readonly<Record<string, string | undefined>> = p
     bakeTimeoutMs: integer("WHZ_STUDIO_BAKE_TIMEOUT_MS", env["WHZ_STUDIO_BAKE_TIMEOUT_MS"], DEFAULT_BAKE_TIMEOUT_MS, 100, 3_600_000),
     dev: env["NODE_ENV"] !== "production",
     bakeOnStart: env["WHZ_STUDIO_BAKE_ON_START"] !== "0",
+    watch: env["WHZ_STUDIO_WATCH"] !== "0",
+    watchPollMs: integer("WHZ_STUDIO_WATCH_POLL_MS", env["WHZ_STUDIO_WATCH_POLL_MS"], DEFAULT_WATCH_POLL_MS, 20, 60_000),
   };
 }

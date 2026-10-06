@@ -398,6 +398,9 @@ running, also name events that arrived later than 2 s; this run did not reproduc
   the watcher's own rescan) costs about 0.1–0.2 s of one core for 2,000 watched files at
   0.04–0.11 ms per entry, and keeps the worst-case delay under the 2 s budget.
   Re-run the probe after a Docker Desktop upgrade.
+- **The studio's watcher does both** ([studio.md](studio.md#live-reload)): it compares a
+  snapshot of `assets/` (mtime and size of every file) every 500 ms, and a native event only
+  makes the next snapshot come at once.
 
 ## Known limits
 

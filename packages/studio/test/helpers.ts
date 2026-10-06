@@ -29,9 +29,10 @@ export function removeTemps(): void {
 
 /**
  * Writes `<root>/assets/<id>/gen.ts`: a one-frame 6 x 6 sprite filled with `slot`. A temp
- * folder has no node_modules, so the program imports the kit by its absolute path.
+ * folder has no node_modules, so the program imports the kit by its absolute path. `palette`
+ * is the palette file it imports (default: the example palette of the repo).
  */
-export function writeAsset(root: string, id: string, slot = "gold.1"): string {
+export function writeAsset(root: string, id: string, slot = "gold.1", palette = PALETTE): string {
   const dir = join(root, "assets", ...id.split("/"));
   mkdirSync(dir, { recursive: true });
   const file = join(dir, "gen.ts");
@@ -39,7 +40,7 @@ export function writeAsset(root: string, id: string, slot = "gold.1"): string {
     file,
     [
       `import { defineAsset, IndexedBuffer, parsePalette } from ${JSON.stringify(KIT)};`,
-      `import paletteJson from ${JSON.stringify(PALETTE)} with { type: "json" };`,
+      `import paletteJson from ${JSON.stringify(palette)} with { type: "json" };`,
       `const palette = parsePalette(paletteJson);`,
       `export default defineAsset({`,
       `  id: ${JSON.stringify(id)}, kind: "sprite", size: [6, 6], pivot: [3, 5], palette,`,
@@ -61,4 +62,49 @@ export function snapshot(folder: string, prefix = ""): Record<string, string> {
     else files[path] = readFileSync(join(folder, path)).toString("hex");
   }
   return files;
+}
+
+/** Writes `<root>/assets/<id>/gen.ts` whose render never returns: only the bake timeout ends it. */
+export function writeHangingAsset(root: string, id: string): string {
+  const dir = join(root, "assets", ...id.split("/"));
+  mkdirSync(dir, { recursive: true });
+  const file = join(dir, "gen.ts");
+  writeFileSync(
+    file,
+    [
+      `import { defineAsset, parsePalette } from ${JSON.stringify(KIT)};`,
+      `import paletteJson from ${JSON.stringify(PALETTE)} with { type: "json" };`,
+      `export default defineAsset({`,
+      `  id: ${JSON.stringify(id)}, kind: "sprite", size: [6, 6], pivot: [3, 5], palette: parsePalette(paletteJson),`,
+      `  clips: { idle: { frames: 1, durations: 500 } }, params: {}, variantSeeds: [1],`,
+      `  render() { for (;;) { /* spins until the worker is terminated */ } },`,
+      `});`,
+      ``,
+    ].join("\n"),
+  );
+  return file;
+}
+
+/**
+ * Writes `<root>/assets/palettes/<id>.json`: the example palette under another id, with the
+ * colour of `gold.1` set to `gold`. Returns the file.
+ */
+export function writePalette(root: string, id: string, gold = "#e8a43a"): string {
+  const palette = JSON.parse(readFileSync(PALETTE, "utf8")) as { id: string; slots: { name: string; rgb: string }[] };
+  palette.id = id;
+  for (const slot of palette.slots) if (slot.name === "gold.1") slot.rgb = gold;
+  const dir = join(root, "assets", "palettes");
+  mkdirSync(dir, { recursive: true });
+  const file = join(dir, `${id}.json`);
+  writeFileSync(file, `${JSON.stringify(palette, null, 2)}\n`);
+  return file;
+}
+
+/** Waits until `ready()` is true (it is asked every 20 ms). Throws with `what` after `ms`. */
+export async function waitFor(what: string, ready: () => boolean, ms = 60_000): Promise<void> {
+  const until = performance.now() + ms;
+  while (!ready()) {
+    if (performance.now() > until) throw new Error(`timed out waiting for: ${what}`);
+    await new Promise((done) => setTimeout(done, 20));
+  }
 }

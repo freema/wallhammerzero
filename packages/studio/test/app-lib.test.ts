@@ -2,7 +2,7 @@
 // dashboard's counts and the URLs. The loaders run exactly these functions.
 
 import { describe, expect, it } from "vitest";
-import { assetHref, DEFAULT_GALLERY_ZOOM, fileUrl, filterAssets, filterChoices, formatMs, gallerySearch, parseGalleryQuery, pickZoom, summarize } from "../app/lib/assets.ts";
+import { assetHref, DEFAULT_GALLERY_ZOOM, fileUrl, filterAssets, imageKey, filterChoices, formatMs, gallerySearch, parseGalleryQuery, pickZoom, summarize } from "../app/lib/assets.ts";
 import type { AssetRecord, AssetStatus } from "../server/services/index.ts";
 
 type Row = Pick<AssetRecord, "id" | "pack" | "kind" | "status" | "clips">;
@@ -93,6 +93,15 @@ describe("URLs", () => {
     expect(fileUrl("build/assets/examples/blinking-dot/seed-1.png")).toBe("/api/files/build/assets/examples/blinking-dot/seed-1.png");
     expect(fileUrl("build/assets/a b/seed-1.png", "ff98ad430bb70a8f")).toBe("/api/files/build/assets/a%20b/seed-1.png?h=ff98ad430bb70a8f");
     expect(fileUrl("build/x.png", null)).toBe("/api/files/build/x.png");
+  });
+
+  it("keys a baked image by its output hash and the hash of the palette's colours", () => {
+    const variant = { outputHash: "ff98ad430bb70a8f" };
+    const palette = (hash: string) => ({ palette: { id: "warm", hash, colors: [] } });
+    expect(imageKey(palette("1111"), variant)).toBe("ff98ad430bb70a8f.1111");
+    // The output hash does not cover the colours: an edited palette must give another URL.
+    expect(imageKey(palette("2222"), variant)).not.toBe(imageKey(palette("1111"), variant));
+    expect(imageKey({ palette: null }, variant)).toBe("ff98ad430bb70a8f");
   });
 
   it("picks only a listed integer zoom", () => {

@@ -96,6 +96,18 @@ export interface IndexFile {
   readonly assets: readonly AssetRecord[];
 }
 
+/** What one scan changed. Ids are sorted. */
+export interface IndexChange {
+  /** The revision of the index after the scan. */
+  readonly revision: number;
+  /** The records that are new or differ from the scan before (new ones are also in `added`). */
+  readonly changed: readonly AssetRecord[];
+  /** Ids that were not in the index before. */
+  readonly added: readonly string[];
+  /** Ids that are gone. */
+  readonly removed: readonly string[];
+}
+
 /** The index as the rest of the server sees it. */
 export interface AssetIndex {
   /** Reads the disk again, replaces the records and writes the cache file if they changed. */
@@ -105,6 +117,14 @@ export interface AssetIndex {
   /** The records of the last scan, sorted by id. */
   all(): readonly AssetRecord[];
   get(id: string): AssetRecord | undefined;
+  /**
+   * A number that grows whenever a scan finds the records changed (0 before the first scan).
+   * Loaders hand it to the page with the records, and events carry it, so a page can tell which
+   * of two views of an asset is the newer one.
+   */
+  readonly revision: number;
+  /** Calls `listener` after every scan that changed a record. Returns the function that stops it. */
+  onChange(listener: (change: IndexChange) => void): () => void;
   /** The absolute path of the cache file. */
   readonly file: string;
 }
@@ -229,11 +249,24 @@ export function createAssetIndex(project: AssetProject, cacheDir: string): Asset
   let byId = new Map<string, AssetRecord>();
   let scannedAt = Number.NEGATIVE_INFINITY;
   let written: string | null = null;
+  let revision = 0;
+  /** Each record as JSON text: how a scan tells a changed record from an unchanged one. */
+  let texts = new Map<string, string>();
+  const listeners = new Set<(change: IndexChange) => void>();
 
   const scan = (): readonly AssetRecord[] => {
-    records = findAssets(project).map((entry) => readRecord(project, entry));
+    const next = findAssets(project).map((entry) => readRecord(project, entry));
+    const nextTexts = new Map(next.map((record) => [record.id, JSON.stringify(record)]));
+    const changed = next.filter((record) => texts.get(record.id) !== nextTexts.get(record.id));
+    const added = changed.filter((record) => !texts.has(record.id)).map((record) => record.id);
+    const removed = [...texts.keys()].filter((id) => !nextTexts.has(id)).sort();
+    // An unchanged record keeps its object, so `get(id)` is stable between scans.
+    records = next.map((record) => (changed.includes(record) ? record : (byId.get(record.id) ?? record)));
     byId = new Map(records.map((record) => [record.id, record]));
+    texts = nextTexts;
     scannedAt = performance.now();
+    const differs = changed.length > 0 || removed.length > 0;
+    if (differs) revision += 1;
     const content: IndexFile = {
       format: INDEX_FORMAT,
       assetsDir: posix(relative(project.root, project.assetsDir)),
@@ -249,6 +282,10 @@ export function createAssetIndex(project: AssetProject, cacheDir: string): Asset
       renameSync(temp, file);
       written = text;
     }
+    if (differs) {
+      const change: IndexChange = { revision, changed, added, removed };
+      for (const listener of [...listeners]) listener(change);
+    }
     return records;
   };
 
@@ -258,5 +295,12 @@ export function createAssetIndex(project: AssetProject, cacheDir: string): Asset
     refresh: (maxAgeMs = 1000) => (performance.now() - scannedAt > maxAgeMs ? scan() : records),
     all: () => records,
     get: (id) => byId.get(id),
+    get revision() {
+      return revision;
+    },
+    onChange(listener) {
+      listeners.add(listener);
+      return () => void listeners.delete(listener);
+    },
   };
 }

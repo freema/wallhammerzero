@@ -1,7 +1,5 @@
 // Small pieces every page uses.
 
-import { useEffect } from "react";
-import { useRevalidator } from "react-router";
 import type { AssetStatus, BakeProgress } from "../server/services/index.ts";
 
 /**
@@ -55,17 +53,4 @@ export function BakeBanner({ running }: { running: BakeProgress | null }) {
       {running.current === null ? "" : `: ${running.current}`} …
     </p>
   );
-}
-
-/**
- * While a bake is in flight, asks the loaders again every second, so its results appear
- * without a reload. (The live-reload note replaces this with pushed events.)
- */
-export function useBakePolling(active: boolean): void {
-  const { revalidate } = useRevalidator();
-  useEffect(() => {
-    if (!active) return;
-    const timer = setInterval(() => void revalidate(), 1000);
-    return () => clearInterval(timer);
-  }, [active, revalidate]);
 }

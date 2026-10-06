@@ -76,7 +76,6 @@ when a row is above the line or the line is missing.
 | # | Note | Gate | Depends on |
 |---|---|---|---|
 | 0 | [Owner calls](2026-10-02-owner-calls.md) | owner answers | none |
-| 8 | [Studio live reload](2026-10-02-studio-live-reload.md) | none | #7 |
 | 9 | [Studio animation player](2026-10-02-studio-animation-player.md) | none | #8, #6 |
 | 10 | [Studio verdicts](2026-10-02-studio-verdicts.md) | none | #8 |
 | 11 | [Studio: task note from a rejection](2026-10-02-studio-task-from-rejection.md) | none | #10 |
@@ -109,7 +108,7 @@ when a row is above the line or the line is missing.
 | Graphics from code | #21 FX emitters, #13 + #14 art spikes (#4 asset kit is done: [packages/asset-kit/README.md](../packages/asset-kit/README.md), [packages/det/README.md](../packages/det/README.md); #5 render CLI is done: [docs/asset-pipeline.md](../docs/asset-pipeline.md), [docs/looking-at-images.md](../docs/looking-at-images.md); #12 voxel baker is done: [packages/voxel-kit/README.md](../packages/voxel-kit/README.md)) |
 | Engine | #18 player + test protocol, #19 text and UI, #20 input, #22 tilemap, #23 saves, #32 conformance (#6 sprite core is done: [packages/runtime/README.md](../packages/runtime/README.md); #17 game package is done: [docs/game-data.md](../docs/game-data.md), [packages/game-data/README.md](../packages/game-data/README.md); #16 sim core is done: [docs/sim.md](../docs/sim.md), [packages/sim/README.md](../packages/sim/README.md)) |
 | Audio | #25 runtime audio, #29 studio audio (#24 synth core is done: [docs/audio.md](../docs/audio.md), [packages/audio/README.md](../packages/audio/README.md)) |
-| Studio | #8 live reload, #9 player, #10 verdicts, #11 task from rejection, #26 concept pages, #27 compare, #28 sliders, #29 audio, #30 play and builds, #31 voxel inspector (#7 skeleton is done: [docs/studio.md](../docs/studio.md)) |
+| Studio | #9 player, #10 verdicts, #11 task from rejection, #26 concept pages, #27 compare, #28 sliders, #29 audio, #30 play and builds, #31 voxel inspector (#7 skeleton and #8 live reload are done: [docs/studio.md](../docs/studio.md)) |
 | Shipping | #30 web build, #33 desktop, #34 mobile |
 
 Packages the queue creates: `det`, `asset-kit`, `voxel-kit`, `runtime`, `sim`, `game-data`,

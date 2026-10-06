@@ -37,6 +37,15 @@ export function fileUrl(path: string, hash?: string | null): string {
   return hash === undefined || hash === null || hash === "" ? url : `${url}?h=${encodeURIComponent(hash)}`;
 }
 
+/**
+ * What the `?h=` of a baked image must carry: the variant's output hash and the hash of the
+ * palette's colours. The output hash covers the palette's id and the pixel indices but not
+ * the colours, so alone it would keep showing the old image after a palette file was edited.
+ */
+export function imageKey(asset: Pick<AssetRecord, "palette">, variant: { readonly outputHash: string }): string {
+  return asset.palette === null ? variant.outputHash : `${variant.outputHash}.${asset.palette.hash}`;
+}
+
 /** `value` if it is one of `allowed`, else `fallback`. For zooms that come from a URL. */
 export function pickZoom(value: string | null, allowed: readonly number[], fallback: number): number {
   const zoom = Number(value);

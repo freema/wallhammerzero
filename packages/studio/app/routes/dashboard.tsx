@@ -1,10 +1,13 @@
 // /: the dashboard. Asset counts by kind and bake status, the bake errors that are on disk
-// now, and the Bake all button.
+// now, and the Bake all button. The numbers follow the index: they are loaded again after
+// every change of it and after every bake run.
 
 import { Link, useFetcher } from "react-router";
-import { BakeBanner, useBakePolling } from "../components.tsx";
+import { BakeBanner } from "../components.tsx";
 import { studioContext } from "../context.ts";
 import { assetHref, formatMs, gallerySearch, STATUSES, summarize } from "../lib/assets.ts";
+import { dashboardNeedsLoader } from "../lib/live.ts";
+import { useLoaderOn, useLoaderRevision, useRunning } from "../live.tsx";
 import type { BakeRun } from "../../server/services/index.ts";
 import type { Route } from "./+types/dashboard";
 
@@ -19,6 +22,7 @@ export function loader({ context }: Route.LoaderArgs) {
     summary: summarize(assets),
     errors: assets.filter((asset) => asset.status === "error").map((asset) => ({ id: asset.id, error: asset.error ?? "" })),
     bake: bake.state(),
+    revision: index.revision,
   };
 }
 
@@ -33,12 +37,15 @@ export async function action({ request, context }: Route.ActionArgs) {
   return { run: await bake.bakeAll("manual") };
 }
 
+/** How a bake run began, in words. */
+const RUN_REASON: Readonly<Record<BakeRun["reason"], string>> = { start: "on start", manual: "by the button", watch: "after a file change" };
+
 function LastRun({ run }: { run: BakeRun }) {
   const failed = run.items.filter((item) => !item.ok);
   return (
     <div className="last-run" data-run={run.number} data-failed={failed.length}>
       <p>
-        Last bake (#{run.number}, {run.reason === "start" ? "on start" : "by the button"}, <time dateTime={run.startedAt}>{run.startedAt.slice(11, 19)} UTC</time>): {run.items.length}{" "}
+        Last bake (#{run.number}, {RUN_REASON[run.reason]}, <time dateTime={run.startedAt}>{run.startedAt.slice(11, 19)} UTC</time>): {run.items.length}{" "}
         {run.items.length === 1 ? "asset" : "assets"} in {formatMs(run.ms)}, {failed.length} failed
         {run.pruned.length === 0 ? "" : `, ${run.pruned.length} removed (${run.pruned.join(", ")})`}.
       </p>
@@ -58,11 +65,13 @@ function LastRun({ run }: { run: BakeRun }) {
 }
 
 export default function Dashboard({ loaderData }: Route.ComponentProps) {
-  const { summary, errors, bake } = loaderData;
+  const { summary, errors, bake, revision } = loaderData;
+  const running = useRunning(bake.running);
   const fetcher = useFetcher<typeof action>();
   const submitting = fetcher.state !== "idle";
-  const busy = submitting || bake.running !== null;
-  useBakePolling(busy);
+  const busy = submitting || running !== null;
+  useLoaderRevision(revision);
+  useLoaderOn(dashboardNeedsLoader);
 
   return (
     <main className="page">
@@ -125,7 +134,7 @@ export default function Dashboard({ loaderData }: Route.ComponentProps) {
           </button>
           <span className="sub">Runs every asset program in a worker and writes the sheets and atlases. One asset that fails or hangs does not stop the others.</span>
         </fetcher.Form>
-        <BakeBanner running={bake.running} />
+        <BakeBanner running={running} />
         {bake.last === null ? <p className="sub">No bake has run since the studio started.</p> : <LastRun run={bake.last} />}
       </section>
 
