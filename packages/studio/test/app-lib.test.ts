@@ -9,7 +9,7 @@ import type { AssetRecord, AssetStatus, Verdict, VerdictStatus } from "../server
 type Row = Pick<AssetRecord, "id" | "pack" | "kind" | "status" | "clips" | "review">;
 
 function verdict(status: VerdictStatus, outputHash: string): Verdict {
-  return { id: `v-${status}`, at: "2026-10-07T01:00:00Z", status, outputHash, sourceHash: "s", variant: null, tags: [], comment: "", frame: null };
+  return { id: `v-${status}`, at: "2026-10-07T01:00:00Z", status, outputHash, sourceHash: "s", variant: null, tags: [], comment: "", frame: null, task: null };
 }
 
 function row(id: string, kind: string | null, status: AssetStatus, clips: string[] = [], review: { status: VerdictStatus; changed: boolean } | null = null): Row {

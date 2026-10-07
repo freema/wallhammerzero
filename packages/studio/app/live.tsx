@@ -10,7 +10,7 @@ import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import { useRevalidator } from "react-router";
 import { createLiveStore, OFFLINE, pickRecord, pickRunning } from "./lib/live.ts";
 import type { LiveStatus } from "./lib/live.ts";
-import type { AssetRecord, AssetsEvent, BakeProgress, LiveState } from "../server/services/index.ts";
+import type { AssetRecord, AssetsEvent, BakeProgress, LiveState, TasksEvent } from "../server/services/index.ts";
 
 /** The one store of this tab. On the server nothing writes to it. */
 export const liveStore = createLiveStore();
@@ -18,7 +18,7 @@ export const liveStore = createLiveStore();
 /** The index revision of the loader data the page shows now (set by `useLoaderRevision`). */
 let loadedRevision = Number.POSITIVE_INFINITY;
 
-const EVENTS_URL = "/api/events?topics=assets";
+const EVENTS_URL = "/api/events?topics=assets,tasks";
 /** If the browser gives the stream up (it does after an HTTP error), try again after this. */
 const RECONNECT_MS = 2000;
 
@@ -45,6 +45,7 @@ export function LiveEvents() {
         if (restarted || state.revision > loadedRevision) void again.current();
       });
       stream.addEventListener("assets", (event) => liveStore.apply(JSON.parse((event as MessageEvent<string>).data) as AssetsEvent));
+      stream.addEventListener("tasks", (event) => liveStore.applyTasks(JSON.parse((event as MessageEvent<string>).data) as TasksEvent));
       stream.addEventListener("reset", () => {
         liveStore.reset();
         void again.current();
@@ -111,6 +112,16 @@ export function useLoaderOn(needs: (event: AssetsEvent) => boolean): void {
       }),
     [],
   );
+}
+
+/** Asks the loaders again after every change under tasks/ (the /tasks page). */
+export function useLoaderOnTasks(): void {
+  const { revalidate } = useRevalidator();
+  const latest = useRef(revalidate);
+  useEffect(() => {
+    latest.current = revalidate;
+  });
+  useEffect(() => liveStore.subscribeTasks(() => void latest.current()), []);
 }
 
 const INDICATOR: Readonly<Record<string, { label: string; hint: string }>> = {

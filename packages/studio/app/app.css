@@ -1044,3 +1044,59 @@ body {
   border-left: 2px solid var(--line);
   white-space: pre-wrap;
 }
+
+/* ---- task notes (app/tasks.tsx, routes/tasks.tsx) ---- */
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.verdict-task code {
+  font-size: 12px;
+}
+
+.task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0 4px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+}
+
+.task-form label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.task-form input[type="text"] {
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 6px;
+}
+
+.task-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.tasks td {
+  vertical-align: top;
+}
+
+.tasks td .badge {
+  margin-left: 6px;
+}

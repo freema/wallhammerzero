@@ -45,6 +45,8 @@ export interface Verdict {
   readonly comment: string;
   /** The frame the comment is about, or null. */
   readonly frame: number | null;
+  /** The task note the studio created from this verdict (`tasks/<file>`), or null. */
+  readonly task: string | null;
 }
 
 /** The content of review.json. */
@@ -93,7 +95,8 @@ export function readReview(entry: Pick<AssetEntry, "id" | "folder">): ReviewFile
   try {
     const json = JSON.parse(readFileSync(file, "utf8")) as unknown;
     if (!isRecord(json) || json["format"] !== REVIEW_FORMAT || !Array.isArray(json["verdicts"])) return empty;
-    return { format: REVIEW_FORMAT, asset: entry.id, verdicts: json["verdicts"].filter(isVerdict) };
+    // `task` came with the task notes: a file from before has no field, which means none.
+    return { format: REVIEW_FORMAT, asset: entry.id, verdicts: json["verdicts"].filter(isVerdict).map((verdict) => ({ ...verdict, task: typeof verdict.task === "string" ? verdict.task : null })) };
   } catch {
     return empty;
   }
@@ -174,9 +177,26 @@ export function appendVerdict(target: VerdictTarget, input: VerdictInput, now: D
   let id = `v-${stamp}-${before.verdicts.length + 1}`;
   for (let n = before.verdicts.length + 2; taken.has(id); n += 1) id = `v-${stamp}-${n}`;
   const outputHash = input.outputHash === undefined ? target.outputHash : input.outputHash;
-  const verdict: Verdict = { id, at, status: fields.status, outputHash, sourceHash: target.sourceHash, variant: fields.variant, tags: fields.tags as VerdictTag[], comment: fields.comment, frame: fields.frame };
+  const verdict: Verdict = { id, at, status: fields.status, outputHash, sourceHash: target.sourceHash, variant: fields.variant, tags: fields.tags as VerdictTag[], comment: fields.comment, frame: fields.frame, task: null };
   const file: ReviewFile = { format: REVIEW_FORMAT, asset: target.entry.id, verdicts: [...before.verdicts, verdict] };
   const path = reviewFile(target.entry);
+  writeAtomic(path, formatJson(file));
+  return { file, path, verdict };
+}
+
+/**
+ * Writes the task note's path into one verdict (the studio created the note from it). The one
+ * change ever made to a verdict after it was written; the rest of the file stays as it is.
+ */
+export function setVerdictTask(entry: Pick<AssetEntry, "id" | "folder">, verdictId: string, task: string): { file: ReviewFile; path: string; verdict: Verdict } {
+  const before = readReview(entry);
+  const index = before.verdicts.findIndex((verdict) => verdict.id === verdictId);
+  if (index < 0) throw new Error(`no verdict ${JSON.stringify(verdictId)} on ${entry.id}`);
+  const was = before.verdicts[index] as Verdict;
+  if (was.task !== null) throw new Error(`verdict ${verdictId} already has a task: ${was.task}`);
+  const verdict: Verdict = { ...was, task };
+  const file: ReviewFile = { ...before, verdicts: before.verdicts.with(index, verdict) };
+  const path = reviewFile(entry);
   writeAtomic(path, formatJson(file));
   return { file, path, verdict };
 }
@@ -199,6 +219,7 @@ function describe(verdict: Verdict): string {
   if (verdict.variant !== null) parts.push(verdict.variant.preset === null ? `seed ${verdict.variant.seed}` : `preset ${verdict.variant.preset} (seed ${verdict.variant.seed})`);
   if (verdict.frame !== null) parts.push(`frame ${verdict.frame}`);
   if (verdict.tags.length > 0) parts.push(verdict.tags.join(", "));
+  if (verdict.task !== null) parts.push(`→ \`${verdict.task}\``);
   return parts.join(" · ");
 }
 
@@ -279,6 +300,8 @@ export interface ReviewServiceOptions {
 export interface ReviewService {
   /** Appends a verdict, rescans and rewrites the inbox. Rejects with the reason for a bad input or an unknown asset. */
   add(id: string, input: VerdictInput): Promise<Verdict>;
+  /** Writes the task note's path into a verdict (once), rescans and rewrites the inbox. */
+  setTask(id: string, verdictId: string, task: string): Promise<Verdict>;
   /** Rewrites the inbox from the files as they are (on start). */
   refreshInbox(): boolean;
 }
@@ -287,21 +310,23 @@ export function createReviewService(options: ReviewServiceOptions): ReviewServic
   const { project } = options;
   let chain: Promise<unknown> = Promise.resolve();
   const inbox = (): boolean => writeInbox(project, options.entries());
+  // One write after the other, whatever the order the requests came in.
+  const serialized = (write: (target: VerdictTarget) => { path: string; verdict: Verdict }, id: string): Promise<Verdict> => {
+    const run = chain.then(() => {
+      const target = options.target(id);
+      if (target === undefined) throw new Error(`no asset ${JSON.stringify(id)}`);
+      const { path, verdict } = write(target);
+      options.wrote?.([path]);
+      options.rescan();
+      inbox();
+      return verdict;
+    });
+    chain = run.catch(() => undefined);
+    return run;
+  };
   return {
-    add(id, input) {
-      // One verdict after the other, whatever the order the requests came in.
-      const run = chain.then(() => {
-        const target = options.target(id);
-        if (target === undefined) throw new Error(`no asset ${JSON.stringify(id)}`);
-        const { path, verdict } = appendVerdict(target, input, options.now?.());
-        options.wrote?.([path]);
-        options.rescan();
-        inbox();
-        return verdict;
-      });
-      chain = run.catch(() => undefined);
-      return run;
-    },
+    add: (id, input) => serialized((target) => appendVerdict(target, input, options.now?.()), id),
+    setTask: (id, verdictId, task) => serialized((target) => setVerdictTask(target.entry, verdictId, task), id),
     refreshInbox: inbox,
   };
 }

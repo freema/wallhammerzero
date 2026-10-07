@@ -11,6 +11,7 @@ import "./app.css";
 const NAV: readonly { to: string; label: string; end?: boolean }[] = [
   { to: "/", label: "Dashboard", end: true },
   { to: "/gallery", label: "Gallery" },
+  { to: "/tasks", label: "Tasks" },
 ];
 
 export function Layout({ children }: { children: ReactNode }) {

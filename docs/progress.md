@@ -9,8 +9,8 @@ tool disagree, the tool wins. Format:
 ## Now
 
 - **In flight:** nothing.
-- **Last finished:** `studio-verdicts` (2026-10-07).
-- **Next:** #11 `studio-task-from-rejection` (#13, #18, #26–#29, #31 and #32 are open too).
+- **Last finished:** `studio-task-from-rejection` (2026-10-07).
+- **Next:** #13 `art-spike-2d` (#18, #26–#29, #31 and #32 are open too).
 
 ## Blocked on the owner
 

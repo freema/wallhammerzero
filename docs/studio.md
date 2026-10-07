@@ -6,7 +6,8 @@ official custom Node server template (Express), React 19 and Vite (D9). It runs 
 everything else (D16).
 
 So far it has the app shell, the asset index, the gallery, the asset page with the
-[animation player](#the-player) and the owner's [verdicts](#verdicts), the bake button and
+[animation player](#the-player) and the owner's [verdicts](#verdicts), a [task note from a
+rejection](#task-notes) and the read-only queue page, the bake button and
 [live reload](#live-reload): a file written under `assets/` is re-baked and shows in the open
 pages by itself. The other pages are later notes in [tasks/README.md](../tasks/README.md);
 each adds its own route and navigation entry.
@@ -83,6 +84,7 @@ of them: it uses the defaults.
 | `build/studio/presets/<id>/` | written by the studio's bake | The preview sheet of every preset of the asset (`<preset>.png`, in the atlas's layout, rendered with the first variant seed) and `presets.json` (`format: "wz.studio-presets/1"`: the source and palette hashes it was made for, the seed, the sheets and their output hashes, or `error`). The command line's bake never writes it; the studio's does, after every successful bake of the asset. Removed with the asset's output. |
 | `.studio-cache/index.json` | written | A copy of the asset index (below). Derived and gitignored: delete it and it comes back. |
 | `assets/<pack>/<name>/review.json` | written by a verdict | The owner's verdicts on the asset ([verdicts](#verdicts)). The only file the studio writes under `assets/`; the watcher is told, so the write is not a change. Not in the asset's source hash. Committed. |
+| `tasks/<date>-<slug>.md`, `tasks/README.md` | written by **Create task** on a rejected verdict | A task note in the format of `tasks/README.md` (an exclusive create: never over another file) and its row in the Queue table ([task notes](#task-notes)). Read for `/tasks`. Committed. |
 | `reviews/INBOX.md` | written by a verdict, on start, and after every change of the index | The generated inbox: what is rejected, commented, changed since a verdict, approved. Claude reads it first (`CLAUDE.md`). Committed. |
 | `packages/studio/build/`, `packages/studio/.react-router/` | written by the package's build and typecheck | The built app and React Router's generated route types. Gitignored. |
 
@@ -94,7 +96,8 @@ Nothing else is written.
 |---|---|
 | `/` | Dashboard: asset counts by bake status and by kind, the **Bake all** button with the result of the last run, and the bake errors that are on disk now. |
 | `/gallery` | Every asset as a card: its first clip playing (first variant seed; the first frame as a still image until the sheet is loaded), its bake status and its verdict, and **Approve** / **Reject** under it. A card follows its asset ([live reload](#live-reload)). Filters by pack, kind, bake status, verdict (`review=`: `unreviewed`, `approved`, `rejected`, `comment`, `changed`) and text (every word must be in the id, the kind or a clip name), and the zoom: 1×, 2×, 3× or 4×. The filters and the zoom are in the URL (`/gallery?pack=examples&kind=sprite&review=rejected&q=dot&zoom=2`), so a view can be reloaded and scripted. An asset whose bake failed is an error card with the message; one without output says so. |
-| `/asset/<pack>/<name>` | One asset: meta (kind, size, pivot, hashes, params, presets), the palette, the clip table, [the player](#the-player): the asset animated at an integer zoom, every variant seed and preset side by side, the pixel inspector, and the [verdict panel](#verdicts). `?zoom=`, `?clip=` and `?facing=` choose where the player starts. The page follows its asset: after a re-bake it shows the new record and the new frames in place, and the player keeps its clip, time and zoom. `POST` with `intent=verdict` is a verdict. |
+| `/asset/<pack>/<name>` | One asset: meta (kind, size, pivot, hashes, params, presets), the palette, the clip table, [the player](#the-player): the asset animated at an integer zoom, every variant seed and preset side by side, the pixel inspector, and the [verdict panel](#verdicts). `?zoom=`, `?clip=` and `?facing=` choose where the player starts. The page follows its asset: after a re-bake it shows the new record and the new frames in place, and the player keeps its clip, time and zoom. `POST` with `intent=verdict` is a verdict; with `intent=task` it writes a [task note](#task-notes) from one of the asset's rejected verdicts (**Create task…** in the history). |
+| `/tasks` | The work queue, read-only: every note in `tasks/` with its row number, title, gate, priority, size and dependencies, in the queue's order ([task notes](#task-notes)). A note without a row, or with a `REMAINING` block, is marked. The list follows the files ([live reload](#live-reload), the `tasks` topic). |
 | `/api/files/<path>` | A build output by its path relative to the checkout, read-only, e.g. `/api/files/build/assets/examples/blinking-dot/atlas.json`. With `?h=<key>` the answer is cached for good; without it the browser revalidates. The pages use `<output hash>.<palette hash>` as the key (`imageKey` in `packages/studio/app/lib/assets.ts`): the output hash alone does not change when only a palette's colours do. |
 | `/api/events` | The event stream of [live reload](#live-reload) (Server-Sent Events). |
 
@@ -194,12 +197,13 @@ then a rename), append-only, one verdict after the other (two quick verdicts los
     { "id": "v-20261007T013012-1", "at": "2026-10-07T01:30:12Z", "status": "rejected",
       "outputHash": "9d7e2a6f0c1b4e58", "sourceHash": "3f2a9c1e7b6d0a44",
       "variant": { "seed": 1, "preset": null }, "tags": ["palette", "silhouette"],
-      "comment": "Too dark; the sparkle merges with the dot.", "frame": 1 }
+      "comment": "Too dark; the sparkle merges with the dot.", "frame": 1, "task": null }
   ]
 }
 ```
 
-`status` is `approved`, `rejected` or `comment`. The file is not in the asset's source hash
+`status` is `approved`, `rejected` or `comment`; `task` is the note made from the verdict
+([task notes](#task-notes)), the one field written after the verdict. The file is not in the asset's source hash
 (it never makes the asset stale), and the watcher is told about the write (echo suppression),
 so a verdict is not a change. The index reads it with the asset: a record carries `review`
 (the status of the last verdict, `changed`, the count, the last verdict and the whole list),
@@ -220,6 +224,42 @@ of the latest verdict, not the clock, so the same files give the same text. Its 
 is generated and must not be edited. The rules for the generator are in `CLAUDE.md`
 ("Verdicts"): read the inbox first, never write these files, never change an approved asset
 without the owner's consent, report a library change that alters approved outputs.
+
+## Task notes
+
+A rejected verdict can become a task for a session (D8, D22): **Create task…** next to it in
+the history of the asset page opens a form prefilled from the verdict (`draftTask` in
+`packages/studio/app/lib/tasks.ts`): a title (the asset and the reasons), a file name made
+from it, the priority and size, and the note's body: **Origin** (the asset, the output hash,
+the verdict, the reasons, the owner's comment quoted, and where the review sheets are:
+`./dev npm run asset -- review <id>` and `build/review/<id>/`), **Read first**, **Scope**
+(the comment as item 1), **Out of scope** and **Acceptance** ("the owner approves the asset in
+the studio"). The owner edits any of it and creates.
+
+The studio then writes, in this order (`packages/studio/server/services/tasks.ts`):
+
+1. **the note** `tasks/<today>-<slug>.md` in the format of
+   [tasks/README.md](../tasks/README.md#note-format) (the title in caps with the date, the
+   header line with `GATE: none` and `Depends on: none`, the body) with an **exclusive
+   create** (`wx`): a name that exists gets `-2`, `-3`, …, and nothing is ever overwritten;
+2. **the queue row** in `tasks/README.md`: above the `queue:end` marker, with the number the
+   `queue:last-number` line gives next, and that number written into the line (the parser is
+   the repo's own `tools/task-queue`, so the studio and `/implement-tasks` read the same table;
+   a table the tool cannot parse is refused before the note is written);
+3. **the link** in the verdict: its `task` field is the note's path, written through the review
+   service (serialized, atomic). The history shows "→ tasks/…", and so does the inbox line of a
+   rejected asset. A verdict gets one note; the body must have the five sections in order.
+
+The note is then the owner's task like any other: a session takes it from the queue, edits it
+in the repo if needed, and deletes it in the commit that does the work. The studio never edits
+or deletes notes. The gate checks a note the studio wrote like every other
+([docs-check.md](docs-check.md)); the test runs that check on what the studio wrote.
+
+**`/tasks`** lists the queue from the files, in the table's order: the row number, the title,
+the gate (open or what it waits for), the priority, the size and the dependencies, and marks a
+note without a row (the gate fails on it) and a note with a `REMAINING` block. The server
+watches `tasks/` like `assets/` (the `tasks` topic of [live reload](#live-reload)): a note
+written by a session, or by the studio, shows without a reload.
 
 **Bake status** of an asset: `baked` (the output was made from the current source files),
 `stale` (the source files changed since), `error` (the last bake failed) and `unbaked` (no
@@ -251,7 +291,8 @@ export function loader({ context }: Route.LoaderArgs) {
 | `index` | `asset-index.ts` | The asset index: one record per asset (id, pack, bake status and error, source hash, output hash, kind, size, clips, variants with their sheet and first frame, palette). `refresh()` rescans the disk when the last scan is older than a second; `scan()` always does; `get(id)`, `all()`. Every scan that finds a record changed, added or gone raises `revision` by one and calls the `onChange` listeners with the changed records. Persisted to `.studio-cache/index.json` (`format: "wz.studio-index/1"`). |
 | `bake` | `bake.ts`, `bake-worker.ts` | Bakes in a `worker_threads` worker with the bake library of `@whz/asset-kit/node`, so the files are those of `asset bake`. `bakeAll(reason)`, `bake(ids, reason)`, `state()`; the reason is `start`, `manual` or `watch`. Runs are queued, and the index is scanned after each. An asset that does not finish in the timeout gets its worker terminated and an `error.json`; the run goes on with the next asset in a new worker. |
 | `events` | `events.ts`, `http.ts` | The event hub behind `/api/events`: `publish(topic, data)`, `subscribe(listener, { lastEventId, topics })`, the ring buffer for reconnecting pages. |
-| `live` | `live.ts`, `watcher.ts` | Live reload: the watcher on the assets folder, the re-bake of what changed, and what is published on the `assets` topic. `state()`, `idle()`, and `watcher.wrote(paths)` for the studio's own writes. |
+| `live` | `live.ts`, `watcher.ts` | Live reload: the watcher on the assets folder, the re-bake of what changed, and what is published on the `assets` topic. `state()`, `idle()`, and `watcher.wrote(paths)` for the studio's own writes. A second watcher, on `tasks/`, publishes the `tasks` topic (made in `index.ts`). |
+| `tasks` | `tasks.ts` | The task notes: `list()` (the queue from the files, for `/tasks`) and `create(assetId, verdictId, input)` (the note, the queue row, the link in the verdict). |
 | `files` | `safe-path.ts`, `http.ts` | The one path resolver: a path relative to the checkout becomes a real file under the output folder, or is refused (`..`, absolute paths, backslashes, anything outside the folder, symlinks that leave it). |
 | `config`, `project` | `config.ts` | The settings above, and the asset-kit project (root, assets folder, output folder). |
 
@@ -298,8 +339,9 @@ returns is stopped by the bake timeout and becomes an error card; the next batch
 usual.
 
 **The stream.** `GET /api/events` is one Server-Sent Events stream for every topic
-(`?topics=assets` picks some; `assets` is the only topic so far, and a later note adds its
-own to `TOPICS` in `packages/studio/server/services/events.ts`). It starts with `hello`
+(`?topics=assets,tasks` picks some; `assets` is the live reload of the assets folder, `tasks`
+says a file under `tasks/` changed (the pages ask the `/tasks` loader again); a later note adds
+its own to `TOPICS` in `packages/studio/server/services/events.ts`). It starts with `hello`
 (`{ boot, state }`: the name of this server process, and whether files are being written, the
 bake in flight, the index revision, whether the folder is watched). Every later event is named
 after its topic and has the id `<boot>-<n>`. A browser that reconnects sends the last id it
@@ -381,6 +423,13 @@ typecheck of the app and of the server, ESLint, a production build, and the test
   nothing; a generator change that changes the pixels marks the asset changed and one that
   does not, does not; the inbox is rewritten on start; the gallery's verdict filter
   (`app-lib.test.ts`);
+- task notes (`tasks.test.ts`): the note format is the one of `tasks/README.md` (labels and
+  sections), the input and its refusals, the exclusive create (the same name again is
+  suffixed, nothing overwritten), the queue row and the `queue:last-number` line, the list in
+  queue order, the draft from a verdict, and the service in a running studio: the note, the
+  row, the link in the verdict and the inbox, the same verdict refused a second note, two
+  creates at once, a note written by hand seen by the watcher; every created note passes the
+  repo's docs check (`@whz/docs-check` run on the scratch checkout);
 - the player: its model with the time passed in (`app-player.test.ts`: frames, speeds,
   stepping, the end of a clip, the keys, what a re-bake keeps); what a preview draws, through
   the runtime's CPU backend over a baked fixture (`app-scene.test.ts`: every frame of every

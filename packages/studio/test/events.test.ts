@@ -102,7 +102,7 @@ describe("the text of the stream", () => {
     expect(parseEventId("abc-012")).toBeNull();
     expect(parseTopics(undefined)).toEqual({ ok: true, topics: null });
     expect(parseTopics("assets")).toEqual({ ok: true, topics: ["assets"] });
-    expect(parseTopics("assets,nope")).toEqual({ ok: false, message: 'unknown topic "nope" (topics: assets)' });
+    expect(parseTopics("assets,nope")).toEqual({ ok: false, message: 'unknown topic "nope" (topics: assets, tasks)' });
   });
 });
 

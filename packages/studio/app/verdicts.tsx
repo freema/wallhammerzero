@@ -8,6 +8,7 @@ import { useFetcher } from "react-router";
 import type { AssetRecord, Verdict, VerdictStatus } from "../server/services/index.ts";
 import { assetHref } from "./lib/assets.ts";
 import { reviewBadge, STATUS_WORD, TAG_TEXT, VERDICT_TAGS, verdictKey } from "./lib/reviews.ts";
+import { VerdictTask } from "./tasks.tsx";
 
 /** What the action of the asset page answers. */
 export interface VerdictResult {
@@ -127,6 +128,12 @@ export function VerdictPanel({ asset, looking }: VerdictPanelProps) {
                   ; the output is <code>{asset.outputHash ?? "none"}</code> now
                 </>
               ) : null}
+              {review.last.task === null ? null : (
+                <>
+                  {" "}
+                  · task <code>{review.last.task}</code>
+                </>
+              )}
             </span>
           </>
         )}
@@ -221,6 +228,7 @@ function VerdictHistory({ asset }: { asset: AssetRecord }) {
           {verdict.variant === null ? "" : ` · ${verdict.variant.preset === null ? `seed ${verdict.variant.seed}` : `preset ${verdict.variant.preset} (seed ${verdict.variant.seed})`}`}
           {verdict.frame === null ? "" : ` · frame ${verdict.frame}`}
           {verdict.tags.length === 0 ? "" : ` · ${verdict.tags.map((tag) => TAG_TEXT[tag]).join(", ")}`}
+          <VerdictTask asset={asset} verdict={verdict} />
           {verdict.comment === "" ? null : <blockquote>{verdict.comment}</blockquote>}
         </li>
       ))}

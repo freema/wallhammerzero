@@ -11,7 +11,7 @@
 //   whether it missed something.
 
 /** The topics of the stream. A later note adds its topic here. */
-export const TOPICS = ["assets"] as const;
+export const TOPICS = ["assets", "tasks"] as const;
 export type Topic = (typeof TOPICS)[number];
 
 /** How many events the hub keeps for reconnecting pages. */

@@ -10,10 +10,12 @@ import { fileUrl, formatMs, gallerySearch, kindOf } from "../lib/assets.ts";
 import { assetNeedsLoader } from "../lib/live.ts";
 import { pickPlayerZoom } from "../lib/player.ts";
 import { readVerdictForm } from "../lib/reviews.ts";
+import { readTaskForm } from "../lib/tasks.ts";
 import { useAsset, useLoaderOn, useLoaderRevision, useRunning } from "../live.tsx";
 import { PlayerSection } from "../preview/player.tsx";
 import { VerdictPanel } from "../verdicts.tsx";
 import type { VerdictResult } from "../verdicts.tsx";
+import type { TaskResult } from "../tasks.tsx";
 import type { Route } from "./+types/asset";
 
 export function meta({ params }: Route.MetaArgs) {
@@ -34,14 +36,27 @@ export function loader({ params, request, context }: Route.LoaderArgs) {
 
 /**
  * POST /asset/<id>: `intent=verdict` appends a verdict to the asset's review.json and rewrites
- * the inbox. A bad input is answered with 400 and the reason; the page shows it.
+ * the inbox; `intent=task` writes a task note from one of its verdicts. A bad input is
+ * answered with 400 and the reason; the page shows it.
  */
 export async function action({ request, params, context }: Route.ActionArgs) {
-  const { reviews } = context.get(studioContext);
+  const { reviews, tasks } = context.get(studioContext);
   const sent = await request.formData();
-  if (sent.get("intent") !== "verdict") throw new Response("unknown intent", { status: 400 });
-  const form = readVerdictForm(sent);
+  const intent = sent.get("intent");
   const id = params["*"];
+  if (intent === "task") {
+    const form = readTaskForm(sent);
+    try {
+      const task = await tasks.create(id, form.verdict, form);
+      const result: TaskResult = { ok: true, error: null, task };
+      return result;
+    } catch (error) {
+      const result: TaskResult = { ok: false, error: error instanceof Error ? error.message : String(error), task: null };
+      return data(result, { status: 400 });
+    }
+  }
+  if (intent !== "verdict") throw new Response("unknown intent", { status: 400 });
+  const form = readVerdictForm(sent);
   try {
     const verdict = await reviews.add(id, {
       status: form.status,

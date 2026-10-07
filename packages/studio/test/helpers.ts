@@ -129,3 +129,42 @@ export async function waitFor(what: string, ready: () => boolean, ms = 60_000): 
     await new Promise((done) => setTimeout(done, 20));
   }
 }
+
+const REPO_TASKS_README = fileURLToPath(new URL("../../../tasks/README.md", import.meta.url));
+
+/** The "## Note format" section of the repo's tasks/README.md, verbatim: the format has one source. */
+export function noteFormatSection(): string {
+  const text = readFileSync(REPO_TASKS_README, "utf8");
+  const start = text.indexOf("## Note format");
+  const end = text.indexOf("## Queue", start);
+  if (start < 0 || end < 0) throw new Error("tasks/README.md has no Note format or Queue section");
+  return text.slice(start, end);
+}
+
+/** Writes `<root>/tasks/README.md` with the real note format and a queue of `rows` (`last` is the highest number ever given). */
+export function writeTasksReadme(root: string, rows: readonly string[] = [], last = 7): string {
+  mkdirSync(join(root, "tasks"), { recursive: true });
+  const text = [
+    "# tasks/: the one work queue",
+    "",
+    "The rules.",
+    "",
+    noteFormatSection().trimEnd(),
+    "",
+    "## Queue",
+    "",
+    "| # | Note | Gate | Depends on |",
+    "|---|---|---|---|",
+    ...rows,
+    "<!-- queue:end (the studio inserts new rows above this line) -->",
+    `<!-- queue:last-number #${last} (the highest row number ever given) -->`,
+    "",
+    "### After",
+    "",
+    "Text.",
+    "",
+  ].join("\n");
+  const file = join(root, "tasks", "README.md");
+  writeFileSync(file, text);
+  return file;
+}

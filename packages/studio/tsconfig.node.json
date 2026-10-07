@@ -3,5 +3,5 @@
   "compilerOptions": {
     "types": ["node"]
   },
-  "include": ["server.ts", "server/services", "test", "vite.config.ts", "vitest.config.ts", "react-router.config.ts"]
+  "include": ["server.ts", "server/services", "server/types", "test", "vite.config.ts", "vitest.config.ts", "react-router.config.ts"]
 }

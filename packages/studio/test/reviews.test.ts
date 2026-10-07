@@ -55,6 +55,7 @@ describe("review.json", () => {
       tags: ["palette", "silhouette"],
       comment: "Too dark.\nFeet slide.",
       frame: 2,
+      task: null,
     });
     const second = appendVerdict({ ...target, outputHash: "2222222222222222" }, { status: "approved" }, new Date("2026-10-07T01:30:12Z"));
     expect(second.verdict).toMatchObject({ id: "v-20261007T013012-2", status: "approved", outputHash: "2222222222222222", variant: null, tags: [], comment: "", frame: null });
@@ -81,7 +82,7 @@ describe("review.json", () => {
   });
 
   it("the state: the last verdict counts, and the asset is changed when its output hash is not the verdict's", () => {
-    const verdict = (status: Verdict["status"], outputHash: string | null): Verdict => ({ id: status, at: "", status, outputHash, sourceHash: "", variant: null, tags: [], comment: "", frame: null });
+    const verdict = (status: Verdict["status"], outputHash: string | null): Verdict => ({ id: status, at: "", status, outputHash, sourceHash: "", variant: null, tags: [], comment: "", frame: null, task: null });
     expect(reviewState({ verdicts: [] }, "1111")).toEqual({ status: null, changed: false, count: 0, last: null, verdicts: [] });
     const two = [verdict("rejected", "1111"), verdict("approved", "2222")];
     expect(reviewState({ verdicts: two }, "2222")).toMatchObject({ status: "approved", changed: false, count: 2 });
@@ -104,7 +105,9 @@ describe("review.json", () => {
     expect(readReview(entry).verdicts).toEqual([]);
     const good = { id: "v-1", at: "2026-10-07T01:30:00Z", status: "approved", outputHash: null, sourceHash: "s", variant: null, tags: [], comment: "", frame: null };
     writeFileSync(file, JSON.stringify({ format: REVIEW_FORMAT, asset: "props/crate", verdicts: [{ id: "v-0", status: "maybe" }, good, "junk"] }));
-    expect(readReview(entry).verdicts).toEqual([good]);
+    expect(readReview(entry).verdicts).toEqual([{ ...good, task: null }]); // a file from before the task notes: no task
+    writeFileSync(file, JSON.stringify({ format: REVIEW_FORMAT, asset: "props/crate", verdicts: [{ ...good, task: "tasks/2026-10-07-x.md" }] }));
+    expect(readReview(entry).verdicts[0]?.task).toBe("tasks/2026-10-07-x.md");
     writeFileSync(file, JSON.stringify({ format: "wz.other/1", asset: "props/crate", verdicts: [good] }));
     expect(readReview(entry).verdicts).toEqual([]);
   });
@@ -112,7 +115,7 @@ describe("review.json", () => {
 
 describe("the inbox", () => {
   const entry = (id: string, review: InboxEntry["review"], outputHash = "now0000000000000"): InboxEntry => ({ id, genFile: `assets/${id}/gen.ts`, outputHash, review });
-  const verdict = (status: Verdict["status"], at: string, extra: Partial<Verdict> = {}): Verdict => ({ id: `v-${at}`, at, status, outputHash: "now0000000000000", sourceHash: "s", variant: null, tags: [], comment: "", frame: null, ...extra });
+  const verdict = (status: Verdict["status"], at: string, extra: Partial<Verdict> = {}): Verdict => ({ id: `v-${at}`, at, status, outputHash: "now0000000000000", sourceHash: "s", variant: null, tags: [], comment: "", frame: null, task: null, ...extra } as Verdict);
   const state = (last: Verdict | null, changed = false): InboxEntry["review"] => ({ status: last?.status ?? null, changed, count: last === null ? 0 : 1, last, verdicts: last === null ? [] : [last] });
 
   it("lists the rejected with their reasons, the comments, what changed since a verdict, and the approved; says it is generated", () => {

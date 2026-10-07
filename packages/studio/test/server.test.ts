@@ -5,11 +5,13 @@
 
 import { spawn } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { copyFixtures, removeTemps, tempRoot } from "./helpers.ts";
+import { copyFixtures, removeTemps, tempRoot, writeTasksReadme } from "./helpers.ts";
+
+const NOTE_BODY = ["## Origin", "Why.", "", "## Read first", "- Nothing.", "", "## Scope", "1. Do it.", "", "## Out of scope", "- The rest.", "", "## Acceptance", "- It is done."].join("\n");
 
 const SERVER = fileURLToPath(new URL("../server.ts", import.meta.url));
 const BUILD = fileURLToPath(new URL("../build/server/index.js", import.meta.url));
@@ -239,6 +241,51 @@ describe("verdicts", () => {
     expect(await other.text()).toContain("unknown intent");
     expect((await fetch(`${origin}/asset/shapes/nope`, { method: "POST", body, headers: { ...headers, Origin: origin } })).status).toBe(400);
     expect(JSON.parse(readFileSync(join(root, "assets", "shapes", "square", "review.json"), "utf8")).verdicts).toHaveLength(2);
+  });
+});
+
+describe("task notes", () => {
+  const headers = { "Content-Type": "application/x-www-form-urlencoded" };
+  it("a rejected verdict offers Create task; the POST writes the note and the queue row, links the verdict, and /tasks lists it", async () => {
+    writeTasksReadme(root, [], 20);
+    expect((await page("/tasks")).html).toContain('<main class="tasks-page" data-tasks="0">');
+    const before = (await page("/asset/shapes/square")).html;
+    const rejected = /data-verdict="(v-[^"]+)" data-status="rejected"/.exec(before)?.[1];
+    expect(rejected).toMatch(/^v-/);
+    expect(before).toContain("Create task…");
+
+    const body = new URLSearchParams({ intent: "task", verdict: rejected ?? "", title: "Square: corners too soft", slug: "", priority: "P1", size: "S", body: NOTE_BODY });
+    const done = await fetch(`${origin}/asset/shapes/square`, { method: "POST", body, headers: { ...headers, Origin: origin } });
+    expect(done.status).toBe(200);
+    const date = new Date().toISOString().slice(0, 10);
+    const file = `tasks/${date}-square-corners-too-soft.md`;
+    expect(readFileSync(join(root, file), "utf8")).toContain(`# SQUARE: CORNERS TOO SOFT (${date})\n\n**GATE:** none · **Priority:** P1 · **Size:** S · **Depends on:** none\n\n## Origin`);
+    expect(readFileSync(join(root, "tasks", "README.md"), "utf8")).toContain(`| 21 | [Square: corners too soft](${date}-square-corners-too-soft.md) | none | none |\n<!-- queue:end`);
+    const review = JSON.parse(readFileSync(join(root, "assets", "shapes", "square", "review.json"), "utf8")) as { verdicts: { id: string; task: string | null }[] };
+    expect(review.verdicts.map((verdict) => verdict.task)).toEqual([file, null]);
+
+    const after = (await page("/asset/shapes/square")).html;
+    expect(after).toContain(`<span class="verdict-task" data-task="${file}">`);
+    expect(after).toContain(`<code>${file}</code>`);
+    expect(after).not.toContain("Create task…");
+    const list = (await page("/tasks")).html;
+    expect(list).toContain('<main class="tasks-page" data-tasks="1">');
+    expect(list).toContain(`<tr data-task="${file}" data-number="21" data-open="true">`);
+    expect(list).toContain("SQUARE: CORNERS TOO SOFT");
+
+    // Again on the same verdict: refused, nothing written. A bad note: refused with the reason.
+    const twice = await fetch(`${origin}/asset/shapes/square`, { method: "POST", body, headers: { ...headers, Origin: origin } });
+    expect(twice.status).toBe(400);
+    expect(await twice.text()).toContain("already has a task");
+    const bad = await fetch(`${origin}/asset/shapes/square`, { method: "POST", body: new URLSearchParams({ intent: "task", verdict: review.verdicts[1]?.id ?? "", title: "x", priority: "P2", size: "S", body: "## Origin\nonly" }), headers: { ...headers, Origin: origin } });
+    expect(bad.status).toBe(400);
+    expect(await bad.text()).toContain("needs the sections");
+    expect((await fetch(`${origin}/asset/shapes/square`, { method: "POST", body, headers })).status).toBe(403);
+    expect(readdirSync(join(root, "tasks")).sort()).toEqual([`${date}-square-corners-too-soft.md`, "README.md"]);
+    // The event stream takes the tasks topic.
+    const stream = await fetch(`${origin}/api/events?topics=assets,tasks`, { headers: { Accept: "text/event-stream" } });
+    expect(stream.status).toBe(200);
+    await stream.body?.cancel();
   });
 });
 

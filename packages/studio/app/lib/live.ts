@@ -12,7 +12,7 @@
 //
 // Only types come from the server code, so nothing of Node reaches the browser bundle.
 
-import type { AssetRecord, AssetsEvent, BakeProgress, LiveState } from "../../server/services/index.ts";
+import type { AssetRecord, AssetsEvent, BakeProgress, LiveState, TasksEvent } from "../../server/services/index.ts";
 import { kindOf } from "./assets.ts";
 import type { GalleryQuery } from "./assets.ts";
 
@@ -45,6 +45,10 @@ export interface LiveStore {
   subscribeAsset(id: string, listener: () => void): () => void;
   /** Every event of the assets topic, after the store took it in. */
   subscribeEvents(listener: (event: AssetsEvent) => void): () => void;
+  /** Every event of the tasks topic (a note under tasks/ changed). */
+  subscribeTasks(listener: (event: TasksEvent) => void): () => void;
+  /** An event of the tasks topic. */
+  applyTasks(event: TasksEvent): void;
 
   /**
    * The stream opened: `boot` names the server process, `state` is its state now. True if this
@@ -67,6 +71,7 @@ export function createLiveStore(): LiveStore {
   const statusListeners = new Set<() => void>();
   const assetListeners = new Map<string, Set<() => void>>();
   const eventListeners = new Set<(event: AssetsEvent) => void>();
+  const taskListeners = new Set<(event: TasksEvent) => void>();
 
   const setStatus = (next: LiveStatus): void => {
     if (next.connected === status.connected && next.writing === status.writing && next.watching === status.watching && sameProgress(next.running, status.running)) return;
@@ -105,6 +110,13 @@ export function createLiveStore(): LiveStore {
     subscribeEvents(listener) {
       eventListeners.add(listener);
       return () => void eventListeners.delete(listener);
+    },
+    subscribeTasks(listener) {
+      taskListeners.add(listener);
+      return () => void taskListeners.delete(listener);
+    },
+    applyTasks(event) {
+      for (const listener of [...taskListeners]) listener(event);
     },
     hello(boot, state) {
       const restarted = server !== null && server !== boot;

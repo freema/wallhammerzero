@@ -20,7 +20,10 @@ Same doctrine as the owner's alpha-frontier project (D8).
   a session does not invent a backlog (see CLAUDE.md).
 - **Half-finished work gets finished.** If `git status` shows someone's unfinished note, read the
   diff, adopt it and deliver the rest.
-- **The studio may create notes** (D8): e.g. a rejected asset becomes a note. It follows this format.
+- **The studio may create notes** (D8): a rejected asset becomes a note (**Create task…** on
+  the asset page, [docs/studio.md](../docs/studio.md#task-notes)). It follows this format and
+  takes a queue row; `/tasks` in the studio lists the queue. A session edits and deletes such
+  a note like any other.
 
 ## Running the queue
 
@@ -76,7 +79,6 @@ when a row is above the line or the line is missing.
 | # | Note | Gate | Depends on |
 |---|---|---|---|
 | 0 | [Owner calls](2026-10-02-owner-calls.md) | owner answers | none |
-| 11 | [Studio: task note from a rejection](2026-10-02-studio-task-from-rejection.md) | none | #10 |
 | 13 | [Art spike 2D (variants A + B)](2026-10-02-art-spike-2d.md) | none | #10, #9 |
 | 14 | [Art spike voxel (variant C)](2026-10-02-art-spike-voxel.md) | none | #12, #13 |
 | 18 | [Player: game loop, host API, test protocol](2026-10-02-player-loop-test-protocol.md) | none | #17, #6 |
@@ -106,7 +108,7 @@ when a row is above the line or the line is missing.
 | Graphics from code | #21 FX emitters, #13 + #14 art spikes (#4 asset kit is done: [packages/asset-kit/README.md](../packages/asset-kit/README.md), [packages/det/README.md](../packages/det/README.md); #5 render CLI is done: [docs/asset-pipeline.md](../docs/asset-pipeline.md), [docs/looking-at-images.md](../docs/looking-at-images.md); #12 voxel baker is done: [packages/voxel-kit/README.md](../packages/voxel-kit/README.md)) |
 | Engine | #18 player + test protocol, #19 text and UI, #20 input, #22 tilemap, #23 saves, #32 conformance (#6 sprite core is done: [packages/runtime/README.md](../packages/runtime/README.md); #17 game package is done: [docs/game-data.md](../docs/game-data.md), [packages/game-data/README.md](../packages/game-data/README.md); #16 sim core is done: [docs/sim.md](../docs/sim.md), [packages/sim/README.md](../packages/sim/README.md)) |
 | Audio | #25 runtime audio, #29 studio audio (#24 synth core is done: [docs/audio.md](../docs/audio.md), [packages/audio/README.md](../packages/audio/README.md)) |
-| Studio | #11 task from rejection, #26 concept pages, #27 compare, #28 sliders, #29 audio, #30 play and builds, #31 voxel inspector (#7 skeleton, #8 live reload, #9 player and #10 verdicts are done: [docs/studio.md](../docs/studio.md)) |
+| Studio | #26 concept pages, #27 compare, #28 sliders, #29 audio, #30 play and builds, #31 voxel inspector (#7 skeleton, #8 live reload, #9 player, #10 verdicts and #11 task from rejection are done: [docs/studio.md](../docs/studio.md)) |
 | Shipping | #30 web build, #33 desktop, #34 mobile |
 
 Packages the queue creates: `det`, `asset-kit`, `voxel-kit`, `runtime`, `sim`, `game-data`,
