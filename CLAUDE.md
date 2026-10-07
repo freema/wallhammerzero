@@ -16,7 +16,8 @@ The code so far: `packages/det`, `packages/asset-kit` (`./dev npm run asset`),
 `packages/voxel-kit`, `packages/sim` (`./dev npm run sim`), `packages/runtime`,
 `packages/game-data` (`./dev npm run game`) with one example game under `games/`,
 `packages/audio` (`./dev npm run audio`) and the studio with the asset gallery, live reload, the player, verdicts and task notes
-(`packages/studio`). There is no player and no real game yet. The rest of the queue is in
+(`packages/studio`); the 2D art spike (`assets/spike-a`, `assets/spike-b`, the rules in
+`assets/STYLE.md`) waits for the owner's verdicts. There is no player and no real game yet. The rest of the queue is in
 `tasks/` (D23): the studio MVP and the art spikes first, then the engine, audio, the rest of the
 studio and the wrappers. The first real game is parked by the owner (D26): don't ask about it.
 

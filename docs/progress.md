@@ -9,8 +9,8 @@ tool disagree, the tool wins. Format:
 ## Now
 
 - **In flight:** nothing.
-- **Last finished:** `studio-task-from-rejection` (2026-10-07).
-- **Next:** #13 `art-spike-2d` (#18, #26–#29, #31 and #32 are open too).
+- **Last finished:** `art-spike-2d` (2026-10-07).
+- **Next:** #14 `art-spike-voxel` (#18, #26–#29, #31 and #32 are open too).
 
 ## Blocked on the owner
 
