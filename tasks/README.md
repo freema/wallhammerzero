@@ -79,7 +79,6 @@ when a row is above the line or the line is missing.
 | # | Note | Gate | Depends on |
 |---|---|---|---|
 | 0 | [Owner calls](2026-10-02-owner-calls.md) | owner answers | none |
-| 37 | [New Hope: characters and flying cars](2026-10-13-nh-characters-vehicles.md) | none | none |
 | 39 | [New Hope: city mockup in the studio](2026-10-13-nh-city-mockup.md) | none | #36, #37, #38 |
 | 18 | [Player: game loop, host API, test protocol](2026-10-02-player-loop-test-protocol.md) | none | #17, #6 |
 | 19 | [Runtime text and UI](2026-10-02-runtime-text-ui.md) | none | #18, #5 |
@@ -112,7 +111,7 @@ when a row is above the line or the line is missing.
 | Audio | #25 runtime audio, #29 studio audio (#24 synth core is done: [docs/audio.md](../docs/audio.md), [packages/audio/README.md](../packages/audio/README.md)) |
 | Studio | #26 concept pages, #27 compare, #28 sliders, #29 audio, #30 play and builds, #31 voxel inspector (#7 skeleton, #8 live reload, #9 player, #10 verdicts and #11 task from rejection are done: [docs/studio.md](../docs/studio.md)) |
 | Shipping | #30 web build, #33 desktop, #34 mobile |
-| New Hope (D28, D29) | #36 building kit, #37 characters and cars, #38 city generator, #39 city mockup, #40 iso city in the runtime, #41 first mission ([games/new-hope/README.md](../games/new-hope/README.md)) |
+| New Hope (D28, D29) | #39 city mockup, #40 iso city in the runtime, #41 first mission (#36 building kit, #37 characters and cars, #38 city generator are done: [games/new-hope/README.md](../games/new-hope/README.md), [packages/citygen/README.md](../packages/citygen/README.md)) |
 
 Packages the queue creates: `det`, `asset-kit`, `voxel-kit`, `runtime`, `sim`, `game-data`,
 `player`, `audio`, `studio`, `citygen` (New Hope), `shell-desktop`, `shell-mobile` (all under `packages/`). The example
