@@ -23,6 +23,8 @@ const DETERMINISTIC = [
   "packages/audio/src/**/*.ts",
   // The pack output must be byte-identical on every machine: canonical JSON, the two hashes.
   "packages/game-data/src/**/*.ts",
+  // A district is a pure function of (seed, params): it becomes sim data later.
+  "packages/citygen/src/**/*.ts",
 ];
 
 /**
@@ -36,6 +38,7 @@ const DETERMINISTIC_EXCEPT = [
   "packages/audio/src/node/**",
   "packages/audio/src/analysis/**",
   "packages/game-data/src/node/**",
+  "packages/citygen/src/node/**",
 ];
 
 const TYPESCRIPT = ["**/*.ts", "**/*.tsx"];

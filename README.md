@@ -18,8 +18,9 @@ Two game types:
 > a WebGL2 and a CPU backend (`packages/runtime`); the game package format with its `game`
 > command and one example game (`packages/game-data`, `games/`); the audio synth with its `audio`
 > command and example songs and SFX (`packages/audio`, `audio/`); and the studio with the asset
-> gallery and live reload (`packages/studio`, `./dev compose up studio`). No player and no real
-> game yet.
+> gallery and live reload (`packages/studio`, `./dev compose up studio`); New Hope's city
+> generator with its `city` command (`packages/citygen`). No player yet; the first real game,
+> New Hope (`games/new-hope/`), has its assets started (`assets/new-hope/`).
 
 ## Where things are
 
@@ -40,6 +41,7 @@ Two game types:
 | [packages/sim/](packages/sim/README.md) | The sim core: the deterministic tick kernel, the toy `counter-shop` systems and the `sim` replay runner |
 | [packages/runtime/](packages/runtime/README.md) | The renderer games and the studio share: a draw list of sprites, a WebGL2 backend (palette lookup texture, integer upscale into a rectangle), a CPU reference backend for Node, the clip player, and a dev page for the browser parity check |
 | [docs/game-data.md](docs/game-data.md) | What a game is on disk: the layout of `games/<id>/`, the id rules, `validate`, `pack` and the two hashes |
+| [packages/citygen/](packages/citygen/README.md) | New Hope's city generator: a district from a seed as a grid of tile-by-storey cells, the traversability check and the `city` command |
 | [packages/game-data/](packages/game-data/README.md) | The game data package: the strict loader, the schemas, the package format and the `game` command |
 | `games/` | Games as data (one folder each, e.g. `games/examples/counter-shop/game.json`) |
 | [docs/audio.md](docs/audio.md) | Music and SFX as data: the `wz.song` and `wz.sfx` formats, the validators, the `audio` command, loudness targets and the composition procedure |

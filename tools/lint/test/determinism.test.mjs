@@ -44,6 +44,7 @@ const UNDER_LINT = [
   "packages/voxel-kit/src/extra.ts",
   "packages/audio/src/extra.ts",
   "packages/game-data/src/extra.ts",
+  "packages/citygen/src/extra.ts",
 ];
 /** Where it does not: tests, scripts and the Node-side loader. */
 const NOT_UNDER_LINT = [
@@ -62,6 +63,8 @@ const NOT_UNDER_LINT = [
   "packages/audio/src/analysis/extra.ts",
   "packages/game-data/test/extra.test.ts",
   "packages/game-data/src/node/extra.ts",
+  "packages/citygen/test/extra.test.ts",
+  "packages/citygen/src/node/extra.ts",
   "packages/studio/server/extra.ts",
   "tools/check/extra.ts",
 ];

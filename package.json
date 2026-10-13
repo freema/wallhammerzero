@@ -16,6 +16,7 @@
     "audio": "node packages/audio/src/node/bin.ts",
     "check": "node tools/check/run.mjs",
     "check:assets": "tsc --noEmit -p assets && eslint assets && node packages/asset-kit/src/node/bin.ts lint --all --no-write",
+    "city": "node packages/citygen/src/node/bin.ts",
     "game": "node packages/game-data/src/node/bin.ts",
     "sim": "node packages/sim/src/node/cli.ts"
   },

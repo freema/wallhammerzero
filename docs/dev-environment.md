@@ -248,7 +248,8 @@ list of files under them is `DETERMINISTIC` in `eslint.config.js`: today everyth
 `assets/`, `packages/det/src/`, `packages/asset-kit/src/`, `packages/sim/src/`,
 `packages/voxel-kit/src/`, `packages/audio/src/`, `packages/runtime/src/` (for the runtime
 the lint is also what keeps frame callbacks and clocks out: the host passes the time in) and
-`packages/game-data/src/` (the pack output must be byte-identical on every machine). Tests,
+`packages/game-data/src/` (the pack output must be byte-identical on every machine) and
+`packages/citygen/src/` (a district is a pure function of seed and params). Tests,
 build scripts, the Node-side entry points (`src/node/`) and the audio analysis
 (`packages/audio/src/analysis/`, which measures rendered sound in floats) are exempt. A later
 package joins by adding its source glob to that list. In `packages/sim/src/systems/` a second

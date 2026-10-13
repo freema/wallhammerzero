@@ -81,7 +81,6 @@ when a row is above the line or the line is missing.
 | 0 | [Owner calls](2026-10-02-owner-calls.md) | owner answers | none |
 | 36 | [New Hope: voxel building kit](2026-10-13-nh-building-kit.md) | none | none |
 | 37 | [New Hope: characters and flying cars](2026-10-13-nh-characters-vehicles.md) | none | none |
-| 38 | [New Hope: city generator](2026-10-13-nh-city-generator.md) | none | none |
 | 39 | [New Hope: city mockup in the studio](2026-10-13-nh-city-mockup.md) | none | #36, #37, #38 |
 | 18 | [Player: game loop, host API, test protocol](2026-10-02-player-loop-test-protocol.md) | none | #17, #6 |
 | 19 | [Runtime text and UI](2026-10-02-runtime-text-ui.md) | none | #18, #5 |

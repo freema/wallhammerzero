@@ -15,6 +15,7 @@ Status: the first layer of the engine and the studio exists. Everything runs in 
 The code so far: `packages/det`, `packages/asset-kit` (`./dev npm run asset`),
 `packages/voxel-kit`, `packages/sim` (`./dev npm run sim`), `packages/runtime`,
 `packages/game-data` (`./dev npm run game`) with one example game under `games/`,
+`packages/citygen` (`./dev npm run city`, New Hope's city generator),
 `packages/audio` (`./dev npm run audio`) and the studio with the asset gallery, live reload, the player, verdicts and task notes
 (`packages/studio`); the art spikes (`assets/spike-a`, `assets/spike-b`, `assets/spike-c`, the rules in
 `assets/STYLE.md`) wait for the owner's verdicts and OC-A2-pick. There is no player and no real game yet. The rest of the queue is in
@@ -104,8 +105,8 @@ The gate is one command, run from the repo root:
   gate.
 - A new package joins the gate by having a `check` script in its own `package.json`. The root
   script is never edited for that.
-- Asset programs (`assets/`), `packages/det`, `packages/asset-kit`, `packages/voxel-kit` and
-  `packages/sim` are under the **determinism lint** (`tools/lint/determinism.js`): no
+- Asset programs (`assets/`), `packages/det`, `packages/asset-kit`, `packages/voxel-kit`,
+  `packages/citygen` and `packages/sim` are under the **determinism lint** (`tools/lint/determinism.js`): no
   `Math.random`, clocks or float `Math`; use `@whz/det`. The asset contract is in
   [packages/asset-kit/README.md](packages/asset-kit/README.md); voxel models and the iso baker
   are in [packages/voxel-kit/README.md](packages/voxel-kit/README.md); the sim contract (ticks,
