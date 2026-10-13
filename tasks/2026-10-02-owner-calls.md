@@ -14,14 +14,21 @@ OC-A5 → D22, OC-B1 → D24 (desktop) and D27 (mobile), OC-B3 → D25 (hosting)
 The smaller calls (OC-A7, OC-M1, OC-M2, OC-S1, OC-S2, OC-D1, OC-D3, OC-D4) were delegated to
 the session and resolved with their defaults in D27.
 
-**Blocking today:** nothing. Only `runtime-tilemap-scene` waits (for OC-A2-pick), and the first
-real game's notes wait for OC-A6.
+**Blocking today:** OC-A2-pick is **ready to answer** (both art spikes are done); it gates
+`runtime-tilemap-scene`. The first real game's notes wait for OC-A6.
 
 ## A. Art and the first game
 
-**OC-A2-pick: Which spike variant wins.** Asked once both art spikes are done
-(`art-spike-2d`, `art-spike-voxel`); the owner has no preference before seeing them (D26). The
-owner compares the three scene mockups and their contact sheets in the studio and picks:
+**OC-A2-pick: Which spike variant wins.** **Ready to answer since 2026-10-07:** both art spikes
+are done (`art-spike-2d`, `art-spike-voxel`); the owner had no preference before seeing them
+(D26). In the studio (`./dev compose up studio`, http://127.0.0.1:4100): the three scene
+mockups side by side at one zoom at `/gallery?kind=scene&zoom=2`, the packs at
+`/gallery?pack=spike-a`, `/gallery?pack=spike-b`, `/gallery?pack=spike-c`, the scenes at
+`/asset/spike-a/scene`, `/asset/spike-b/scene`, `/asset/spike-c/scene`. The sessions' reads
+are in [assets/spike-a/README.md](../assets/spike-a/README.md),
+[assets/spike-b/README.md](../assets/spike-b/README.md) and
+[assets/spike-c/README.md](../assets/spike-c/README.md) (the voxel chibi loses the face; the
+voxel props are the cheapest and gain states and facings for free). The owner picks:
 (a) 16×16 3/4, (b) 16×24 chibi 3/4, (c) 2:1 iso voxel-baked, or a mix (e.g. 2D characters +
 voxel-baked props). Also: the number of facings. Gates `runtime-tilemap-scene` and the art
 notes of the first game.

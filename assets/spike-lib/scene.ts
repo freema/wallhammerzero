@@ -115,7 +115,12 @@ export function drawScene(scale: Scale, seed: number, shadows: ShadowStyle): Ind
     out.blit(pop, px - (pop.w >> 1), py - (pop.h >> 1) + 2);
   }
 
-  // The UI strip: a dark band, a money panel with a coin and a counter, and three stat bars.
+  drawUiStrip(out, seed);
+  return out;
+}
+
+/** The UI strip over the last 16 rows: a dark band, a money panel with a coin and a counter, and three stat bars. */
+export function drawUiStrip(out: IndexedBuffer, seed: number): void {
   const ui = ramp("ui");
   const gold = ramp("gold");
   out.fill(0, UI_Y, SCENE_W, TILE, ui[0]);
@@ -136,7 +141,6 @@ export function drawScene(scale: Scale, seed: number, shadows: ShadowStyle): Ind
     out.fill(SCENE_W - 16, y, 14, 2, ui[1]);
     out.fill(SCENE_W - 16, y, len, 2, color);
   });
-  return out;
 }
 
 export function defineScene(pack: string, scale: Scale): AnyAsset {

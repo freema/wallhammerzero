@@ -9,13 +9,13 @@ tool disagree, the tool wins. Format:
 ## Now
 
 - **In flight:** nothing.
-- **Last finished:** `art-spike-2d` (2026-10-07).
-- **Next:** #14 `art-spike-voxel` (#18, #26–#29, #31 and #32 are open too).
+- **Last finished:** `art-spike-voxel` (2026-10-07).
+- **Next:** #18 `player-loop-test-protocol` (#26–#29, #31 and #32 are open too).
 
 ## Blocked on the owner
 
-- #22 `runtime-tilemap-scene`: OC-A2-pick (which art-spike variant wins; asked after both art
-  spikes are done).
+- #22 `runtime-tilemap-scene`: OC-A2-pick (which art-spike variant wins). **Ready to answer**
+  since 2026-10-07: both spikes are done, the links are in `tasks/2026-10-02-owner-calls.md`.
 
 ## Attempt ledger (failed approaches: do not retry)
 

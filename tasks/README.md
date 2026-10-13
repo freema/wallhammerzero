@@ -79,7 +79,6 @@ when a row is above the line or the line is missing.
 | # | Note | Gate | Depends on |
 |---|---|---|---|
 | 0 | [Owner calls](2026-10-02-owner-calls.md) | owner answers | none |
-| 14 | [Art spike voxel (variant C)](2026-10-02-art-spike-voxel.md) | none | #12, #13 |
 | 18 | [Player: game loop, host API, test protocol](2026-10-02-player-loop-test-protocol.md) | none | #17, #6 |
 | 19 | [Runtime text and UI](2026-10-02-runtime-text-ui.md) | none | #18, #5 |
 | 20 | [Runtime input](2026-10-02-runtime-input.md) | none | #19 |
@@ -104,7 +103,7 @@ when a row is above the line or the line is missing.
 | Track | Notes |
 |---|---|
 | Infrastructure | all done: #1 Docker ([docs/dev-environment.md](../docs/dev-environment.md)), #2 the implement-tasks skill ([Running the queue](#running-the-queue)), #3 skill intake ([security/skill-intake/README.md](../security/skill-intake/README.md)), #15 docs check ([docs/docs-check.md](../docs/docs-check.md)) |
-| Graphics from code | #21 FX emitters, #14 art spike (voxel) (#13 art spike 2D is done: [assets/spike-a/README.md](../assets/spike-a/README.md), [assets/spike-b/README.md](../assets/spike-b/README.md), [assets/STYLE.md](../assets/STYLE.md); #4 asset kit is done: [packages/asset-kit/README.md](../packages/asset-kit/README.md), [packages/det/README.md](../packages/det/README.md); #5 render CLI is done: [docs/asset-pipeline.md](../docs/asset-pipeline.md), [docs/looking-at-images.md](../docs/looking-at-images.md); #12 voxel baker is done: [packages/voxel-kit/README.md](../packages/voxel-kit/README.md)) |
+| Graphics from code | #21 FX emitters (#13 + #14 art spikes are done, OC-A2-pick is ready: [assets/spike-a/README.md](../assets/spike-a/README.md), [assets/spike-b/README.md](../assets/spike-b/README.md), [assets/spike-c/README.md](../assets/spike-c/README.md), [assets/STYLE.md](../assets/STYLE.md); #4 asset kit is done: [packages/asset-kit/README.md](../packages/asset-kit/README.md), [packages/det/README.md](../packages/det/README.md); #5 render CLI is done: [docs/asset-pipeline.md](../docs/asset-pipeline.md), [docs/looking-at-images.md](../docs/looking-at-images.md); #12 voxel baker is done: [packages/voxel-kit/README.md](../packages/voxel-kit/README.md)) |
 | Engine | #18 player + test protocol, #19 text and UI, #20 input, #22 tilemap, #23 saves, #32 conformance (#6 sprite core is done: [packages/runtime/README.md](../packages/runtime/README.md); #17 game package is done: [docs/game-data.md](../docs/game-data.md), [packages/game-data/README.md](../packages/game-data/README.md); #16 sim core is done: [docs/sim.md](../docs/sim.md), [packages/sim/README.md](../packages/sim/README.md)) |
 | Audio | #25 runtime audio, #29 studio audio (#24 synth core is done: [docs/audio.md](../docs/audio.md), [packages/audio/README.md](../packages/audio/README.md)) |
 | Studio | #26 concept pages, #27 compare, #28 sliders, #29 audio, #30 play and builds, #31 voxel inspector (#7 skeleton, #8 live reload, #9 player, #10 verdicts and #11 task from rejection are done: [docs/studio.md](../docs/studio.md)) |
