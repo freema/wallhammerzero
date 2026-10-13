@@ -8,11 +8,10 @@ tool disagree, the tool wins. Format:
 
 ## Now
 
-- **In flight:** nothing. Wave 1 of New Hope (#36, #37, #38) is done and committed; the owner
-  looks at it in the studio before anything else starts (no next wave without the owner).
-- **Last finished:** `nh-characters-vehicles` (2026-10-13).
-- **Next:** #39 `nh-city-mockup`, then #18 `player-loop-test-protocol` (#26–#29, #31 and #32
-  are open too).
+- **In flight:** New Hope in 3D (D30): `packages/new-hope-play` is playable; the owner plays it
+  and says what comes next. No queue notes for it: the owner asked to work on the game directly.
+- **Last finished:** New Hope 3D first playable (2026-10-13).
+- **Next:** what the owner asks for in New Hope; otherwise #18 `player-loop-test-protocol`.
 
 ## Blocked on the owner
 

@@ -79,11 +79,9 @@ when a row is above the line or the line is missing.
 | # | Note | Gate | Depends on |
 |---|---|---|---|
 | 0 | [Owner calls](2026-10-02-owner-calls.md) | owner answers | none |
-| 39 | [New Hope: city mockup in the studio](2026-10-13-nh-city-mockup.md) | none | #36, #37, #38 |
 | 18 | [Player: game loop, host API, test protocol](2026-10-02-player-loop-test-protocol.md) | none | #17, #6 |
 | 19 | [Runtime text and UI](2026-10-02-runtime-text-ui.md) | none | #18, #5 |
 | 20 | [Runtime input](2026-10-02-runtime-input.md) | none | #19 |
-| 40 | [Runtime: iso city with levels](2026-10-13-runtime-iso-levels.md) | none | #18, #39 |
 | 21 | [FX emitters](2026-10-02-fx-emitters.md) | none | #19, #5 |
 | 22 | [Runtime tilemap and scene](2026-10-02-runtime-tilemap-scene.md) | OC-A2-pick | #18, #20 |
 | 23 | [Player saves](2026-10-02-player-saves.md) | none | #18 |
@@ -93,7 +91,6 @@ when a row is above the line or the line is missing.
 | 28 | [Studio: live generators with sliders](2026-10-02-studio-params-sliders.md) | none | #9, #10 |
 | 29 | [Studio audio: music review + SFX board](2026-10-02-studio-audio.md) | none | #24, #10 |
 | 30 | [Studio: play a game and trigger builds](2026-10-02-studio-play-and-builds.md) | none | #18, #8 |
-| 41 | [New Hope: the first playable mission](2026-10-13-nh-first-mission.md) | none | #40, #20, #19, #30 |
 | 31 | [Studio: voxel model inspector](2026-10-02-studio-voxel-inspector.md) | none | #12, #9 |
 | 32 | [Sim conformance on QuickJS](2026-10-02-sim-conformance-quickjs.md) | none | #17 |
 | 33 | [Desktop wrapper](2026-10-02-desktop-wrapper.md) | none | #30, #23 |
@@ -111,17 +108,17 @@ when a row is above the line or the line is missing.
 | Audio | #25 runtime audio, #29 studio audio (#24 synth core is done: [docs/audio.md](../docs/audio.md), [packages/audio/README.md](../packages/audio/README.md)) |
 | Studio | #26 concept pages, #27 compare, #28 sliders, #29 audio, #30 play and builds, #31 voxel inspector (#7 skeleton, #8 live reload, #9 player, #10 verdicts and #11 task from rejection are done: [docs/studio.md](../docs/studio.md)) |
 | Shipping | #30 web build, #33 desktop, #34 mobile |
-| New Hope (D28, D29) | #39 city mockup, #40 iso city in the runtime, #41 first mission (#36 building kit, #37 characters and cars, #38 city generator are done: [games/new-hope/README.md](../games/new-hope/README.md), [packages/citygen/README.md](../packages/citygen/README.md)) |
+| New Hope (D28, D30) | played and built with the owner in `packages/new-hope-play` (D30 replaced the iso notes #39–#41); done: #36 building kit, #37 characters and cars (iso assets, kept as references), #38 city generator ([games/new-hope/README.md](../games/new-hope/README.md), [packages/citygen/README.md](../packages/citygen/README.md)) |
 
 Packages the queue creates: `det`, `asset-kit`, `voxel-kit`, `runtime`, `sim`, `game-data`,
-`player`, `audio`, `studio`, `citygen` (New Hope), `shell-desktop`, `shell-mobile` (all under `packages/`). The example
+`player`, `audio`, `studio`, `citygen` and `new-hope-play` (New Hope), `shell-desktop`, `shell-mobile` (all under `packages/`). The example
 game `games/examples/counter-shop/` grows with each engine note and is the test bed for all of
 them.
 
 ### Not in the queue (and why)
 
-- **The rest of New Hope** (D28) beyond the first slice (body-passing, combat, more districts,
-  the story beyond the first mission) and **the first Kairosoft sim** (OC-A6, parked): not
+- **The rest of New Hope** (D28, D30): worked on directly with the owner in
+  `packages/new-hope-play` and **the first Kairosoft sim** (OC-A6, parked): not
   queued until the owner agrees on them.
 - **Steam, signing, stores, iOS builds:** wait for OC-B2 and OC-B4. **CI** is not set up; the
   repo is private on GitHub (D25).

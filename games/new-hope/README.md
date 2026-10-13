@@ -1,58 +1,30 @@
 # New Hope
 
-The first real game (D28): a cyberpunk, GTA-like voxel game on a generated city-planet, seen
-through a fixed 2:1 isometric camera over voxel models baked to pixel art (D29). The story and
-what the game takes from the owner's canon: [STORY.md](STORY.md). This README is the working
-concept: what is agreed is marked with its decision, the rest is the session's proposal and
-the owner corrects it in chat or by verdicts in the studio.
+The first real game (D28): a cyberpunk, GTA-like game on a generated city-planet, played in
+real-time 3D in Three.js (D30, which replaced the fixed iso of D29). The game is the package
+[packages/new-hope-play](../../packages/new-hope-play/README.md): `./dev compose up newhope`,
+then http://127.0.0.1:4200. The story and what the game takes from the owner's canon:
+[STORY.md](STORY.md). This folder keeps the concept and the story; agreed points carry their
+decision, the rest is the session's proposal for the owner to correct.
 
 ## What it is
 
-- **A city that covers the planet** (D28): towers everywhere, generated from a seed. Nothing
-  is laid out by hand; a district is the generator's output plus what the player changed.
-- **Moving across the buildings and in flying cars, many levels up and down** (D28). On foot
-  the player walks streets and walkways, takes ramps, stairs and lifts between levels and
-  crosses between towers on bridges. In a flying car the player flies the sky lanes and lands
-  on roofs and pads.
-- **Fixed iso, levels as layers** (D29). Every level of the city is a layer of tile-sized
-  voxel modules; the layers above the player are cut away so the player always shows.
+- **A city that covers the planet** (D28): a district generated from a seed by
+  `packages/citygen`, and the endless city around it to the horizon.
+- **Moving across the buildings and in flying cars, many levels up and down** (D28): on foot
+  over streets, decks, walkways, stairs and lifts; in hover cars along the sky lanes, landing
+  on roof pads.
+- **3D with a No Man's Sky look** (D30): a third-person camera, a vivid night sky with a ringed
+  gas giant, colour fog, neon and bloom. Everything is generated in code.
 
-## The levels (proposal)
+## The levels
 
-From the bottom up; a level is one storey layer of the cell grid.
+From the bottom up (the bands of `packages/citygen`): the undercity of the Ancestors and the
+Psions (ruins, halls, crystal light), the streets, the middle levels with walkways between
+towers, the upper levels of the Union, the roofs with their pads, the sky lanes.
 
-| Band | What is there |
-|---|---|
-| Undercity | Ancestor and Psion ruins (the `ancient` and `psion` ramps of the palette), relics, no light but their own. |
-| Streets | The old ground: dark, wet asphalt, abandoned shopfronts, the first Union outposts. |
-| Middle levels | Walkways between towers, half-settled floors, scavenger crews, markets. |
-| Upper levels | The colonised city: neon, Union offices, the med bay where Kylo wakes. |
-| Roofs and pads | Landing pads, gardens, antennas. |
-| Sky lanes | Flying traffic between towers, above the roofs and through the gaps. |
+## What plays today
 
-## Scale and look (session defaults)
-
-- Native resolution **480 × 270** (16:9, ×4 to 1920 × 1080), palette
-  `assets/palettes/new-hope.json`: night city, cold concrete and glass, flat neon and window
-  light that the baker draws unshaded.
-- The voxel grid of `packages/voxel-kit`: one voxel is 4 px across, a tile is 4 × 4 voxels
-  (a 16 × 8 diamond). A storey is a fixed number of voxels tall, the same for every module, so
-  modules stack. The exact height is set by the building-kit note.
-- Characters are small at this scale (the voxel chibi of spike-c reads as a person by its
-  colours, not by its face): portraits and dialogue carry the faces.
-
-## The first slice
-
-The aim is to see, in the studio, a generated block of the city and to play one short mission
-in it. In order:
-
-1. The building kit, the characters and the flying car as voxel assets in the studio.
-2. The city generator: a district from a seed, every walkable cell reachable.
-3. A city mockup asset that composes the generator's output from the kit's modules, with the
-   cut-away levels, to judge the look before the engine can play it.
-4. The engine notes the game needs (player loop, input, text and UI) and an iso multi-level
-   scene in the runtime.
-5. The mission: Kylo wakes in the med bay, goes down by lift and walkway, takes a flying taxi
-   across the sky lanes to another tower.
-
-The queue rows are in [tasks/README.md](../../tasks/README.md).
+Kylo wakes on a roof next to a taxi. Jobs: taxi fares from pad to pad (paid by distance, a
+bonus for speed), and every fourth job a signal that sends him down on foot into an Ancestor
+hall under the streets. Traffic streams along the lanes, people walk the streets and decks.

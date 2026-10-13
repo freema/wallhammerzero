@@ -15,13 +15,15 @@ Status: the first layer of the engine and the studio exists. Everything runs in 
 The code so far: `packages/det`, `packages/asset-kit` (`./dev npm run asset`),
 `packages/voxel-kit`, `packages/sim` (`./dev npm run sim`), `packages/runtime`,
 `packages/game-data` (`./dev npm run game`) with one example game under `games/`,
-`packages/citygen` (`./dev npm run city`, New Hope's city generator),
+`packages/citygen` (`./dev npm run city`, New Hope's city generator), `packages/new-hope-play`
+(New Hope, the playable 3D game in Three.js: `./dev compose up newhope`, then http://127.0.0.1:4200),
 `packages/audio` (`./dev npm run audio`) and the studio with the asset gallery, live reload, the player, verdicts and task notes
 (`packages/studio`); the art spikes (`assets/spike-a`, `assets/spike-b`, `assets/spike-c`, the rules in
 `assets/STYLE.md`) wait for the owner's verdicts and OC-A2-pick. There is no player and no real game yet. The rest of the queue is in
 `tasks/` (D23): the studio MVP and the art spikes first, then the engine, audio, the rest of the
-studio and the wrappers. The first real game is **New Hope** (D28: a cyberpunk, GTA-like voxel
-game on a generated city-planet, fixed iso, D29) in `games/new-hope/`; its first slice is queued.
+studio and the wrappers. The first real game is **New Hope** (D28: a cyberpunk, GTA-like game on a
+generated city-planet), real-time 3D in Three.js (D30, replaces D29's iso) in
+`packages/new-hope-play`; its story and concept are in `games/new-hope/`.
 
 Read in this order: [docs/DECISIONS.md](docs/DECISIONS.md) → [tasks/README.md](tasks/README.md) →
 [research/README.md](research/README.md). Where ideas come from and how others do it:
@@ -57,8 +59,9 @@ Read in this order: [docs/DECISIONS.md](docs/DECISIONS.md) → [tasks/README.md]
   asset format.
 - **The studio shows all assets, above all animations and FX.** The owner's verdicts are written back
   into the repo. The studio can create task notes and trigger builds.
-- **Games use web tech:** TypeScript, our own runtime on WebGL, wrapped for desktop and mobile. A
-  Godot player may come later for consoles, so **games are pure data** and the player is swappable.
+- **Games use web tech:** TypeScript, our own runtime on WebGL, wrapped for desktop and mobile.
+  New Hope is the exception: real-time 3D on Three.js (D30). A Godot player may come later for
+  consoles, so **games are pure data** and the player is swappable.
 
 ## Verdicts (D7, D21)
 

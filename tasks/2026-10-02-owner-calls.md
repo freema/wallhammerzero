@@ -11,12 +11,12 @@ here.
 
 Answered so far: OC-A1 → D18, OC-A2 → D19 (pick after the spike), OC-A3 → D20, OC-A4 → D21,
 OC-A5 → D22, OC-B1 → D24 (desktop) and D27 (mobile), OC-B3 → D25 (hosting) and D27 (licence),
-OC-A6 for the first game → D28 (New Hope), OC-D2 for New Hope → D29.
+OC-A6 for the first game → D28 (New Hope), OC-D2 for New Hope → D29, then D30 (Three.js).
 The smaller calls (OC-A7, OC-M1, OC-M2, OC-S1, OC-S2, OC-D1, OC-D3, OC-D4) were delegated to
 the session and resolved with their defaults in D27.
 
 **Blocking today:** OC-A2-pick is **ready to answer** (both art spikes are done); it gates
-`runtime-tilemap-scene` (the Kairosoft tilemap; New Hope's iso view is D29).
+`runtime-tilemap-scene` (the Kairosoft tilemap; New Hope is 3D, D30).
 
 ## A. Art and the first game
 
@@ -51,6 +51,4 @@ them, we keep to targets that build in Docker (web, Linux, Windows, Android).
 
 ## C. Later
 
-**OC-D2: Three.js for voxel games.** Answered for New Hope by D29 (fixed iso, baked sprites,
-our runtime). Still open for a later voxel game with a free camera (the Light No Fire plan in
-the owner's Vellum).
+**OC-D2: Three.js for voxel games.** Answered by D30: New Hope is real-time 3D on Three.js.

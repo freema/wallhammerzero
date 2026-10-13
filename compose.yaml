@@ -40,6 +40,14 @@ services:
     ports:
       - "127.0.0.1:${WHZ_STUDIO_PORT:-4100}:4100"
 
+  # New Hope, the 3D game (D30): `./dev compose up newhope`, then http://127.0.0.1:4200.
+  newhope:
+    <<: *node-service
+    network_mode: bridge
+    command: ["npm", "run", "dev", "--workspace", "@whz/new-hope-play"]
+    ports:
+      - "127.0.0.1:${WHZ_NEWHOPE_PORT:-4200}:4200"
+
   # Port convention for services that listen: 127.0.0.1 only, a fixed default, and a
   # WHZ_<SERVICE>_PORT variable to override it (another checkout, a verifier).
   # tools/dev-env/compose-lint.mjs enforces this in the gate.
