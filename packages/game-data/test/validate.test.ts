@@ -96,7 +96,7 @@ describe("game.json", () => {
   });
 
   it("checks every field", () => {
-    const game = miniGame({ id: "Mini", title: "", resolution: { width: 8, height: 180.5 }, palette: "Bad Palette", systems: [], extra: 1, rowText: { customerKinds: [] } });
+    const game = miniGame({ id: "Mini", title: "", resolution: { width: 8, height: 180.5 }, palette: "Bad Palette", systems: "shop.counter", extra: 1, rowText: { customerKinds: [] } });
     expect(brief(run(mini({ "game.json": game })).problems)).toEqual([
       "game.json $.id [schema]",
       "game.json $.title [schema]",

@@ -83,9 +83,8 @@ const GAME_PROPERTIES = {
   palette: { type: "string", pattern: PALETTE_ID_PATTERN, maxLength: MAX_ID_LENGTH, "x-ref": "palette", description: "a palette id" },
   systems: {
     type: "array",
-    description: "The engine systems the game uses.",
+    description: "The engine systems the game uses; empty while a game's systems are not written yet.",
     items: { type: "string", pattern: ROW_ID_PATTERN, maxLength: MAX_ID_LENGTH, "x-ref": "system", description: "a system id" },
-    minItems: 1,
     uniqueItems: true,
   },
   entryScene: { type: "string", pattern: GAME_ID_PATTERN, maxLength: MAX_ID_LENGTH, "x-ref": "doc:scenes", description: "a scene id" },

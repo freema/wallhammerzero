@@ -10,12 +10,13 @@ ends with a longer list of open questions; only the ones that block or shape que
 here.
 
 Answered so far: OC-A1 → D18, OC-A2 → D19 (pick after the spike), OC-A3 → D20, OC-A4 → D21,
-OC-A5 → D22, OC-B1 → D24 (desktop) and D27 (mobile), OC-B3 → D25 (hosting) and D27 (licence).
+OC-A5 → D22, OC-B1 → D24 (desktop) and D27 (mobile), OC-B3 → D25 (hosting) and D27 (licence),
+OC-A6 for the first game → D28 (New Hope), OC-D2 for New Hope → D29.
 The smaller calls (OC-A7, OC-M1, OC-M2, OC-S1, OC-S2, OC-D1, OC-D3, OC-D4) were delegated to
 the session and resolved with their defaults in D27.
 
 **Blocking today:** OC-A2-pick is **ready to answer** (both art spikes are done); it gates
-`runtime-tilemap-scene`. The first real game's notes wait for OC-A6.
+`runtime-tilemap-scene` (the Kairosoft tilemap; New Hope's iso view is D29).
 
 ## A. Art and the first game
 
@@ -33,13 +34,11 @@ voxel props are the cheapest and gain states and facings for free). The owner pi
 voxel-baked props). Also: the number of facings. Gates `runtime-tilemap-scene` and the art
 notes of the first game.
 
-**OC-A6: Which Kairosoft game do we copy first?** **Parked by the owner (D26): do not ask
-again until the owner raises it.** It gates the first game's notes (sim systems, content,
-concept page). Options: (a) a placement-and-visitors sim like *Hot Springs Story* / *Mega Mall
-Story* (grid building, visitors walking, combos, rank; exercises most of the engine); (b) a
-staff-and-projects sim like *Game Dev Story* (mostly menus and staff stats, little map);
-(c) something else. Recommendation: (a). Goes with it: whether the sims get bigger creatures
-or pets (the 3D-baked creature style pays off from about 30 px, not at 16×24).
+**OC-A6: Which Kairosoft game comes after New Hope?** The first real game is New Hope (D28),
+so this call now only picks the first Kairosoft sim of D1. Parked: do not ask until the owner
+raises it. Options: (a) a placement-and-visitors sim like *Hot Springs Story* / *Mega Mall
+Story*; (b) a staff-and-projects sim like *Game Dev Story*; (c) something else.
+Recommendation: (a).
 
 ## B. Platform
 
@@ -52,6 +51,6 @@ them, we keep to targets that build in Docker (web, Linux, Windows, Android).
 
 ## C. Later
 
-**OC-D2: Three.js for voxel games.** Deferred. `voxels.md` says it depends on the voxel game's
-camera (a pixel-stable look needs a fixed orthographic camera; a free perspective flight camera
-crawls). Revisit before the first voxel game.
+**OC-D2: Three.js for voxel games.** Answered for New Hope by D29 (fixed iso, baked sprites,
+our runtime). Still open for a later voxel game with a free camera (the Light No Fire plan in
+the owner's Vellum).

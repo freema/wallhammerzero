@@ -19,7 +19,8 @@ The code so far: `packages/det`, `packages/asset-kit` (`./dev npm run asset`),
 (`packages/studio`); the art spikes (`assets/spike-a`, `assets/spike-b`, `assets/spike-c`, the rules in
 `assets/STYLE.md`) wait for the owner's verdicts and OC-A2-pick. There is no player and no real game yet. The rest of the queue is in
 `tasks/` (D23): the studio MVP and the art spikes first, then the engine, audio, the rest of the
-studio and the wrappers. The first real game is parked by the owner (D26): don't ask about it.
+studio and the wrappers. The first real game is **New Hope** (D28: a cyberpunk, GTA-like voxel
+game on a generated city-planet, fixed iso, D29) in `games/new-hope/`; its first slice is queued.
 
 Read in this order: [docs/DECISIONS.md](docs/DECISIONS.md) → [tasks/README.md](tasks/README.md) →
 [research/README.md](research/README.md). Where ideas come from and how others do it:

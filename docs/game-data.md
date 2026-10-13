@@ -60,7 +60,7 @@ two games share an id: the id names the game in commands, build outputs and save
 | `title` | The working title, for tools and the studio. Text the player reads is in the locales. |
 | `resolution` | The native resolution in pixels (`width`, `height`, 16 to 4096). The player scales it by whole numbers. |
 | `palette` | The game's palette: the id of a file under `assets/palettes/`. |
-| `systems` | The engine systems the game uses (ids of `ENGINE_SYSTEMS` in `packages/sim`). A system that requires another needs it listed too. |
+| `systems` | The engine systems the game uses (ids of `ENGINE_SYSTEMS` in `packages/sim`). A system that requires another needs it listed too. Empty (`[]`) while the game's systems are not written yet: `games/new-hope/` starts that way. |
 | `entryScene` | Optional until scenes exist: the id of the scene the game starts in (`scenes/<id>.json`). |
 | `rowText` | Optional. Per data table, the display texts every row has. `"items": ["name"]` means: each row `<id>` of `items` has the string `items.<id>.name` in every locale. |
 

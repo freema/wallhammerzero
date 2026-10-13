@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "new-hope",
+  "title": "New Hope",
+  "resolution": { "width": 480, "height": 270 },
+  "palette": "new-hope",
+  "systems": []
+}

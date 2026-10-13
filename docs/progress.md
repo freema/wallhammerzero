@@ -8,9 +8,13 @@ tool disagree, the tool wins. Format:
 
 ## Now
 
-- **In flight:** nothing.
-- **Last finished:** `art-spike-voxel` (2026-10-07).
-- **Next:** #18 `player-loop-test-protocol` (#26–#29, #31 and #32 are open too).
+- **In flight:** New Hope wave 1 (D28, D29), started 2026-10-13 as a small workflow of three
+  agents with the owner's go: #36 `nh-building-kit`, #37 `nh-characters-vehicles`, #38
+  `nh-city-generator`. The agents write files only; the main session checks each result, runs
+  the gate and commits one note per commit.
+- **Last finished:** `art-spike-voxel` (2026-10-07, committed 2026-10-13).
+- **Next:** #39 `nh-city-mockup` after wave 1, then #18 `player-loop-test-protocol` (#26–#29,
+  #31 and #32 are open too).
 
 ## Blocked on the owner
 
