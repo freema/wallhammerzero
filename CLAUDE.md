@@ -22,9 +22,12 @@ browser game), `packages/audio` (`./dev npm run audio`) and the studio with the 
 (`packages/studio`); the art spikes (`assets/spike-a`, `assets/spike-b`, `assets/spike-c`, the rules in
 `assets/STYLE.md`) wait for the owner's verdicts and OC-A2-pick. There is no player and no real game yet. The rest of the queue is in
 `tasks/` (D23): the studio MVP and the art spikes first, then the engine, audio, the rest of the
-studio and the wrappers. The first real game is **New Hope** (D28: a cyberpunk, GTA-like game on a
+studio and the wrappers. The first real game was **New Hope** (D28: a cyberpunk, GTA-like game on a
 generated city-planet), real-time 3D in Three.js (D30, replaces D29's iso) in
-`packages/new-hope-play`; its story and concept are in `games/new-hope/`.
+`packages/new-hope-play`; its story and concept are in `games/new-hope/`. It is **parked as a
+reference** (D31): the next game comes from `/make-game` pitches
+([.claude/skills/make-game/SKILL.md](.claude/skills/make-game/SKILL.md)), and every pitch and its
+verdict is in [docs/games/pitches.md](docs/games/pitches.md).
 
 Read in this order: [docs/DECISIONS.md](docs/DECISIONS.md) → [tasks/README.md](tasks/README.md) →
 [research/README.md](research/README.md). Where ideas come from and how others do it:

@@ -19,6 +19,7 @@ and are made only by the owner in chat; a page marks what is decided and what is
 | [phaser.md](phaser.md) | 2D games on Phaser 4 for PixelDen, and how Wallhammer supplies their art and audio. |
 | [testing.md](testing.md) | How a game is verified: the test hook, scripts, tiers, screenshots, the QA sub-agent. |
 | [shipping.md](shipping.md) | Desktop, Steam, mobile and the stores: what builds in Docker, what is an owner call. |
+| [pitches.md](pitches.md) | Every game concept pitched and the owner's verdict; `/make-game` reads it before pitching. |
 
 ## Three kinds of game
 
@@ -49,10 +50,14 @@ consent, and never writes a decision or a task note for an idea the owner has no
 ## How a game is built here
 
 The flow below is what the verified research supports and what the repo already does. Steps
-5 and 6 run as `/continue-game <id> [focus]`
+1 to 4 run as `/make-game [idea]`
+([.claude/skills/make-game/SKILL.md](../../.claude/skills/make-game/SKILL.md)): pitches checked
+against the ledger [pitches.md](pitches.md), the owner's pick, a scaffold from
+[packages/play-kit](../../packages/play-kit/README.md), the core verb, a first look. Steps 5 and
+6 run as `/continue-game <id> [focus]`
 ([.claude/skills/continue-game/SKILL.md](../../.claude/skills/continue-game/SKILL.md)), with the
-game's state in `games/<id>/STATE.md`. The rest of the proposal (`/make-game`, a progress
-feed, a studio page per game) is
+game's state in `games/<id>/STATE.md`. The rest of the proposal (a progress feed, a studio
+page per game) is
 [research/game-commands-flow.md](../../research/game-commands-flow.md): it stays a proposal
 for the owner to discuss, and is not repeated here.
 

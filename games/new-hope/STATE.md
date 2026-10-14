@@ -4,7 +4,7 @@ Where the game stands between `/continue-game new-hope` runs
 ([.claude/skills/continue-game/SKILL.md](../../.claude/skills/continue-game/SKILL.md)). Each run
 updates this file in its own commit. It is not a queue: Next holds at most three items.
 
-**Status:** building. Updated 2026-10-14, after `1b8bb83`.
+**Status:** parked (D31): a reference, not developed unless the owner asks. Updated 2026-10-14.
 
 ## How to run
 
@@ -30,7 +30,8 @@ updates this file in its own commit. It is not a queue: Next holds at most three
 - 2026-10-13, on the direction (D30): „chci aby to bylo 3D three js hratelná hra žádný verze dva
   no mans skyes look že procedurálně generovaný svět“.
 - 2026-10-14: „pokračuj prosím vývojem hry“.
-- No playtest feedback yet on `1b8bb83` (the fixed step, the instanced crowd, the merged cars).
+- 2026-10-14, on the game as a whole (D31): „úplně nevidím teď důvod dál pokračovat tou hrou pokud
+  na ní neimplementuješ ty skills … celkově hra se mi nelíbí ani“.
 
 ## Next
 
