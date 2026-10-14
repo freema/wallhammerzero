@@ -28,6 +28,8 @@ generated city-planet), real-time 3D in Three.js (D30, replaces D29's iso) in
 Read in this order: [docs/DECISIONS.md](docs/DECISIONS.md) → [tasks/README.md](tasks/README.md) →
 [research/README.md](research/README.md). Where ideas come from and how others do it:
 [docs/references.md](docs/references.md).
+Before building or continuing a game, read the handbook [docs/games/](docs/games/README.md):
+Three.js, Phaser, procedural generation, performance, testing and shipping.
 
 ## How we work
 
