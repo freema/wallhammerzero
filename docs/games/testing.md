@@ -221,10 +221,9 @@ timing, never fun.
 
 - **Fix the counters first.** three.js resets `renderer.info` on every `render()` call while
   `info.autoReset` is true, so under `EffectComposer` the numbers after a frame are the last
-  pass's (New Hope's `__nh.info()` reports one triangle). `renderer.info.autoReset = false`,
-  one `reset()` at the top of each presented frame, and `perf()` returns a copy. Every perf
-  claim made about New Hope so far is unmeasured; this is the one-line change that makes
-  measuring possible.
+  pass's (New Hope's first `__nh.info()` reported one triangle). `renderer.info.autoReset = false`,
+  one `reset()` at the top of each presented frame, and `perf()` returns a copy. New Hope does
+  this since 2026-10-14.
 - **Two tiers of perf test:**
   - **Counts, any renderer, can run in Docker:** `calls`, `triangles`, `geometries`,
     `textures`, `programs`, bundle size, request count, against a committed `perf-budget.json`

@@ -1,15 +1,21 @@
 // New Hope (D30): the playable 3D game. A district of the city-planet from a seed, Kylo on foot
 // and in hover cars, jobs that send him across the sky lanes and down into the undercity.
+//
+// The loop: `step` is the simulation at a fixed 120 Hz (input, physics, rules), `present` draws
+// (camera, HUD, sound, the render) once per browser frame. Same seed + same inputs per step =
+// the same run, which is what scripted checks (debug.ts) rely on.
 
 import * as THREE from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { createRng } from "@whz/det";
 import { K } from "@whz/citygen";
 import { Hovercar, Walker } from "./actors.ts";
 import { Sound } from "./audio.ts";
 import { buildCity } from "./city.ts";
+import { captureErrors, installDebug } from "./debug.ts";
 import { PsiBeam, Rain } from "./fx.ts";
 import { Input } from "./input.ts";
 import { Jobs } from "./jobs.ts";
@@ -18,18 +24,27 @@ import { Radar } from "./radar.ts";
 import { addLights, createSky, createSkyline } from "./sky.ts";
 import { createAtlas } from "./textures.ts";
 import { Crowd, Traffic } from "./traffic.ts";
-import { blocksPoint, cellCentre, cellsOf, createWorld, STOREY, TILE } from "./world.ts";
+import { blocksPoint, cellCentre, cellsOf, createWorld, hash3, STOREY } from "./world.ts";
+
+captureErrors();
 
 const params = new URLSearchParams(location.search);
 const seed = Number(params.get("seed") ?? 2) >>> 0;
+/** The simulation step: 120 Hz runs once per frame on 120 Hz screens and twice on 60 Hz ones. */
+const STEP = 1 / 120;
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+// Antialiasing happens in the composer's multisampled target: the default framebuffer only ever
+// receives the final full-screen pass, so MSAA there would cost memory and do nothing.
+const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+const pixelRatio = Math.min(devicePixelRatio, 2);
+renderer.setPixelRatio(pixelRatio);
 renderer.setSize(innerWidth, innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.0;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// Count a whole frame (shadow, scene and post passes), not just the last render call.
+renderer.info.autoReset = false;
 document.body.prepend(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -48,7 +63,7 @@ const traffic = new Traffic(world);
 scene.add(traffic.group);
 const crowd = new Crowd(world);
 scene.add(crowd.group);
-const police = new Police(world);
+const police = new Police(world, createRng(seed, "police"));
 scene.add(police.group);
 const rain = new Rain();
 scene.add(rain.lines);
@@ -93,8 +108,14 @@ pads.slice(1).forEach((p, i) => {
 
 const jobs = new Jobs(world, scene, taxi);
 
-// Post-processing: the neon blooms.
-const composer = new EffectComposer(renderer);
+// Post-processing: the neon blooms. The scene pass renders into a 4x multisampled half-float
+// target (an explicit target gets pixel ratio 1, so the ratio is set again).
+const composer = new EffectComposer(
+  renderer,
+  new THREE.WebGLRenderTarget(innerWidth * pixelRatio, innerHeight * pixelRatio, { type: THREE.HalfFloatType, samples: 4 }),
+);
+composer.setPixelRatio(pixelRatio);
+composer.setSize(innerWidth, innerHeight);
 composer.addPass(new RenderPass(scene, camera));
 const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.7, 0.5, 0.86);
 composer.addPass(bloom);
@@ -115,20 +136,36 @@ start.addEventListener("click", () => {
   void renderer.domElement.requestPointerLock();
 });
 renderer.domElement.addEventListener("click", () => void renderer.domElement.requestPointerLock());
+document.addEventListener("visibilitychange", () => sound.setHidden(document.hidden));
 
-const hud = {
-  tl: document.querySelector("#hud .tl") as HTMLElement,
-  tr: document.querySelector("#hud .tr") as HTMLElement,
-  bl: document.querySelector("#hud .bl") as HTMLElement,
-  c: document.querySelector("#hud .c") as HTMLElement,
-  prompt: document.querySelector("#hud .prompt") as HTMLElement,
-};
+/** HUD text, written to the DOM only when it changes. */
+class Line {
+  private last = "";
+  private readonly el: HTMLElement;
+
+  constructor(selector: string) {
+    this.el = document.querySelector(selector) as HTMLElement;
+  }
+
+  set(html: string): void {
+    if (html === this.last) return;
+    this.last = html;
+    this.el.innerHTML = html;
+  }
+
+  opacity(value: string): void {
+    if (this.el.style.opacity !== value) this.el.style.opacity = value;
+  }
+}
+const hud = { tl: new Line("#hud .tl"), tr: new Line("#hud .tr"), bl: new Line("#hud .bl"), c: new Line("#hud .c"), prompt: new Line("#hud .prompt") };
 const radar = new Radar(world, document.getElementById("hud") as HTMLElement);
 
 let camYaw = Math.PI * 0.75;
 let camPitch = 0.32;
 let camDist = 6;
 let driving: Hovercar | null = null;
+/** Simulation steps since the start. */
+let tick = 0;
 let time = 0;
 let flash = 0;
 /** Psionic energy for body-passing, 0..100. */
@@ -137,6 +174,8 @@ let passes = 0;
 const PASS_COST = 60;
 const target = new THREE.Vector3();
 const desired = new THREE.Vector3();
+const KEY_OFFSET = new THREE.Vector3(60, 140, 40);
+const LIFT = new THREE.Vector3(0, 0.3, 0);
 
 function bandName(level: number): string {
   const b = world.district.params.bands;
@@ -144,14 +183,9 @@ function bandName(level: number): string {
   return "sky";
 }
 
-function placeCamera(dt: number): void {
+function placeCamera(): void {
   const focus = driving ? driving.pos : kylo.pos;
   target.set(focus.x, focus.y + (driving ? 1.6 : 1.55), focus.z);
-  if (driving && input.idle > 1.2 && driving.speed() > 4) {
-    let d = driving.yaw - camYaw;
-    d = Math.atan2(Math.sin(d), Math.cos(d));
-    camYaw += d * Math.min(1, dt * 2.5);
-  }
   const dist = driving ? camDist * 1.9 : camDist;
   const cp = Math.cos(camPitch);
   desired.set(target.x - Math.sin(camYaw) * cp * dist, target.y + Math.sin(camPitch) * dist, target.z - Math.cos(camYaw) * cp * dist);
@@ -169,7 +203,7 @@ function placeCamera(dt: number): void {
   camera.lookAt(target);
   // Keep the shadow box on the action.
   keyLight.target.position.copy(target);
-  keyLight.position.copy(target).add(new THREE.Vector3(60, 140, 40));
+  keyLight.position.copy(target).add(KEY_OFFSET);
   sky.position.copy(camera.position);
 }
 
@@ -186,8 +220,8 @@ function nearestCar(): Hovercar | null {
   return best;
 }
 
-export function message(text: string): void {
-  hud.c.innerHTML = text;
+function message(text: string): void {
+  hud.c.set(text);
   flash = 3.2;
 }
 
@@ -222,7 +256,7 @@ function passBody(): boolean {
   const theirs = crowd.lookOf(i);
   crowd.swap(i, kylo.look, from);
   kylo.setLook(theirs);
-  kylo.respawnAt(to.add(new THREE.Vector3(0, 0.3, 0)));
+  kylo.respawnAt(to.add(LIFT));
   beam.fire(from, kylo.pos);
   sound.whoosh();
   if (seen) police.report(1, "a guard saw the passing", message);
@@ -241,15 +275,18 @@ function busted(): void {
   message(`BUSTED<br><small>the Union takes ${lost} ¤ and drops you on the roof</small>`);
 }
 
-function frame(dt: number, render = true): void {
+/** One simulation step: input, actors, rules. Draws nothing. */
+function step(dt: number): void {
+  tick++;
   time += dt;
-  camYaw -= input.mouseX * 0.0024;
-  camPitch = Math.min(1.25, Math.max(-0.35, camPitch + input.mouseY * 0.0022));
-  camDist = Math.min(16, Math.max(2.5, camDist + input.wheel * 0.6));
-
-  let prompt = "";
   psi = Math.min(100, psi + dt * 6);
   if (driving) {
+    // The camera swings behind a car that flies straight while the mouse rests.
+    if (input.idle > 1.2 && driving.speed() > 4) {
+      let d = driving.yaw - camYaw;
+      d = Math.atan2(Math.sin(d), Math.cos(d));
+      camYaw += d * Math.min(1, dt * 2.5);
+    }
     driving.update(dt, input);
     kylo.pos.copy(driving.pos);
     if (driving.impact > 0) {
@@ -260,34 +297,38 @@ function frame(dt: number, render = true): void {
   } else {
     kylo.update(dt, input, camYaw);
     const car = nearestCar();
-    if (car) {
-      prompt = `<b>F</b> ${car.kind === "cruiser" ? "steal the Union cruiser" : `fly the ${car.kind}`}`;
-      if (input.hit("KeyF")) enterCar(car);
-    } else if (kylo.inLift()) {
-      prompt = "<b>E</b> up · <b>Q</b> down";
-    } else if (psi >= PASS_COST && crowd.nearest(kylo.pos, 10) >= 0) {
-      prompt = "<b>T</b> pass into their body";
-    }
+    if (car && input.hit("KeyF")) enterCar(car);
     if (input.hit("KeyT") && !passBody() && psi < PASS_COST) message("<small>not enough psi</small>");
   }
   if (input.hit("KeyM")) sound.toggleMute();
   for (const car of cars) if (car !== driving) car.update(dt, null);
-  traffic.update(dt);
   crowd.update(dt);
   const doneBefore = jobs.state().done;
   jobs.update(dt, kylo.pos, driving, camYaw, message);
   if (jobs.state().done > doneBefore && doneBefore > 1) sound.chime();
-  const speed = driving ? driving.speed() : 0;
-  police.update(dt, kylo.pos, speed, { say: message, busted });
+  police.update(dt, kylo.pos, driving ? driving.speed() : 0, { say: message, busted });
+  if (input.hit("KeyN")) location.search = `?seed=${(hash3(seed, tick, 77) * 1e9) >>> 0}`;
+  input.endStep(dt);
+}
+
+/** CPU time of recent render calls in ms, for `perf()`. */
+const renderMs: number[] = [];
+
+/** Draw the current state: camera, effects, sound, HUD, radar and the frame. */
+function present(dt: number): void {
+  camYaw -= input.mouseX * 0.0024;
+  camPitch = Math.min(1.25, Math.max(-0.35, camPitch + input.mouseY * 0.0022));
+  camDist = Math.min(16, Math.max(2.5, camDist + input.wheel * 0.6));
+  input.endFrame();
+
+  traffic.update(dt);
+  crowd.draw();
   beam.update(dt);
-  if (input.hit("KeyN")) location.search = `?seed=${(Math.random() * 1e9) >>> 0}`;
-
   (sky.material as THREE.ShaderMaterial).uniforms.time!.value = time;
-  const blink = Math.sin(time * 3) > 0.2;
-  city.beacons.visible = blink;
-
-  placeCamera(dt);
+  city.beacons.visible = Math.sin(time * 3) > 0.2;
+  placeCamera();
   rain.update(dt, camera.position);
+  const speed = driving ? driving.speed() : 0;
   sound.update(dt, {
     driving: driving !== null,
     speed,
@@ -297,84 +338,121 @@ function frame(dt: number, render = true): void {
     rain: rain.raining(),
   });
 
+  let prompt = "";
+  if (!driving) {
+    const car = nearestCar();
+    if (car) prompt = `<b>F</b> ${car.kind === "cruiser" ? "steal the Union cruiser" : `fly the ${car.kind}`}`;
+    else if (kylo.inLift()) prompt = "<b>E</b> up · <b>Q</b> down";
+    else if (psi >= PASS_COST && crowd.nearest(kylo.pos, 10) >= 0) prompt = "<b>T</b> pass into their body";
+  }
   const level = Math.floor((driving ? driving.pos.y : kylo.pos.y) / STOREY + 0.05);
   const stars = police.stars ? `<br><span class="stars">${"★".repeat(police.stars)}${"☆".repeat(5 - police.stars)}</span>` : "";
   const psiBar = `<br>psi <span class="bar"><i style="width:${psi.toFixed(0)}%;background:${psi >= PASS_COST ? "#b05aff" : "#553a77"}"></i></span>`;
-  hud.tl.innerHTML = `NEW HOPE · district ${seed}<br>level ${level} · ${bandName(level)}${driving ? ` · ${Math.round(driving.speed() * 3.6)} km/h` : ""}${psiBar}${stars}`;
+  hud.tl.set(`NEW HOPE · district ${seed}<br>level ${level} · ${bandName(level)}${driving ? ` · ${Math.round(speed * 3.6)} km/h` : ""}${psiBar}${stars}`);
   if (police.arrest() > 0.05) prompt = `UNION SECURITY · STOP · ${"▮".repeat(Math.ceil(police.arrest() * 6))}`;
-  hud.tr.innerHTML = jobs.hud(kylo.pos, camYaw);
-  hud.bl.innerHTML = driving
-    ? "<b>W/S</b> thrust · <b>A/D</b> turn · <b>Space</b> up · <b>Shift</b> down · <b>R</b> boost · <b>F</b> get out"
-    : "<b>WASD</b> move · <b>Shift</b> run · <b>Space</b> jump · <b>T</b> pass into a body · <b>mouse</b> look · <b>wheel</b> zoom · <b>M</b> mute · <b>N</b> new district";
-  hud.prompt.innerHTML = prompt;
-  hud.prompt.style.opacity = prompt ? "1" : "0";
+  hud.tr.set(jobs.hud(kylo.pos, camYaw));
+  hud.bl.set(
+    driving
+      ? "<b>W/S</b> thrust · <b>A/D</b> turn · <b>Space</b> up · <b>Shift</b> down · <b>R</b> boost · <b>F</b> get out"
+      : "<b>WASD</b> move · <b>Shift</b> run · <b>Space</b> jump · <b>T</b> pass into a body · <b>mouse</b> look · <b>wheel</b> zoom · <b>M</b> mute · <b>N</b> new district",
+  );
+  hud.prompt.set(prompt);
+  hud.prompt.opacity(prompt ? "1" : "0");
   flash = Math.max(0, flash - dt);
-  hud.c.style.opacity = flash > 0 ? String(Math.min(1, flash)) : "0";
+  hud.c.opacity(flash > 0 ? String(Math.min(1, Math.round(flash * 20) / 20)) : "0");
 
-  if (render) {
-    radar.draw(dt, kylo.pos, camYaw, {
-      target: jobs.target(),
-      cars: cars.filter((c) => c !== driving).map((c) => c.pos),
-      police: police.positions(),
-      crowd: crowd.positions(),
-    });
-    composer.render(dt);
-  }
-  input.endFrame(dt);
+  radar.draw(dt, kylo.pos, camYaw, {
+    target: jobs.target(),
+    cars: cars.filter((c) => c !== driving).map((c) => c.pos),
+    police: police.positions(),
+    crowd: crowd.positions(),
+  });
+  renderer.info.reset();
+  const t0 = performance.now();
+  composer.render(dt);
+  renderMs.push(performance.now() - t0);
+  if (renderMs.length > 240) renderMs.shift();
+}
+
+/** Run the simulation for `seconds` of game time, then draw once. */
+function advance(seconds: number): void {
+  const n = Math.max(1, Math.round(seconds / STEP));
+  for (let i = 0; i < n; i++) step(STEP);
+  present(n * STEP);
 }
 
 let last = performance.now();
+let owed = 0;
 function loop(now: number): void {
-  const dt = Math.min(0.05, (now - last) / 1000);
+  let dt = Math.min(0.1, (now - last) / 1000);
   last = now;
-  frame(dt);
+  // Snap a frame time near a whole number of steps to it, so a steady 60 or 120 Hz screen gets
+  // exactly 2 or 1 steps per frame instead of an occasional 1 or 3.
+  const whole = Math.round(dt / STEP);
+  if (whole > 0 && Math.abs(dt - whole * STEP) < STEP * 0.25) dt = whole * STEP;
+  owed += dt;
+  let n = 0;
+  while (owed >= STEP - 1e-9 && n < 12) {
+    step(STEP);
+    owed -= STEP;
+    n++;
+  }
+  if (n === 12) owed = 0;
+  present(dt);
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
 
-// A handle for checks from the browser's console and the DevTools MCP.
-Object.assign(window, {
-  __nh: {
-    seed,
-    world: { w: world.w, d: world.d, h: world.h, tile: TILE, storey: STOREY },
-    kylo: () => kylo.pos.toArray(),
-    driving: () => driving !== null,
-    jobs: () => jobs.state(),
-    teleport: (x: number, y: number, z: number) => kylo.respawnAt(new THREE.Vector3(x, y, z)),
-    look: (yaw: number, pitch: number, dist: number) => {
-      camYaw = yaw;
-      camPitch = pitch;
-      camDist = dist;
-    },
-    info: () => renderer.info.render,
-    /** Put the car Kylo drives (or Kylo) at a point, e.g. on the job's pad. */
-    place: (x: number, y: number, z: number) => {
-      if (driving) {
-        driving.pos.set(x, y, z);
-        driving.vel.set(0, 0, 0);
-      } else kylo.respawnAt(new THREE.Vector3(x, y, z));
-    },
-    target: () => jobs.target().toArray(),
-    police: () => ({ stars: police.stars, units: police.positions().length, arrest: police.arrest() }),
-    wanted: (stars: number) => police.report(stars, "console", message),
-    pass: () => passBody(),
-    crowd: () => crowd.positions().map((p) => p.toArray()),
-    psi: () => psi,
-    rain: (on: boolean | null) => {
-      rain.force = on;
-    },
-    nearestCar: () => {
-      const c = nearestCar();
-      return c ? c.kind : null;
-    },
-    /** Hold or release a key (KeyboardEvent.code) for scripted play. */
-    key: (code: string, down: boolean) => dispatchEvent(new KeyboardEvent(down ? "keydown" : "keyup", { code })),
-    /** Run the game for `seconds` at 60 fps without waiting for the browser (works in a hidden tab). */
-    advance: (seconds: number) => {
-      const n = Math.round(seconds * 60);
-      for (let i = 0; i < n; i++) frame(1 / 60, i === n - 1);
-      return { kylo: kylo.pos.toArray(), driving: driving !== null, jobs: jobs.state() };
-    },
+installDebug({
+  seed,
+  step: STEP,
+  renderer,
+  composer,
+  scene,
+  camera,
+  renderMs,
+  advance,
+  render: () => present(0),
+  state: () => ({
+    tick,
+    kylo: { pos: kylo.pos.toArray(), yaw: kylo.yaw, onGround: kylo.onGround, kylosBody: kylo.look.long === true },
+    driving: driving ? { kind: driving.kind, pos: driving.pos.toArray(), vel: driving.vel.toArray(), speed: driving.speed() } : null,
+    psi,
+    passes,
+    level: Math.floor((driving ? driving.pos.y : kylo.pos.y) / STOREY + 0.05),
+    jobs: jobs.state(),
+    police: { stars: police.stars, heat: police.heatLevel, units: police.positions().map((p) => p.toArray()), arrest: police.arrest() },
+    crowd: crowd.positions().map((p) => p.toArray()),
+  }),
+  band: bandName,
+  nearestCar: () => nearestCar()?.kind ?? null,
+  key: (code, down) => dispatchEvent(new KeyboardEvent(down ? "keydown" : "keyup", { code })),
+  pointer: (dx, dy) => {
+    camYaw -= dx * 0.0024;
+    camPitch = Math.min(1.25, Math.max(-0.35, camPitch + dy * 0.0022));
   },
+  look: (yaw, pitch, dist) => {
+    camYaw = yaw;
+    camPitch = pitch;
+    camDist = dist;
+  },
+  place: (x, y, z) => {
+    if (driving) {
+      driving.pos.set(x, y, z);
+      driving.vel.set(0, 0, 0);
+    } else kylo.respawnAt(new THREE.Vector3(x, y, z));
+  },
+  enterNearestCar: () => {
+    const car = nearestCar();
+    if (!driving && car) enterCar(car);
+    return driving !== null;
+  },
+  leaveCar,
+  wanted: (stars) => police.report(stars, "console", message),
+  pass: () => passBody(),
+  rain: (on) => {
+    rain.force = on;
+  },
+  world,
 });
 message("KYLO<br><small>no memory · a Union capsule · New Hope</small>");

@@ -156,7 +156,26 @@ export class Sound {
 
   toggleMute(): void {
     this.muted = !this.muted;
-    if (this.ctx) this.master.gain.setTargetAtTime(this.muted ? 0 : 0.55, this.ctx.currentTime, 0.1);
+    if (!this.ctx) return;
+    this.master.gain.setTargetAtTime(this.muted ? 0 : 0.55, this.ctx.currentTime, 0.1);
+    // Muted, the graph stops too (after the fade), so the reverb and the drone cost nothing.
+    if (this.muted) setTimeout(() => this.run(), 400);
+    else this.run();
+  }
+
+  /** A hidden tab is silent and costs no audio processing. */
+  setHidden(hidden: boolean): void {
+    this.hidden = hidden;
+    this.run();
+  }
+
+  private hidden = false;
+
+  private run(): void {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    if (this.muted || this.hidden) void ctx.suspend();
+    else void ctx.resume();
   }
 
   update(dt: number, s: AudioState): void {

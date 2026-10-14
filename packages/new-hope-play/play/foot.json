@@ -1,0 +1,20 @@
+{
+  "name": "foot",
+  "seed": 2,
+  "steps": [
+    { "do": "advance", "seconds": 1, "expect": "driving", "eq": null, "note": "starts on foot on the roof" },
+    { "expect": "band", "eq": "roofs" },
+    { "do": "scenario", "name": "lift" },
+    { "do": "advance", "seconds": 0.5, "expect": "kylo.onGround", "eq": true },
+    { "do": "save", "name": "bottom" },
+    { "do": "hold", "code": "KeyE", "seconds": 1, "note": "E rides the lift up one storey" },
+    { "do": "advance", "seconds": 0.5, "expect": "level", "from": "bottom", "eq": 1 },
+    { "do": "scenario", "name": "street" },
+    { "do": "advance", "seconds": 0.5, "expect": "band", "eq": "streets" },
+    { "do": "save", "name": "street" },
+    { "do": "hold", "code": "KeyW", "seconds": 2, "expect": "kylo.pos.0", "from": "street", "gte": 3, "note": "walks along the camera's forward" },
+    { "expect": "kylo.onGround", "eq": true },
+    { "expect": "perf.calls", "lte": 400, "note": "draw-call budget, shadow and post passes included" },
+    { "shot": "street" }
+  ]
+}

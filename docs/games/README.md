@@ -69,7 +69,8 @@ for the owner to discuss, and is not repeated here.
    The owner's verdicts come back as `review.json` and `reviews/INBOX.md` (D7, D21).
 4. **One test hook per game, numbers before pictures.** State as text, the game steps its own
    clock, seeded scripts, counts from `renderer.info`, PNG shots read by a sub-agent:
-   [testing.md](testing.md). New Hope's `window.__nh` is the start of this.
+   [testing.md](testing.md). New Hope's `window.__game` has the first verbs (`describe`,
+   `digest`, `advance`, `scenario`, `runScript`, `shot`, `perf`, `errors`).
 5. **One increment per run, one commit, the gate chained to it**
    (`./dev npm run check && git commit …`). The same check that failed twice stops the run; the
    report says what was verified and what only the owner can judge.

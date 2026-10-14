@@ -1,0 +1,22 @@
+{
+  "name": "car",
+  "seed": 2,
+  "steps": [
+    { "do": "advance", "seconds": 1, "expect": "nearestCar", "eq": "taxi", "note": "the taxi waits next to Kylo" },
+    { "do": "press", "code": "KeyF", "expect": "driving.kind", "eq": "taxi" },
+    { "expect": "jobs.kind", "eq": "fare", "note": "boarding the taxi starts a fare" },
+    { "do": "hold", "code": "KeyW", "seconds": 1.5, "expect": "driving.speed", "gt": 10 },
+    { "do": "hold", "code": "Space", "seconds": 1 },
+    { "do": "scenario", "name": "target", "note": "drop the taxi on the fare's pad" },
+    { "do": "advance", "seconds": 2, "expect": "jobs.done", "gte": 2, "note": "the fare is paid" },
+    { "expect": "jobs.credits", "gt": 0 },
+    { "expect": "perf.calls", "lte": 400 },
+    { "shot": "landed" },
+    { "do": "save", "name": "paid" },
+    { "do": "wanted", "args": [3] },
+    { "do": "advance", "seconds": 4, "expect": "police.units.length", "gte": 4, "note": "three stars bring four cruisers" },
+    { "do": "advance", "seconds": 8, "expect": "jobs.credits", "from": "paid", "lt": 0, "note": "a parked taxi gets arrested: the fine" },
+    { "expect": "driving", "eq": null },
+    { "expect": "police.stars", "eq": 0 }
+  ]
+}

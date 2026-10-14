@@ -153,8 +153,8 @@ unmeasured:
 
 - `renderer.info` resets on **every** `render()` call while `info.autoReset` is true, and in
   r180 it resets after the shadow pass. Under `EffectComposer` (RenderPass + UnrealBloomPass's
-  13 full-screen draws + OutputPass) `__nh.info()` therefore reports the OutputPass's one
-  triangle. **Rule:** `renderer.info.autoReset = false` and one `renderer.info.reset()` at the
+  13 full-screen draws + OutputPass) New Hope's first `__nh.info()` therefore reported the
+  OutputPass's one triangle (fixed 2026-10-14: `__game.perf()` counts the whole frame). **Rule:** `renderer.info.autoReset = false` and one `renderer.info.reset()` at the
   top of each presented frame; expose `perf()` returning a copy of `render` and `memory` plus
   `programs.length`, the tier and the DPR. r185 moved the WebGL reset before the shadow pass
   (#33688), so after an upgrade shadow draws are counted too; the per-pass reset remains.

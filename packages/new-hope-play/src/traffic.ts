@@ -3,8 +3,8 @@
 
 import * as THREE from "three";
 import { K } from "@whz/citygen";
-import { animatePerson, buildPerson, crowdLook } from "./models.ts";
-import type { Person, PersonLook } from "./models.ts";
+import { crowdLook, PeopleMeshes, pose } from "./people.ts";
+import type { Pose, PersonLook } from "./people.ts";
 import { hash3, STOREY, TILE } from "./world.ts";
 import type { World } from "./world.ts";
 
@@ -15,6 +15,7 @@ interface Track {
   dx: number;
   dz: number;
   length: number;
+  yaw: number;
 }
 
 interface Flyer {
@@ -40,7 +41,7 @@ export class Traffic {
     const [l0, l1] = d.params.bands.lanes;
     const half = (d.params.streetWidth * TILE) / 2;
     const add = (ox: number, oy: number, oz: number, dx: number, dz: number, length: number): void => {
-      this.tracks.push({ ox, oy, oz, dx, dz, length });
+      this.tracks.push({ ox, oy, oz, dx, dz, length, yaw: Math.atan2(dx, dz) });
     };
     // The district's lane grid: over every street row (lower lane level) and column (upper).
     for (const row of d.streets.rows) {
@@ -89,7 +90,7 @@ export class Traffic {
       f.t = (f.t + (f.speed * dt) / tr.length) % 1;
       const s = f.t * tr.length;
       this.tmp.position.set(tr.ox + tr.dx * s, tr.oy + Math.sin(f.t * 40 + i) * 0.3, tr.oz + tr.dz * s);
-      this.tmp.rotation.set(0, Math.atan2(tr.dx, tr.dz), 0);
+      this.tmp.rotation.set(0, tr.yaw, 0);
       this.tmp.scale.setScalar(1);
       this.tmp.updateMatrix();
       this.body.setMatrixAt(i, this.tmp.matrix);
@@ -105,8 +106,9 @@ export class Traffic {
 }
 
 interface Walker {
-  p: Person;
   look: PersonLook;
+  pos: THREE.Vector3;
+  yaw: number;
   x: number;
   y: number;
   z: number;
@@ -118,16 +120,20 @@ interface Walker {
 }
 
 const FLAT = new Set<number>([K.street, K.deck, K.walkway, K.pad]);
+const STEPS = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
 
 export class Crowd {
-  readonly group = new THREE.Group();
   private readonly people: Walker[] = [];
+  private readonly meshes: PeopleMeshes;
+  private readonly pose: Pose = { legL: 0, legR: 0, armL: 0, armR: 0, bob: 0 };
+  private readonly options: [number, number][] = [];
   private rnd: () => number;
 
   private readonly world: World;
 
   constructor(world: World, count = 70) {
     this.world = world;
+    this.meshes = new PeopleMeshes(count);
     let s = (world.district.seed ^ 0x9e3779b9) >>> 0;
     this.rnd = () => {
       s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
@@ -140,10 +146,13 @@ export class Crowd {
     for (let i = 0; i < count && spots.length; i++) {
       const [x, y, z] = spots[Math.floor(this.rnd() * spots.length)] as [number, number, number];
       const look = crowdLook(this.rnd);
-      const p = buildPerson(look);
-      this.group.add(p.root);
-      this.people.push({ p, look, x, y, z, tx: x, ty: y, t: 1, phase: this.rnd() * 6, speed: 1.1 + this.rnd() * 0.7 });
+      this.meshes.setLook(i, look);
+      this.people.push({ look, pos: new THREE.Vector3(), yaw: 0, x, y, z, tx: x, ty: y, t: 1, phase: this.rnd() * 6, speed: 1.1 + this.rnd() * 0.7 });
     }
+  }
+
+  get group(): THREE.Group {
+    return this.meshes.group;
   }
 
   /** The person nearest to a point within `max` metres, or -1. */
@@ -151,7 +160,7 @@ export class Crowd {
     let best = -1;
     let bestD = max;
     this.people.forEach((w, i) => {
-      const d = w.p.root.position.distanceTo(pos);
+      const d = w.pos.distanceTo(pos);
       if (d < bestD) {
         best = i;
         bestD = d;
@@ -161,16 +170,16 @@ export class Crowd {
   }
 
   position(i: number): THREE.Vector3 {
-    return (this.people[i] as Walker).p.root.position;
+    return (this.people[i] as Walker).pos;
   }
 
   lookOf(i: number): PersonLook {
     return (this.people[i] as Walker).look;
   }
 
-  /** Everyone's position, for the radar. */
+  /** Everyone's position, for the radar and checks. */
   positions(): THREE.Vector3[] {
-    return this.people.map((w) => w.p.root.position);
+    return this.people.map((w) => w.pos);
   }
 
   /**
@@ -180,8 +189,6 @@ export class Crowd {
   swap(i: number, look: PersonLook, at?: THREE.Vector3): PersonLook {
     const w = this.people[i] as Walker;
     const old = w.look;
-    const pos = w.p.root.position.clone();
-    const rot = w.p.root.rotation.y;
     if (at) {
       const x = Math.floor(at.x / TILE), y = Math.floor(at.z / TILE), z = Math.floor(at.y / STOREY + 0.05);
       if (FLAT.has(this.world.kind(x, y, z))) {
@@ -189,33 +196,32 @@ export class Crowd {
         w.y = w.ty = y;
         w.z = z;
         w.t = 1;
-        pos.copy(at);
+        w.pos.copy(at);
       }
     }
-    this.group.remove(w.p.root);
     w.look = look;
-    w.p = buildPerson(look);
-    w.p.root.position.copy(pos);
-    w.p.root.rotation.y = rot;
-    this.group.add(w.p.root);
+    this.meshes.setLook(i, look);
     return old;
   }
 
   /** Union guards (visored) within r metres of a point. */
   guardsNear(pos: THREE.Vector3, r: number): number {
-    return this.people.filter((w) => w.look.visor && w.p.root.position.distanceTo(pos) < r).length;
+    let n = 0;
+    for (const w of this.people) if (w.look.visor && w.pos.distanceTo(pos) < r) n++;
+    return n;
   }
 
+  /** Walk: the simulation step. */
   update(dt: number): void {
     for (const w of this.people) {
       if (w.t >= 1) {
         w.x = w.tx;
         w.y = w.ty;
-        const options: [number, number][] = [];
-        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        const options = this.options;
+        options.length = 0;
+        for (const [dx, dy] of STEPS) {
           if (FLAT.has(this.world.kind(w.x + dx, w.y + dy, w.z))) options.push([w.x + dx, w.y + dy]);
         }
-        // Mostly keep walking the same way.
         const pick = options.length ? (options[Math.floor(this.rnd() * options.length)] as [number, number]) : [w.x, w.y];
         w.tx = pick[0];
         w.ty = pick[1];
@@ -224,10 +230,17 @@ export class Crowd {
       w.t = Math.min(1, w.t + (dt * w.speed) / TILE);
       const fx = (w.x + (w.tx - w.x) * w.t + 0.5) * TILE;
       const fz = (w.y + (w.ty - w.y) * w.t + 0.5) * TILE;
-      w.p.root.position.set(fx + (w.speed - 1.45) * 2.4, w.z * STOREY, fz - (w.speed - 1.45) * 2.4);
-      if (w.tx !== w.x || w.ty !== w.y) w.p.root.rotation.y = Math.atan2(w.tx - w.x, w.ty - w.y);
+      w.pos.set(fx + (w.speed - 1.45) * 2.4, w.z * STOREY, fz - (w.speed - 1.45) * 2.4);
+      if (w.tx !== w.x || w.ty !== w.y) w.yaw = Math.atan2(w.tx - w.x, w.ty - w.y);
       w.phase += dt * w.speed * 2.2;
-      animatePerson(w.p, w.phase * 2, w.tx !== w.x || w.ty !== w.y ? 0.6 : 0, false);
     }
+  }
+
+  /** Pose the instanced bodies: once per presented frame. */
+  draw(): void {
+    this.people.forEach((w, i) => {
+      this.meshes.set(i, w.pos, w.yaw, pose(this.pose, w.phase * 2, w.tx !== w.x || w.ty !== w.y ? 0.6 : 0, false));
+    });
+    this.meshes.commit();
   }
 }

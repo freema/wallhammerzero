@@ -3,14 +3,22 @@
 
 import * as THREE from "three";
 import { K } from "@whz/citygen";
-import { animatePerson, buildCar, buildPerson, KYLO } from "./models.ts";
-import type { Car, CarKind, Person, PersonLook } from "./models.ts";
+import { buildCar } from "./models.ts";
+import type { Car, CarKind } from "./models.ts";
+import { animatePerson, buildPerson, KYLO } from "./people.ts";
+import type { Person, PersonLook } from "./people.ts";
 import type { Input } from "./input.ts";
-import { blocksPoint, cellOf, floorAt, STOREY, TILE } from "./world.ts";
+import { blocksPoint, cellOf, floorAt, hash3, STOREY, TILE } from "./world.ts";
 import type { World } from "./world.ts";
 
 const GRAVITY = 24;
 const RADIUS = 0.32;
+const PROBE_HEIGHTS = [0.45, 1.0, 1.7] as const;
+const PROBE_CORNERS = [[RADIUS, RADIUS], [-RADIUS, RADIUS], [RADIUS, -RADIUS], [-RADIUS, -RADIUS]] as const;
+const HULL_ALONG = [-2.1, 0, 2.1] as const;
+const HULL_ACROSS = [-0.95, 0.95] as const;
+/** Cars made so far: each gets its own bob phase from its number, not from Math.random. */
+let carsMade = 0;
 
 export class Walker {
   person: Person;
@@ -58,8 +66,8 @@ export class Walker {
   private blocked(x: number, y: number, z: number): boolean {
     const w = this.world;
     if (x < RADIUS || z < RADIUS || x > w.w * TILE - RADIUS || z > w.d * TILE - RADIUS) return true;
-    for (const h of [0.45, 1.0, 1.7]) {
-      for (const [dx, dz] of [[RADIUS, RADIUS], [-RADIUS, RADIUS], [RADIUS, -RADIUS], [-RADIUS, -RADIUS]] as const) {
+    for (const h of PROBE_HEIGHTS) {
+      for (const [dx, dz] of PROBE_CORNERS) {
         if (blocksPoint(w, x + dx, y + h, z + dz)) return true;
       }
     }
@@ -170,7 +178,9 @@ export class Hovercar {
   /** The speed lost in the last collision this frame (m/s), for crash sounds and heat. */
   impact = 0;
   private yawRate = 0;
-  private time = Math.random() * 10;
+  private time = hash3(carsMade++, 5, 17) * 10;
+  /** Seconds at rest: a parked car that has settled skips the flight model. */
+  private still = 0;
 
   private readonly world: World;
   readonly kind: CarKind;
@@ -191,8 +201,8 @@ export class Hovercar {
 
   private hits(x: number, y: number, z: number): boolean {
     const fx = Math.sin(this.yaw), fz = Math.cos(this.yaw);
-    for (const along of [-2.1, 0, 2.1]) {
-      for (const across of [-0.95, 0.95]) {
+    for (const along of HULL_ALONG) {
+      for (const across of HULL_ACROSS) {
         const px = x + fx * along - fz * across;
         const pz = z + fz * along + fx * across;
         if (blocksPoint(this.world, px, y + 0.35, pz) || blocksPoint(this.world, px, y + 1.25, pz)) return true;
@@ -203,6 +213,13 @@ export class Hovercar {
 
   update(dt: number, input: Input | null): void {
     this.time += dt;
+    if (!this.occupied && this.still > 1) {
+      if (this.vel.lengthSq() > 1e-4) this.still = 0;
+      else {
+        this.pose(this.lastFloor);
+        return;
+      }
+    }
     if (input && this.occupied) {
       const thrust = input.axis(["KeyS", "ArrowDown"], ["KeyW", "ArrowUp"]);
       const turn = input.axis(["KeyD", "ArrowRight"], ["KeyA", "ArrowLeft"]);
@@ -258,19 +275,27 @@ export class Hovercar {
       this.pos.y = floor + hover;
       this.vel.y = Math.max(0, this.vel.y);
     }
+    this.lastFloor = floor;
+    if (this.occupied || this.vel.lengthSq() > 1e-4) this.still = 0;
+    else {
+      this.still += dt;
+      this.vel.set(0, 0, 0);
+    }
+    this.pose(floor);
+  }
 
+  private lastFloor = 0;
+
+  private pose(floor: number): void {
+    const flat = Math.hypot(this.vel.x, this.vel.z);
     const bob = Math.sin(this.time * 2.1) * (this.occupied ? 0.06 : 0.1);
     this.car.body.position.y = bob;
     this.car.body.rotation.z = -this.yawRate * Math.min(1, flat / 25) * 0.35;
     this.car.body.rotation.x = -this.vel.y * 0.012;
-    const bar = this.car.body.getObjectByName("lightbar");
-    if (bar) bar.rotation.y = this.time * 8;
-    const pool = this.root.getObjectByName("pool");
-    if (pool) {
-      const gap = this.pos.y - floor;
-      pool.position.y = -gap + 0.02;
-      pool.visible = gap < 12;
-    }
+    if (this.car.lightbar) this.car.lightbar.rotation.y = this.time * 8;
+    const gap = this.pos.y - floor;
+    this.car.pool.position.y = -gap + 0.02;
+    this.car.pool.visible = gap < 12;
     this.root.position.copy(this.pos);
     this.root.rotation.y = this.yaw;
   }

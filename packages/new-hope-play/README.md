@@ -38,21 +38,50 @@ it: then it adds one.
 | `src/textures.ts` | One procedural atlas (canvas): five facade styles (union, habitat, market, derelict, ancient), roofs, decks, pads, asphalt, walkways, stairs, metal, ruin stone; a colour map and an emissive map. |
 | `src/city.ts` | The district's meshes in 16-tile chunks: every visible cell face, slabs, ramps, lift shafts with glass, walkway railings; instanced blade signs, rooftop gear, antenna beacons, Psion crystals. |
 | `src/sky.ts` | The sky shader (gradient, stars, nebula, a ringed gas giant, a moon), fog and lights, and the endless city: instanced towers whose windows and neon bands are drawn in the shader, with collision boxes. |
-| `src/models.ts` | Low-poly people (Kylo, the crowd, Union guards) and hover cars (taxi, Union cruiser, civilian), built from primitives. |
+| `src/people.ts` | Low-poly people (Kylo, the crowd, Union guards) from one list of body parts: Kylo is a mesh tree, the crowd one instanced mesh per part (about 17 draws for everyone). Geometry and materials are shared. |
+| `src/models.ts` | Hover cars (taxi, Union cruiser, civilian): the parts of each kind merged per material and shared, so a car is 6 or 7 draws. |
 | `src/actors.ts` | Kylo on foot (walk, run, jump, stairs, lifts, railings) and the hover car flight model (thrust, grip, bank, bounce, landing). |
 | `src/traffic.ts` | Instanced flying traffic along the lane grid and over the endless city; the crowd walking the flat cells. |
 | `src/jobs.ts` | Fares and descents, the beacon, credits. |
-| `src/police.ts` | Heat (stars), Union cruisers that chase, the arrest. |
+| `src/police.ts` | Heat (stars), Union cruisers that chase (a seeded orbit, pooled cars), the arrest. |
 | `src/audio.ts` | All sound as WebAudio code: the city drone and a synth pad, wind, rain, the engine, the siren, cues for jobs, crashes, arrests and body-passing. |
 | `src/radar.ts` | The radar, drawn on a canvas. |
 | `src/fx.ts` | Rain around the camera (a storm every three minutes or so) and the beam of body-passing. |
-| `src/main.ts` | Renderer, bloom, camera (third person, pulled in front of walls), HUD, the loop. |
+| `src/main.ts` | Renderer, bloom (antialiased in the composer's 4× multisampled target), camera (third person, pulled in front of walls), HUD, and the loop: `step` (the simulation at a fixed 120 Hz) and `present` (camera, sound, HUD, the render, once per frame). |
+| `src/debug.ts` | The test hook `window.__game` (below). |
+| `play/*.json` | Smoke scripts for `__game.runScript(<name>)`: `foot` (roof, lift, street) and `car` (board, fly, land a fare, an arrest). |
 
-The city is deterministic from the seed (citygen); the look and the motion are not part of any
-digest. For scripted checks the page exposes `window.__nh`: `advance(seconds)` runs the game
-without the browser's frame clock (it works in a hidden tab), `key(code, down)` holds a key,
-`teleport`, `look`, `jobs()`, `info()`, `place(x, y, z)` (the car Kylo drives, or Kylo),
-`target()`, `police()`, `wanted(stars)`, `pass()`, `psi()`, `crowd()`, `rain(on | null)`.
+The city is deterministic from the seed (citygen). Play is reproducible within one browser:
+the same seed and the same inputs per simulation step give the same run and the same
+`digest()` (gameplay randomness is seeded: the crowd's walks and the police from `@whz/det`).
+Motion is float maths, so it is not part of any cross-engine digest.
+
+## Testing: `window.__game`
+
+The page exposes `window.__game` (and the old name `window.__nh`) for the browser's console
+and the DevTools MCP. Nothing waits for the browser's clock, so it works in a hidden tab.
+
+| Call | What it does |
+|---|---|
+| `describe()` | The state in brief (under 1 KB): mode, position, level and band, car, job, heat, psi, people near. |
+| `state()`, `digest()` | The full state (positions to the millimetre) and its FNV-1a 64 hash. |
+| `advance(seconds)` | Runs fixed steps, draws once, returns `describe()`. |
+| `key(code, down)`, `press(code)`, `hold(code, seconds)`, `pointer(dx, dy)`, `look(yaw, pitch, dist)` | Input. |
+| `scenario(name)` | `lift` (the bottom of the nearest shaft), `street`, `car` (get into the nearest car), `target` (on the job's spot). |
+| `place(x, y, z)`, `enterCar()`, `leaveCar()`, `wanted(stars)`, `pass()`, `rain(on \| null)` | Set up a situation. |
+| `runScript(name \| script)` | Runs `play/<name>.json` (or a script object) in the page, stops at the first failed expectation or console error, returns the checks, the digest, `describe()`, errors and shots. |
+| `shot(name, pixelRatio = 1)` | Renders and writes `build/shots/new-hope/<name>.png` through the dev server (`POST /__shot`). |
+| `perf()` | The last frame's draw calls and triangles (shadow and post passes included), geometries, textures, programs, the CPU time of the render call. |
+| `errors()` | Errors, rejections and `console.error` lines since load. |
+
+A script is `{ "name", "seed", "steps": [...] }`. A step does one thing (`"do": "advance" |
+"press" | "hold" | "scenario" | "save" | …`), may check a path of the state
+(`"expect": "jobs.done", "gte": 2`; `"from": "<saved>"` compares the change since a `save`) and
+may take a `"shot"`. From the DevTools MCP: `await __game.runScript("car")` on a freshly loaded
+`?seed=2`.
+
+Measured on seed 2 at the start (2026-10-14, a 1512 × 776 window at DPR 2): 775 draw calls and 681 geometries
+before the instanced crowd and the merged cars, 120 and 48 after.
 
 The container has no GPU: the game is checked in the host browser. `./dev npm run check -- @whz/new-hope-play`
 type-checks, lints and builds it.

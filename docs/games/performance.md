@@ -6,9 +6,9 @@ prove it with numbers. This page is the short form; the depth and the sources ar
 reports it links. Nothing in this page was measured in a browser yet: the budgets are
 **proposals** until the owner sets them and the first bench run exists.
 
-The one rule: **no perf claim without a before/after bench.** New Hope today has a console handle
-(`window.__nh`) but no frame timing, and its draw-call counter reports only the last composer
-pass. Instrumenting comes before optimising
+The one rule: **no perf claim without a before/after bench.** New Hope's hook (`window.__game`)
+counts the draw calls of a whole frame since 2026-10-14 (`perf()`), but it times only the CPU
+side of the render call: there is no GPU timing yet. Instrumenting comes before optimising
 ([research/game-optimisation.md §7.3](../../research/game-optimisation.md#73-new-hope-on-paper-the-top-10), row 1).
 
 ## 1. Measure first
@@ -86,7 +86,7 @@ in the same session) are the simplest scheme that does not oscillate.
 
 ## 3. The hooks a game exposes (proposal)
 
-Every game exposes these on its dev handle (`window.__nh` for New Hope, `window.__pd` for a
+Every game exposes these on its dev handle (`window.__game` for New Hope, `window.__pd` for a
 PixelDen game, the planned `__wz` for the Wallhammer player). They are the only way an agent
 can check a perf change; details and the rationale are in
 [research/game-optimisation.md §7.2](../../research/game-optimisation.md#72-hooks-every-game-must-expose).

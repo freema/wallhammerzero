@@ -2,6 +2,7 @@
 // body-passing.
 
 import * as THREE from "three";
+import { hash3 } from "./world.ts";
 
 const DROPS = 4000;
 const BOX = 70;
@@ -21,9 +22,9 @@ export class Rain {
     this.pos = new Float32Array(DROPS * 6);
     this.speed = new Float32Array(DROPS);
     for (let i = 0; i < DROPS; i++) {
-      const x = (Math.random() - 0.5) * BOX, y = Math.random() * BOX, z = (Math.random() - 0.5) * BOX;
+      const x = (hash3(i, 1, 0) - 0.5) * BOX, y = hash3(i, 2, 0) * BOX, z = (hash3(i, 3, 0) - 0.5) * BOX;
       this.pos.set([x, y, z, x, y - 0.9, z], i * 6);
-      this.speed[i] = 38 + Math.random() * 18;
+      this.speed[i] = 38 + hash3(i, 4, 0) * 18;
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(this.pos, 3));
@@ -69,7 +70,11 @@ export class Rain {
   }
 }
 
-/** The violet beam between Kylo's old body and the new one, and a flash of light. */
+/**
+ * The violet beam between Kylo's old body and the new one, and a flash of light. The light stays
+ * in the scene at intensity 0: a light that appears changes every lit material's program, and the
+ * first body pass would stall on the recompile.
+ */
 export class PsiBeam {
   readonly group = new THREE.Group();
   private readonly beam: THREE.Mesh;
@@ -83,7 +88,7 @@ export class PsiBeam {
     );
     this.light = new THREE.PointLight(0xb05aff, 0, 30, 1.5);
     this.group.add(this.beam, this.light);
-    this.group.visible = false;
+    this.beam.visible = false;
   }
 
   fire(from: THREE.Vector3, to: THREE.Vector3): void {
@@ -94,7 +99,7 @@ export class PsiBeam {
     this.beam.scale.set(1, 1, Math.max(0.1, a.distanceTo(b)));
     this.light.position.copy(b);
     this.life = 0.8;
-    this.group.visible = true;
+    this.beam.visible = true;
   }
 
   update(dt: number): void {
@@ -104,6 +109,9 @@ export class PsiBeam {
     (this.beam.material as THREE.MeshBasicMaterial).opacity = k;
     this.beam.scale.x = this.beam.scale.y = 0.5 + k * 1.5;
     this.light.intensity = k * 80;
-    if (this.life <= 0) this.group.visible = false;
+    if (this.life <= 0) {
+      this.beam.visible = false;
+      this.light.intensity = 0;
+    }
   }
 }

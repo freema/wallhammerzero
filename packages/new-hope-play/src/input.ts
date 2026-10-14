@@ -1,4 +1,5 @@
-// Keyboard and mouse: held keys, presses since the last frame, mouse motion under pointer lock.
+// Keyboard and mouse: held keys, presses since the last simulation step, mouse motion under
+// pointer lock.
 
 export class Input {
   private readonly held = new Set<string>();
@@ -43,12 +44,19 @@ export class Input {
     return (this.down(...pos) ? 1 : 0) - (this.down(...neg) ? 1 : 0);
   }
 
-  /** Call at the end of a frame. */
-  endFrame(dt: number): void {
+  /**
+   * Call after each simulation step: presses are kept until a step has seen them, so a press is
+   * never lost (a frame with no step) or seen twice (a frame with two).
+   */
+  endStep(dt: number): void {
     this.pressed.clear();
+    this.idle += dt;
+  }
+
+  /** Call when a frame has used the mouse motion. */
+  endFrame(): void {
     this.mouseX = 0;
     this.mouseY = 0;
     this.wheel = 0;
-    this.idle += dt;
   }
 }
