@@ -48,7 +48,10 @@ pixel diff is the regression detector.
 Every game exposes one small, versioned object in dev and test builds (`import.meta.env.DEV`
 or `?test=1`; stripped from production). Code games implement it directly; data games get it
 from the player (`__wz` in #18, the same verbs). New Hope keeps `__nh` as an alias and as its
-rich console. The shape, merged from the three reports (**proposal**):
+rich console. **What exists** is the hook of [packages/play-kit](../../packages/play-kit/README.md)
+(`describe`, `state`, `digest`, `advance`, `key`/`press`/`hold`, `scenario`, `act`,
+`runScript`, `shot`, `perf`, `errors`), which every code game gets from `./dev npm run play -- new`.
+The fuller shape below, merged from the three reports, is still a **proposal**:
 
 ```ts
 interface GameHook {

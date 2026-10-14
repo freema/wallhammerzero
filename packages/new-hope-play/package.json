@@ -12,6 +12,7 @@
   "dependencies": {
     "@whz/citygen": "0.0.0",
     "@whz/det": "0.0.0",
+    "@whz/play-kit": "0.0.0",
     "three": "^0.180.0"
   },
   "devDependencies": {

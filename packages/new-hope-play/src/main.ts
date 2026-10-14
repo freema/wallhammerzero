@@ -12,6 +12,7 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { createRng } from "@whz/det";
 import { K } from "@whz/citygen";
+import { fixedLoop } from "@whz/play-kit";
 import { Hovercar, Walker } from "./actors.ts";
 import { Sound } from "./audio.ts";
 import { buildCity } from "./city.ts";
@@ -374,34 +375,11 @@ function present(dt: number): void {
   if (renderMs.length > 240) renderMs.shift();
 }
 
-/** Run the simulation for `seconds` of game time, then draw once. */
-function advance(seconds: number): void {
-  const n = Math.max(1, Math.round(seconds / STEP));
-  for (let i = 0; i < n; i++) step(STEP);
-  present(n * STEP);
-}
-
-let last = performance.now();
-let owed = 0;
-function loop(now: number): void {
-  let dt = Math.min(0.1, (now - last) / 1000);
-  last = now;
-  // Snap a frame time near a whole number of steps to it, so a steady 60 or 120 Hz screen gets
-  // exactly 2 or 1 steps per frame instead of an occasional 1 or 3.
-  const whole = Math.round(dt / STEP);
-  if (whole > 0 && Math.abs(dt - whole * STEP) < STEP * 0.25) dt = whole * STEP;
-  owed += dt;
-  let n = 0;
-  while (owed >= STEP - 1e-9 && n < 12) {
-    step(STEP);
-    owed -= STEP;
-    n++;
-  }
-  if (n === 12) owed = 0;
-  present(dt);
-  requestAnimationFrame(loop);
-}
-requestAnimationFrame(loop);
+// The simulation at a fixed step, the picture once per frame; `advance` runs the same steps
+// without the browser clock (the test hook).
+const loop = fixedLoop({ step: STEP, update: step, present });
+const advance = loop.advance;
+loop.start();
 
 installDebug({
   seed,

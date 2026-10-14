@@ -17,7 +17,8 @@ The code so far: `packages/det`, `packages/asset-kit` (`./dev npm run asset`),
 `packages/game-data` (`./dev npm run game`) with one example game under `games/`,
 `packages/citygen` (`./dev npm run city`, New Hope's city generator), `packages/new-hope-play`
 (New Hope, the playable 3D game in Three.js: `./dev compose up newhope`, then http://127.0.0.1:4200),
-`packages/audio` (`./dev npm run audio`) and the studio with the asset gallery, live reload, the player, verdicts and task notes
+`packages/play-kit` (`./dev npm run play -- new`: the test hook `window.__game` and the scaffold of a new
+browser game), `packages/audio` (`./dev npm run audio`) and the studio with the asset gallery, live reload, the player, verdicts and task notes
 (`packages/studio`); the art spikes (`assets/spike-a`, `assets/spike-b`, `assets/spike-c`, the rules in
 `assets/STYLE.md`) wait for the owner's verdicts and OC-A2-pick. There is no player and no real game yet. The rest of the queue is in
 `tasks/` (D23): the studio MVP and the art spikes first, then the engine, audio, the rest of the

@@ -48,7 +48,7 @@ it: then it adds one.
 | `src/radar.ts` | The radar, drawn on a canvas. |
 | `src/fx.ts` | Rain around the camera (a storm every three minutes or so) and the beam of body-passing. |
 | `src/main.ts` | Renderer, bloom (antialiased in the composer's 4× multisampled target), camera (third person, pulled in front of walls), HUD, and the loop: `step` (the simulation at a fixed 120 Hz) and `present` (camera, sound, HUD, the render, once per frame). |
-| `src/debug.ts` | The test hook `window.__game` (below). |
+| `src/debug.ts` | New Hope's side of the test hook `window.__game` of `@whz/play-kit` (below): the state, the scenarios, the actions, the shot through the bloom. |
 | `play/*.json` | Smoke scripts for `__game.runScript(<name>)`: `foot` (roof, lift, street) and `car` (board, fly, land a fare, an arrest). |
 
 The city is deterministic from the seed (citygen). Play is reproducible within one browser:
@@ -59,7 +59,9 @@ Motion is float maths, so it is not part of any cross-engine digest.
 ## Testing: `window.__game`
 
 The page exposes `window.__game` (and the old name `window.__nh`) for the browser's console
-and the DevTools MCP. Nothing waits for the browser's clock, so it works in a hidden tab.
+and the DevTools MCP. The hook, the script runner and the fixed-step loop are
+[@whz/play-kit](../play-kit/README.md); this game adds its state, scenarios and actions. Nothing
+waits for the browser's clock, so it works in a hidden tab.
 
 | Call | What it does |
 |---|---|
@@ -68,7 +70,7 @@ and the DevTools MCP. Nothing waits for the browser's clock, so it works in a hi
 | `advance(seconds)` | Runs fixed steps, draws once, returns `describe()`. |
 | `key(code, down)`, `press(code)`, `hold(code, seconds)`, `pointer(dx, dy)`, `look(yaw, pitch, dist)` | Input. |
 | `scenario(name)` | `lift` (the bottom of the nearest shaft), `street`, `car` (get into the nearest car), `target` (on the job's spot). |
-| `place(x, y, z)`, `enterCar()`, `leaveCar()`, `wanted(stars)`, `pass()`, `rain(on \| null)` | Set up a situation. |
+| `place(x, y, z)`, `enterCar()`, `leaveCar()`, `wanted(stars)`, `pass()`, `rain(on \| null)` | Set up a situation. In scripts and through `act(name, ...args)` they are the actions `look`, `pointer`, `place`, `wanted`, `pass`, `rain` (1 on, 0 off, none: the weather), `enter` and `leave`. |
 | `runScript(name \| script)` | Runs `play/<name>.json` (or a script object) in the page, stops at the first failed expectation or console error, returns the checks, the digest, `describe()`, errors and shots. |
 | `shot(name, pixelRatio = 1)` | Renders and writes `build/shots/new-hope/<name>.png` through the dev server (`POST /__shot`). |
 | `perf()` | The last frame's draw calls and triangles (shadow and post passes included), geometries, textures, programs, the CPU time of the render call. |

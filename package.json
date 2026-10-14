@@ -18,6 +18,7 @@
     "check:assets": "tsc --noEmit -p assets && eslint assets && node packages/asset-kit/src/node/bin.ts lint --all --no-write",
     "city": "node packages/citygen/src/node/bin.ts",
     "game": "node packages/game-data/src/node/bin.ts",
+    "play": "node packages/play-kit/src/node/bin.ts",
     "sim": "node packages/sim/src/node/cli.ts"
   },
   "devDependencies": {
