@@ -5,7 +5,8 @@ real-time 3D in Three.js (D30, which replaced the fixed iso of D29). The game is
 [packages/new-hope-play](../../packages/new-hope-play/README.md): `./dev compose up newhope`,
 then http://127.0.0.1:4200. The story and what the game takes from the owner's canon:
 [STORY.md](STORY.md). This folder keeps the concept and the story; agreed points carry their
-decision, the rest is the session's proposal for the owner to correct.
+decision, the rest is the session's proposal for the owner to correct. Where the build stands,
+the owner's last feedback and the next steps: [STATE.md](STATE.md).
 
 ## What it is
 

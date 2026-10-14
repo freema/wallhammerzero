@@ -118,8 +118,9 @@ them.
 ### Not in the queue (and why)
 
 - **The rest of New Hope** (D28, D30): worked on directly with the owner in
-  `packages/new-hope-play` and **the first Kairosoft sim** (OC-A6, parked): not
-  queued until the owner agrees on them.
+  `packages/new-hope-play`, one increment per `/continue-game new-hope` run; its next steps
+  are in [games/new-hope/STATE.md](../games/new-hope/STATE.md), not here.
+- **The first Kairosoft sim** (OC-A6, parked): not queued until the owner agrees on it.
 - **Steam, signing, stores, iOS builds:** wait for OC-B2 and OC-B4. **CI** is not set up; the
   repo is private on GitHub (D25).
 - **A free-camera voxel game, live 3D voxels:** later (D15), and OC-D2 for such a game.

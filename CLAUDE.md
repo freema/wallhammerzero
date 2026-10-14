@@ -41,6 +41,10 @@ Three.js, Phaser, procedural generation, performance, testing and shipping.
 - **`tasks/` is the only work queue.** Rules are in [tasks/README.md](tasks/README.md). Owner calls are
   never decided by a session. The loop that works through the queue is the `/implement-tasks`
   skill; its state between iterations is [docs/progress.md](docs/progress.md).
+- **A game is continued with `/continue-game <id> [focus]`**
+  ([.claude/skills/continue-game/SKILL.md](.claude/skills/continue-game/SKILL.md)): one
+  increment, one commit, then a report and a stop. A game's state and its next steps (at most
+  three, not a queue) live in its `STATE.md`, e.g. [games/new-hope/STATE.md](games/new-hope/STATE.md).
 - **If the docs and the code disagree, the code wins, and the doc is fixed in the same commit.**
   The gate compares the docs with the repo (links, backticked paths, the queue, the research
   index, decision ids, npm script names): [docs/docs-check.md](docs/docs-check.md).

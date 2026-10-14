@@ -48,9 +48,11 @@ consent, and never writes a decision or a task note for an idea the owner has no
 
 ## How a game is built here
 
-The flow below is what the verified research supports and what the repo already does. The
-proposal for the commands that would run it end to end (`/make-game`, `/continue-game`, a
-progress feed, a studio page per game) is
+The flow below is what the verified research supports and what the repo already does. Steps
+5 and 6 run as `/continue-game <id> [focus]`
+([.claude/skills/continue-game/SKILL.md](../../.claude/skills/continue-game/SKILL.md)), with the
+game's state in `games/<id>/STATE.md`. The rest of the proposal (`/make-game`, a progress
+feed, a studio page per game) is
 [research/game-commands-flow.md](../../research/game-commands-flow.md): it stays a proposal
 for the owner to discuss, and is not repeated here.
 
