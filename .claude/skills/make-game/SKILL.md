@@ -8,8 +8,9 @@ disable-model-invocation: true
 # make-game: an idea to a first playable build
 
 The idea: `$ARGUMENTS` (empty means: pitch freely). The target is **something the owner can
-play within about an hour of work**, with as little paperwork as the gate needs. The owner's
-playtest is the verdict; green checks are not quality.
+play after one session**, with as little paperwork as the gate needs. A 3D game with a
+generated world and its own physics fills a long session; a 2D one with a single verb takes
+less. The owner's playtest is the verdict; green checks are not quality.
 
 There are exactly **two owner gates**: (A) the pick of a pitch, (B) the playtest at the end.
 Between them, decide with defaults and say each choice in one line. Never ask about tuning,
@@ -24,6 +25,8 @@ file layout, naming or which slice comes first.
 - Read the handbook pages the engine needs ([docs/games/README.md](../../../docs/games/README.md):
   `threejs.md` for 3D, `procgen.md` for generated content, `performance.md` for budgets,
   `testing.md` for the hook), not the long research reports.
+- Edit files only with the editor tools or `./dev` commands. Never run the host's `node` or
+  `python` to rewrite a file (CLAUDE.md: nothing runs on the host).
 
 ## M0 Pitch (then owner gate A)
 
@@ -44,7 +47,12 @@ file layout, naming or which slice comes first.
 4. Mark one as **recommended** with one line why. Append the three to the ledger in
    `docs/games/pitches.md` as `pitched`.
 5. **Stop and ask the owner** to pick one (a number, "go" for the recommended, or changes). This
-   is the only question before code.
+   is the only question before code. If the ledger has no owner's words on what they disliked
+   or liked in earlier games, add one line asking for them in the same message: they become
+   the look criteria of M3.
+
+A pitch at real scale also names **the length of a first run** (two to five minutes): the
+distances, speeds and timers follow from it, not the other way round.
 
 When the owner answers: set the picked row to `picked` and the others to `passed`, quoting the
 answer. If the pick departs from a recorded decision (for example an engine other than our
@@ -74,10 +82,23 @@ runtime, D10), add a decision row to `docs/DECISIONS.md` with the owner's words.
 2. Build the verb with the simplest shapes: all rules in the fixed-step `update`, randomness
    from `@whz/det` with the seed, so a seed and the inputs give the same run.
 3. Add a goal and a failure (a score, a timer, a way to lose) so it is a game, not a toy.
-4. Verify: the package check (`./dev npm run check -- @whz/<id>-play`), then every script in
-   `play/`. Then **one blind sub-agent** (sonnet) gets the URL, the controls and the pitch,
-   never the code, plays it through `window.__game` (keys, `advance`, `describe`, a few shots)
-   and reports: does the verb work as pitched, what confused it, what broke.
+   The HUD says **where to go and what to do next** in words (a bearing, a distance, the next
+   key), not only in a symbol: a new player with no legend gets lost first.
+4. The hook's `start` scenario resets the whole game (score, timers, the seeded draws), so
+   scripts give the same numbers in any order. The start screen pauses the simulation until a
+   click or a hook call.
+5. Verify: the package check (`./dev npm run check -- @whz/<id>-play`), then every script in
+   `play/`. Then prove the goal can be reached **with keys only**: a short loop in the page
+   that presses keys from `state()` and `advance`s until the goal (or the timer) ends; write
+   the time it took into STATE.md.
+6. Then **one blind sub-agent** (sonnet) gets the URL, the controls and the pitch, never the
+   code, plays it through `window.__game` (keys, `advance`, `describe`, a few screenshots) and
+   reports: does the verb work as pitched, what confused it, what broke. Give it a **frozen
+   build**, not the dev server, which reloads under it on every edit:
+   `./dev npm run build -w @whz/<id>-play`, then in the background
+   `./dev -p <port+1> npx vite preview --config packages/<id>-play/vite.config.ts --port <port+1>`.
+   Tell it to open its own tab and close it, and to stay under about 45 tool calls. Fix what
+   it found that a new player would hit; stop the preview server.
 
 ## M3 First look and sound
 
@@ -88,11 +109,17 @@ Mute with M, and suspend audio in a hidden tab.
 
 - Before: name 3–5 **look criteria** from the pitch ("the night sky stays saturated, not
   grey", "sprites read at 4× upscale").
-- Shots: `__game.shot(<name>)` from 2–3 scenarios. **One sub-agent** (sonnet) reads them
-  against the criteria and the owner's words in the ledger and returns a text verdict per
-  criterion. Shots do not go into the main context.
-- Measure `__game.perf()` (Three.js: draw calls, triangles, geometries) and write the numbers
-  as the first budgets.
+- While building the look, the main session may Read a few of its own shots (about six in
+  all, upscaled for pixel art): a look cannot be tuned blind. Aim each shot at what a
+  criterion is about (the camera on the target, the village, the effect); a scripted camera
+  snaps to its place instead of easing.
+- Then the independent verdict: `__game.shot(<name>)` from 3–5 scenarios, and **one
+  sub-agent** (sonnet) reads them against the criteria and the owner's words in the ledger
+  and returns a text verdict per criterion. Check each FAIL against the shot before acting on
+  it: a reader misjudges scale and misses what is out of frame.
+- Measure `__game.perf()` (Three.js: draw calls, triangles, geometries) in the busiest and the
+  emptiest place and write the numbers as the first budgets. Its render time is the CPU's
+  submit time, not the GPU's.
 
 ## M4 Hand-off (then owner gate B)
 
