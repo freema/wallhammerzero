@@ -4,7 +4,7 @@
 import * as THREE from "three";
 import { K } from "@whz/citygen";
 import { animatePerson, buildCar, buildPerson, KYLO } from "./models.ts";
-import type { Car, CarKind, Person } from "./models.ts";
+import type { Car, CarKind, Person, PersonLook } from "./models.ts";
 import type { Input } from "./input.ts";
 import { blocksPoint, cellOf, floorAt, STOREY, TILE } from "./world.ts";
 import type { World } from "./world.ts";
@@ -13,7 +13,8 @@ const GRAVITY = 24;
 const RADIUS = 0.32;
 
 export class Walker {
-  readonly person: Person;
+  person: Person;
+  look: PersonLook = KYLO;
   readonly pos = new THREE.Vector3();
   velY = 0;
   yaw = 0;
@@ -31,6 +32,18 @@ export class Walker {
 
   get root(): THREE.Group {
     return this.person.root;
+  }
+
+  /** Take another body: the model changes, the place and the motion stay. */
+  setLook(look: PersonLook): void {
+    const parent = this.person.root.parent;
+    const visible = this.person.root.visible;
+    parent?.remove(this.person.root);
+    this.look = look;
+    this.person = buildPerson(look);
+    this.person.root.visible = visible;
+    parent?.add(this.person.root);
+    this.sync();
   }
 
   cell(): { x: number; y: number; z: number; kind: number } {
@@ -154,6 +167,8 @@ export class Hovercar {
   readonly vel = new THREE.Vector3();
   yaw = 0;
   occupied = false;
+  /** The speed lost in the last collision this frame (m/s), for crash sounds and heat. */
+  impact = 0;
   private yawRate = 0;
   private time = Math.random() * 10;
 
@@ -222,10 +237,17 @@ export class Hovercar {
 
     // Move one axis at a time and bounce off what blocks it.
     const nx = this.pos.x + this.vel.x * dt;
-    if (this.hits(nx, this.pos.y, this.pos.z)) this.vel.x *= -0.35;
+    this.impact = 0;
+    if (this.hits(nx, this.pos.y, this.pos.z)) {
+      this.impact = Math.max(this.impact, Math.abs(this.vel.x) * 1.35);
+      this.vel.x *= -0.35;
+    }
     else this.pos.x = nx;
     const nz = this.pos.z + this.vel.z * dt;
-    if (this.hits(this.pos.x, this.pos.y, nz)) this.vel.z *= -0.35;
+    if (this.hits(this.pos.x, this.pos.y, nz)) {
+      this.impact = Math.max(this.impact, Math.abs(this.vel.z) * 1.35);
+      this.vel.z *= -0.35;
+    }
     else this.pos.z = nz;
     const ny = this.pos.y + this.vel.y * dt;
     if (this.vel.y > 0 && this.hits(this.pos.x, ny + 0.5, this.pos.z)) this.vel.y = 0;

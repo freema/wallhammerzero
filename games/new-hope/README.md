@@ -28,3 +28,6 @@ towers, the upper levels of the Union, the roofs with their pads, the sky lanes.
 Kylo wakes on a roof next to a taxi. Jobs: taxi fares from pad to pad (paid by distance, a
 bonus for speed), and every fourth job a signal that sends him down on foot into an Ancestor
 hall under the streets. Traffic streams along the lanes, people walk the streets and decks.
+Reckless flying and stolen Union cruisers bring Union security with wanted stars and an arrest;
+Kylo's canon gift, passing into another body, is how he shakes them off. Storms roll in, and all
+sound is generated in code.

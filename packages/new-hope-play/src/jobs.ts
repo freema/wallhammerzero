@@ -111,6 +111,18 @@ export class Jobs {
     }
   }
 
+  /** Where the current job points. */
+  target(): THREE.Vector3 {
+    return this.job.where;
+  }
+
+  /** Take a share of the credits (an arrest); returns how much was taken. */
+  fine(share: number): number {
+    const lost = Math.round(this.credits * share);
+    this.credits -= lost;
+    return lost;
+  }
+
   hud(kylo: THREE.Vector3, camYaw: number): string {
     const d = this.job.where.clone().sub(kylo);
     const dist = Math.round(Math.hypot(d.x, d.z));

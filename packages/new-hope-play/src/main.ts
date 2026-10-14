@@ -8,9 +8,13 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { K } from "@whz/citygen";
 import { Hovercar, Walker } from "./actors.ts";
+import { Sound } from "./audio.ts";
 import { buildCity } from "./city.ts";
+import { PsiBeam, Rain } from "./fx.ts";
 import { Input } from "./input.ts";
 import { Jobs } from "./jobs.ts";
+import { Police } from "./police.ts";
+import { Radar } from "./radar.ts";
 import { addLights, createSky, createSkyline } from "./sky.ts";
 import { createAtlas } from "./textures.ts";
 import { Crowd, Traffic } from "./traffic.ts";
@@ -44,12 +48,20 @@ const traffic = new Traffic(world);
 scene.add(traffic.group);
 const crowd = new Crowd(world);
 scene.add(crowd.group);
+const police = new Police(world);
+scene.add(police.group);
+const rain = new Rain();
+scene.add(rain.lines);
+const beam = new PsiBeam();
+scene.add(beam.group);
+const sound = new Sound();
 
 // Start: Kylo on the highest roof that has a pad, a taxi waiting on the pad.
 const pads = cellsOf(world, K.pad).sort((a, b) => b[2] - a[2] || Math.abs(a[0] - world.w / 2) - Math.abs(b[0] - world.w / 2));
 const startPad = pads[0] ?? [world.w >> 1, world.d >> 1, world.streetLevel];
 const kylo = new Walker(world);
 scene.add(kylo.root);
+const home = new THREE.Vector3();
 {
   const [px, py, pz] = startPad;
   let spawn = cellCentre(px, py, pz);
@@ -60,7 +72,8 @@ scene.add(kylo.root);
       break;
     }
   }
-  kylo.respawnAt(new THREE.Vector3(spawn.x, spawn.y + 0.5, spawn.z));
+  home.set(spawn.x, spawn.y + 0.5, spawn.z);
+  kylo.respawnAt(home);
   kylo.lastSafe.copy(kylo.pos);
 }
 const cars: Hovercar[] = [];
@@ -98,6 +111,7 @@ const input = new Input(renderer.domElement);
 const start = document.getElementById("start") as HTMLElement;
 start.addEventListener("click", () => {
   start.style.display = "none";
+  sound.start();
   void renderer.domElement.requestPointerLock();
 });
 renderer.domElement.addEventListener("click", () => void renderer.domElement.requestPointerLock());
@@ -109,6 +123,7 @@ const hud = {
   c: document.querySelector("#hud .c") as HTMLElement,
   prompt: document.querySelector("#hud .prompt") as HTMLElement,
 };
+const radar = new Radar(world, document.getElementById("hud") as HTMLElement);
 
 let camYaw = Math.PI * 0.75;
 let camPitch = 0.32;
@@ -116,6 +131,10 @@ let camDist = 6;
 let driving: Hovercar | null = null;
 let time = 0;
 let flash = 0;
+/** Psionic energy for body-passing, 0..100. */
+let psi = 100;
+let passes = 0;
+const PASS_COST = 60;
 const target = new THREE.Vector3();
 const desired = new THREE.Vector3();
 
@@ -172,6 +191,56 @@ export function message(text: string): void {
   flash = 3.2;
 }
 
+function leaveCar(): void {
+  if (!driving) return;
+  const car = driving;
+  car.occupied = false;
+  driving = null;
+  const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
+  kylo.respawnAt(new THREE.Vector3(car.pos.x + fz * 2.2, car.pos.y + 0.2, car.pos.z - fx * 2.2));
+  kylo.root.visible = true;
+}
+
+function enterCar(car: Hovercar): void {
+  driving = car;
+  car.occupied = true;
+  kylo.root.visible = false;
+  camYaw = car.yaw;
+  jobs.enteredCar(car);
+  if (car.kind === "cruiser") police.report(2, "stolen Union cruiser", message);
+}
+
+/** Kylo passes into the nearest body: he takes its place and look, it wakes in his. */
+function passBody(): boolean {
+  const i = crowd.nearest(kylo.pos, 10);
+  if (i < 0 || psi < PASS_COST) return false;
+  psi -= PASS_COST;
+  passes++;
+  const from = kylo.pos.clone();
+  const to = crowd.position(i).clone();
+  const seen = crowd.guardsNear(from, 18) + crowd.guardsNear(to, 18) > 0;
+  const theirs = crowd.lookOf(i);
+  crowd.swap(i, kylo.look, from);
+  kylo.setLook(theirs);
+  kylo.respawnAt(to.add(new THREE.Vector3(0, 0.3, 0)));
+  beam.fire(from, kylo.pos);
+  sound.whoosh();
+  if (seen) police.report(1, "a guard saw the passing", message);
+  else if (police.stars > 0) {
+    police.shake(2);
+    message(`ANOTHER BODY<br><small>Union security loses the trail${police.stars ? ` · ${"★".repeat(police.stars)}` : ""}</small>`);
+  } else if (passes === 1) message("ANOTHER BODY<br><small>you were someone else a moment ago · the Ancestors did this</small>");
+  return true;
+}
+
+function busted(): void {
+  leaveCar();
+  const lost = jobs.fine(0.3);
+  kylo.respawnAt(home);
+  sound.fail();
+  message(`BUSTED<br><small>the Union takes ${lost} ¤ and drops you on the roof</small>`);
+}
+
 function frame(dt: number, render = true): void {
   time += dt;
   camYaw -= input.mouseX * 0.0024;
@@ -179,37 +248,38 @@ function frame(dt: number, render = true): void {
   camDist = Math.min(16, Math.max(2.5, camDist + input.wheel * 0.6));
 
   let prompt = "";
+  psi = Math.min(100, psi + dt * 6);
   if (driving) {
     driving.update(dt, input);
     kylo.pos.copy(driving.pos);
-    if (input.hit("KeyF")) {
-      const car = driving;
-      car.occupied = false;
-      driving = null;
-      const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
-      kylo.respawnAt(new THREE.Vector3(car.pos.x + fz * 2.2, car.pos.y + 0.2, car.pos.z - fx * 2.2));
-      kylo.root.visible = true;
+    if (driving.impact > 0) {
+      sound.crash(driving.impact);
+      police.crash(driving.impact, message);
     }
+    if (input.hit("KeyF")) leaveCar();
   } else {
     kylo.update(dt, input, camYaw);
     const car = nearestCar();
     if (car) {
-      prompt = `<b>F</b> fly the ${car.kind}`;
-      if (input.hit("KeyF")) {
-        driving = car;
-        car.occupied = true;
-        kylo.root.visible = false;
-        camYaw = car.yaw;
-        jobs.enteredCar(car);
-      }
+      prompt = `<b>F</b> ${car.kind === "cruiser" ? "steal the Union cruiser" : `fly the ${car.kind}`}`;
+      if (input.hit("KeyF")) enterCar(car);
     } else if (kylo.inLift()) {
       prompt = "<b>E</b> up · <b>Q</b> down";
+    } else if (psi >= PASS_COST && crowd.nearest(kylo.pos, 10) >= 0) {
+      prompt = "<b>T</b> pass into their body";
     }
+    if (input.hit("KeyT") && !passBody() && psi < PASS_COST) message("<small>not enough psi</small>");
   }
+  if (input.hit("KeyM")) sound.toggleMute();
   for (const car of cars) if (car !== driving) car.update(dt, null);
   traffic.update(dt);
   crowd.update(dt);
+  const doneBefore = jobs.state().done;
   jobs.update(dt, kylo.pos, driving, camYaw, message);
+  if (jobs.state().done > doneBefore && doneBefore > 1) sound.chime();
+  const speed = driving ? driving.speed() : 0;
+  police.update(dt, kylo.pos, speed, { say: message, busted });
+  beam.update(dt);
   if (input.hit("KeyN")) location.search = `?seed=${(Math.random() * 1e9) >>> 0}`;
 
   (sky.material as THREE.ShaderMaterial).uniforms.time!.value = time;
@@ -217,19 +287,39 @@ function frame(dt: number, render = true): void {
   city.beacons.visible = blink;
 
   placeCamera(dt);
+  rain.update(dt, camera.position);
+  sound.update(dt, {
+    driving: driving !== null,
+    speed,
+    throttle: driving && (input.down("KeyW") || input.down("KeyR")) ? 1 : 0,
+    altitude: kylo.pos.y,
+    wanted: police.stars,
+    rain: rain.raining(),
+  });
 
   const level = Math.floor((driving ? driving.pos.y : kylo.pos.y) / STOREY + 0.05);
-  hud.tl.innerHTML = `NEW HOPE · district ${seed}<br>level ${level} · ${bandName(level)}${driving ? ` · ${Math.round(driving.speed() * 3.6)} km/h` : ""}`;
+  const stars = police.stars ? `<br><span class="stars">${"★".repeat(police.stars)}${"☆".repeat(5 - police.stars)}</span>` : "";
+  const psiBar = `<br>psi <span class="bar"><i style="width:${psi.toFixed(0)}%;background:${psi >= PASS_COST ? "#b05aff" : "#553a77"}"></i></span>`;
+  hud.tl.innerHTML = `NEW HOPE · district ${seed}<br>level ${level} · ${bandName(level)}${driving ? ` · ${Math.round(driving.speed() * 3.6)} km/h` : ""}${psiBar}${stars}`;
+  if (police.arrest() > 0.05) prompt = `UNION SECURITY · STOP · ${"▮".repeat(Math.ceil(police.arrest() * 6))}`;
   hud.tr.innerHTML = jobs.hud(kylo.pos, camYaw);
   hud.bl.innerHTML = driving
     ? "<b>W/S</b> thrust · <b>A/D</b> turn · <b>Space</b> up · <b>Shift</b> down · <b>R</b> boost · <b>F</b> get out"
-    : "<b>WASD</b> move · <b>Shift</b> run · <b>Space</b> jump · <b>mouse</b> look · <b>wheel</b> zoom · <b>N</b> new district";
+    : "<b>WASD</b> move · <b>Shift</b> run · <b>Space</b> jump · <b>T</b> pass into a body · <b>mouse</b> look · <b>wheel</b> zoom · <b>M</b> mute · <b>N</b> new district";
   hud.prompt.innerHTML = prompt;
   hud.prompt.style.opacity = prompt ? "1" : "0";
   flash = Math.max(0, flash - dt);
   hud.c.style.opacity = flash > 0 ? String(Math.min(1, flash)) : "0";
 
-  if (render) composer.render(dt);
+  if (render) {
+    radar.draw(dt, kylo.pos, camYaw, {
+      target: jobs.target(),
+      cars: cars.filter((c) => c !== driving).map((c) => c.pos),
+      police: police.positions(),
+      crowd: crowd.positions(),
+    });
+    composer.render(dt);
+  }
   input.endFrame(dt);
 }
 
@@ -257,6 +347,26 @@ Object.assign(window, {
       camDist = dist;
     },
     info: () => renderer.info.render,
+    /** Put the car Kylo drives (or Kylo) at a point, e.g. on the job's pad. */
+    place: (x: number, y: number, z: number) => {
+      if (driving) {
+        driving.pos.set(x, y, z);
+        driving.vel.set(0, 0, 0);
+      } else kylo.respawnAt(new THREE.Vector3(x, y, z));
+    },
+    target: () => jobs.target().toArray(),
+    police: () => ({ stars: police.stars, units: police.positions().length, arrest: police.arrest() }),
+    wanted: (stars: number) => police.report(stars, "console", message),
+    pass: () => passBody(),
+    crowd: () => crowd.positions().map((p) => p.toArray()),
+    psi: () => psi,
+    rain: (on: boolean | null) => {
+      rain.force = on;
+    },
+    nearestCar: () => {
+      const c = nearestCar();
+      return c ? c.kind : null;
+    },
     /** Hold or release a key (KeyboardEvent.code) for scripted play. */
     key: (code: string, down: boolean) => dispatchEvent(new KeyboardEvent(down ? "keydown" : "keyup", { code })),
     /** Run the game for `seconds` at 60 fps without waiting for the browser (works in a hidden tab). */

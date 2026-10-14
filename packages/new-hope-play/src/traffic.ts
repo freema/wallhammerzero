@@ -4,7 +4,7 @@
 import * as THREE from "three";
 import { K } from "@whz/citygen";
 import { animatePerson, buildPerson, crowdLook } from "./models.ts";
-import type { Person } from "./models.ts";
+import type { Person, PersonLook } from "./models.ts";
 import { hash3, STOREY, TILE } from "./world.ts";
 import type { World } from "./world.ts";
 
@@ -106,6 +106,7 @@ export class Traffic {
 
 interface Walker {
   p: Person;
+  look: PersonLook;
   x: number;
   y: number;
   z: number;
@@ -138,10 +139,71 @@ export class Crowd {
         for (let x = 0; x < world.w; x++) if (FLAT.has(world.kind(x, y, z)) && this.rnd() < 0.5) spots.push([x, y, z]);
     for (let i = 0; i < count && spots.length; i++) {
       const [x, y, z] = spots[Math.floor(this.rnd() * spots.length)] as [number, number, number];
-      const p = buildPerson(crowdLook(this.rnd));
+      const look = crowdLook(this.rnd);
+      const p = buildPerson(look);
       this.group.add(p.root);
-      this.people.push({ p, x, y, z, tx: x, ty: y, t: 1, phase: this.rnd() * 6, speed: 1.1 + this.rnd() * 0.7 });
+      this.people.push({ p, look, x, y, z, tx: x, ty: y, t: 1, phase: this.rnd() * 6, speed: 1.1 + this.rnd() * 0.7 });
     }
+  }
+
+  /** The person nearest to a point within `max` metres, or -1. */
+  nearest(pos: THREE.Vector3, max: number): number {
+    let best = -1;
+    let bestD = max;
+    this.people.forEach((w, i) => {
+      const d = w.p.root.position.distanceTo(pos);
+      if (d < bestD) {
+        best = i;
+        bestD = d;
+      }
+    });
+    return best;
+  }
+
+  position(i: number): THREE.Vector3 {
+    return (this.people[i] as Walker).p.root.position;
+  }
+
+  lookOf(i: number): PersonLook {
+    return (this.people[i] as Walker).look;
+  }
+
+  /** Everyone's position, for the radar. */
+  positions(): THREE.Vector3[] {
+    return this.people.map((w) => w.p.root.position);
+  }
+
+  /**
+   * Give person i another look (the body Kylo left behind) and, when `at` is on a walkable cell,
+   * move them there; returns the look they had.
+   */
+  swap(i: number, look: PersonLook, at?: THREE.Vector3): PersonLook {
+    const w = this.people[i] as Walker;
+    const old = w.look;
+    const pos = w.p.root.position.clone();
+    const rot = w.p.root.rotation.y;
+    if (at) {
+      const x = Math.floor(at.x / TILE), y = Math.floor(at.z / TILE), z = Math.floor(at.y / STOREY + 0.05);
+      if (FLAT.has(this.world.kind(x, y, z))) {
+        w.x = w.tx = x;
+        w.y = w.ty = y;
+        w.z = z;
+        w.t = 1;
+        pos.copy(at);
+      }
+    }
+    this.group.remove(w.p.root);
+    w.look = look;
+    w.p = buildPerson(look);
+    w.p.root.position.copy(pos);
+    w.p.root.rotation.y = rot;
+    this.group.add(w.p.root);
+    return old;
+  }
+
+  /** Union guards (visored) within r metres of a point. */
+  guardsNear(pos: THREE.Vector3, r: number): number {
+    return this.people.filter((w) => w.look.visor && w.p.root.position.distanceTo(pos) < r).length;
   }
 
   update(dt: number): void {
