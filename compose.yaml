@@ -48,6 +48,14 @@ services:
     ports:
       - "127.0.0.1:${WHZ_NEWHOPE_PORT:-4200}:4200"
 
+  # Tidewright (games/tidewright): `./dev compose up tidewright`, then http://127.0.0.1:4300.
+  tidewright:
+    <<: *node-service
+    network_mode: bridge
+    command: ["npm", "run", "dev", "--workspace", "@whz/tidewright-play"]
+    ports:
+      - "127.0.0.1:${WHZ_TIDEWRIGHT_PORT:-4300}:4300"
+
   # Port convention for services that listen: 127.0.0.1 only, a fixed default, and a
   # WHZ_<SERVICE>_PORT variable to override it (another checkout, a verifier).
   # tools/dev-env/compose-lint.mjs enforces this in the gate.

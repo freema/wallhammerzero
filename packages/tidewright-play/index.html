@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tidewright</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #0b1622; overflow: hidden; }
+      canvas#view { display: block; cursor: grab; }
+      canvas#view:active { cursor: grabbing; }
+      .hud { position: fixed; pointer-events: none; font: 500 13px/1.45 "Avenir Next", "Segoe UI", system-ui, sans-serif; color: #f2f4f2; text-shadow: 0 1px 2px #0009; }
+      .hud b { font-weight: 700; }
+      .hud .warn { color: #ffd27a; }
+      .hud .bad { color: #ff8a7a; }
+      .hud .good { color: #a8f0b0; }
+      .hud .small { font-size: 11.5px; opacity: .8; }
+      .panel { background: linear-gradient(#0a1a26aa, #0a1a2688); border: 1px solid #ffffff22; border-radius: 6px; padding: 8px 12px; }
+      #job { left: 16px; top: 14px; min-width: 230px; }
+      #job .cargo { font-size: 15px; text-transform: capitalize; }
+      #speed { right: 16px; top: 14px; text-align: right; }
+      #speed .big { font-size: 30px; font-weight: 300; line-height: 1.1; }
+      #speed .big small { font-size: 13px; }
+      #trim { left: 50%; bottom: 22px; transform: translateX(-50%); width: 360px; text-align: center; }
+      #trim .gauge { position: relative; height: 10px; margin: 6px 0 4px; border-radius: 5px; background: #ffffff26; }
+      #trim-band { position: absolute; top: 0; bottom: 0; background: #7fe0a088; border-radius: 5px; }
+      #sheet-mark { position: absolute; top: -4px; width: 3px; height: 18px; margin-left: -1px; background: #fff; border-radius: 2px; box-shadow: 0 0 4px #000a; }
+      #trim .ends { display: flex; justify-content: space-between; font-size: 10.5px; opacity: .7; }
+      #compass { right: 14px; bottom: 30px; width: 150px; height: 150px; }
+      #legend { right: 14px; bottom: 10px; width: 150px; text-align: center; }
+      #job .course { color: #ffc65a; font-weight: 600; }
+      #msg { left: 50%; top: 30%; transform: translateX(-50%); font-size: 24px; font-weight: 300; letter-spacing: .04em; text-align: center; opacity: 0; transition: opacity .6s; }
+      #msg small { display: block; font-size: 14px; opacity: .85; }
+      #keys { left: 16px; bottom: 16px; font-size: 11.5px; opacity: .75; }
+      #start { position: fixed; inset: 0; display: grid; place-items: center; background: radial-gradient(#0e2636cc, #050b12ee); color: #f2f4f2; font: 400 15px/1.6 "Avenir Next", "Segoe UI", system-ui, sans-serif; cursor: pointer; text-align: center; }
+      #start h1 { font-size: 56px; font-weight: 200; letter-spacing: .25em; margin: 0 0 6px; }
+      #start p { margin: 4px auto; max-width: 560px; opacity: .88; }
+      #start .go { margin-top: 18px; font-size: 13px; letter-spacing: .2em; opacity: .7; }
+    </style>
+  </head>
+  <body>
+    <div id="job" class="hud panel"></div>
+    <div id="speed" class="hud panel"></div>
+    <div id="trim" class="hud panel">
+      <div id="trim-label"></div>
+      <div class="gauge"><div id="trim-band"></div><div id="sheet-mark"></div></div>
+      <div class="ends"><span>sheet in (W)</span><span>ease out (S)</span></div>
+    </div>
+    <canvas id="compass" class="hud" width="300" height="300"></canvas>
+    <div id="legend" class="hud small"><span style="color:#ffc65a">━ harbour</span> · <span style="color:#7fd8ff">━▶ wind</span></div>
+    <div id="msg" class="hud"></div>
+    <div id="keys" class="hud">A/D helm · W/S sheet · drag to look, wheel to zoom · M sound</div>
+    <div id="start">
+      <div>
+        <h1>TIDEWRIGHT</h1>
+        <p>A nine-metre sloop, a hold of cargo and a storm on its way.</p>
+        <p>Steer with <b>A/D</b>. Trim the sail with <b>W/S</b>: keep the white mark in the green band.
+          You cannot sail straight into the wind; zig-zag (tack) toward it. Ease off near the pier:
+          tie up under 4 knots. Mind the turquoise shallows.</p>
+        <p class="go">CLICK TO CAST OFF</p>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

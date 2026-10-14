@@ -1,0 +1,15 @@
+{
+  "name": "tack",
+  "seed": 1,
+  "steps": [
+    { "do": "scenario", "name": "open" },
+    { "do": "steady", "args": [1] },
+    { "do": "point", "args": [50] },
+    { "do": "sheet", "args": [0.3] },
+    { "do": "advance", "seconds": 30, "expect": "boat.awaDeg", "gt": 0, "note": "close-hauled with the wind from starboard" },
+    { "do": "save", "name": "before" },
+    { "do": "hold", "code": "KeyD", "seconds": 9, "note": "helm to starboard: through the wind" },
+    { "do": "advance", "seconds": 25, "expect": "boat.awaDeg", "lt": 0, "note": "now the wind is from port: the tack went through" },
+    { "expect": "boat.knots", "gte": 3.0, "note": "and the boat is sailing again", "shot": "after-tack" }
+  ]
+}

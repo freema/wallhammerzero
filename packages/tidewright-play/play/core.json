@@ -1,0 +1,26 @@
+{
+  "name": "core",
+  "seed": 1,
+  "steps": [
+    { "do": "scenario", "name": "open" },
+    { "do": "steady", "args": [1] },
+    { "do": "point", "args": [90] },
+    { "do": "sheet", "args": [0.8] },
+    { "do": "advance", "seconds": 30, "expect": "boat.knots", "gte": 5.5, "note": "a beam reach, trimmed: fast", "shot": "beam-reach" },
+    { "expect": "boat.trim", "eq": "good" },
+    { "do": "sheet", "args": [0.06] },
+    { "do": "advance", "seconds": 30, "expect": "boat.knots", "lte": 3.8, "note": "the same course sheeted hard in: the sail stalls" },
+    { "expect": "boat.trim", "eq": "stalled" },
+    { "do": "point", "args": [0] },
+    { "do": "advance", "seconds": 25, "expect": "boat.knots", "lte": 1.0, "note": "head to wind: in irons" },
+    { "expect": "boat.trim", "eq": "luffing" },
+    { "do": "point", "args": [48] },
+    { "do": "sheet", "args": [0.3] },
+    { "do": "advance", "seconds": 40, "expect": "boat.knots", "gte": 4.0, "note": "close-hauled, trimmed: it sails toward the wind", "shot": "close-hauled" },
+    { "expect": "boat.heelDeg", "lt": -8, "note": "and heels to leeward (port, with the wind from starboard)" },
+    { "do": "point", "args": [165] },
+    { "do": "sheet", "args": [1.4] },
+    { "do": "advance", "seconds": 40, "expect": "boat.knots", "gte": 3.0, "note": "running before the wind, eased right out" },
+    { "expect": "boat.trim", "eq": "good", "note": "and the trim reads good, not stalled" }
+  ]
+}

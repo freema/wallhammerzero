@@ -1,0 +1,17 @@
+{
+  "name": "cargo",
+  "seed": 1,
+  "steps": [
+    { "do": "scenario", "name": "start" },
+    { "do": "save", "name": "start" },
+    { "do": "scenario", "name": "dock" },
+    { "do": "advance", "seconds": 8, "expect": "job.delivered", "eq": 1, "note": "tied up slowly at the target's pier" },
+    { "expect": "job.credits", "gt": 40, "note": "paid, with the early bonus" },
+    { "do": "scenario", "name": "shoal" },
+    { "do": "advance", "seconds": 20, "expect": "boat.groundings", "gte": 1, "note": "steered onto a beach: the keel finds the bottom" },
+    { "expect": "job.condition", "lte": 0.75, "note": "and a quarter of the load is spoiled" },
+    { "do": "storm", "args": [1] },
+    { "do": "advance", "seconds": 2, "expect": "wind.knots", "gte": 20, "note": "a forced storm: the wind is up", "shot": "storm" },
+    { "do": "storm", "args": [-1] }
+  ]
+}

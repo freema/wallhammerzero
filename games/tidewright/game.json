@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "tidewright",
+  "title": "Tidewright",
+  "resolution": {
+    "width": 480,
+    "height": 270
+  },
+  "palette": "example",
+  "systems": []
+}

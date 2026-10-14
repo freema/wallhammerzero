@@ -1,0 +1,9 @@
+{
+  "name": "smoke",
+  "seed": 1,
+  "steps": [
+    { "do": "scenario", "name": "start", "expect": "harbours", "gte": 3, "note": "the archipelago has at least three harbours" },
+    { "expect": "job.distance", "gt": 200, "note": "the first load goes to another island: a short first run" },
+    { "do": "advance", "seconds": 2, "expect": "boat.aground", "eq": false, "note": "the dock is in open water" }
+  ]
+}
