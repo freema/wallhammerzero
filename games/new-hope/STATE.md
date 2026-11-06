@@ -27,11 +27,11 @@ updates this file in its own commit. It is not a queue: Next holds at most three
 
 ## Last owner feedback
 
-- 2026-10-13, on the direction (D30): „chci aby to bylo 3D three js hratelná hra žádný verze dva
-  no mans skyes look že procedurálně generovaný svět“.
-- 2026-10-14: „pokračuj prosím vývojem hry“.
-- 2026-10-14, on the game as a whole (D31): „úplně nevidím teď důvod dál pokračovat tou hrou pokud
-  na ní neimplementuješ ty skills … celkově hra se mi nelíbí ani“.
+- 2026-10-13, on the direction (D30): “I want it to be a 3D three js playable game, no version two,
+  no mans skyes look, that it is a procedurally generated world”.
+- 2026-10-14: “please continue developing the game”.
+- 2026-10-14, on the game as a whole (D31): “I do not see any reason right now to continue with that game unless
+  you implement those skills on it … overall I do not like the game either”.
 
 ## Next
 
@@ -49,7 +49,7 @@ updates this file in its own commit. It is not a queue: Next holds at most three
 Ideas and looks the owner turned down. Never re-propose them.
 - A fixed isometric view over baked voxel sprites, and any 2D version (D29, replaced by D30).
 - Paperwork before play: task notes, asset sheets and plans instead of a playable build
-  (2026-10-13: „tohle je nedostatečné!“).
+  (2026-10-13: “this is insufficient!”).
 
 Tried by a session and set aside (not owner verdicts):
 - AgX tone mapping (2026-10-14): it greys the neon against D30's vivid look; ACES stays.

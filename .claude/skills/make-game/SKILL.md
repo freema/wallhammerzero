@@ -131,10 +131,10 @@ Mute with M, and suspend audio in a hidden tab.
    `./dev npm run check && git add <files> && git commit -m "<Title>: the first playable build"`.
    Never pipe the gate through `tail` or `grep`. Do not push.
 4. **Report in Czech** and stop:
-   - **Hraj**: the URL, `./dev compose up <id>`, the controls, what to try first;
-   - **Ověřeno**: the scripts and their numbers, the blind player's findings, the shot verdict;
-   - **Neověřeno**: is it fun, does it feel good, the sound, the look in motion: only the owner
+   - **Play**: the URL, `./dev compose up <id>`, the controls, what to try first;
+   - **Verified**: the scripts and their numbers, the blind player's findings, the shot verdict;
+   - **Unverified**: is it fun, does it feel good, the sound, the look in motion: only the owner
      can judge these;
-   - **Dál**: the first Next item, run as `/continue-game <id>`;
+   - **Next**: the first Next item, run as `/continue-game <id>`;
    - **Skill**: one or two lines on where this skill helped or got in the way (input for
      improving it), and a request to read `/usage` and say what the run cost.

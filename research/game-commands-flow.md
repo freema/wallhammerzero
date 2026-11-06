@@ -153,7 +153,7 @@ What hurts:
 ### 2.2 `/make-game <idea>`: stages
 
 One run takes an idea to a **first playable build** and stops. The owner's feedback on
-2026-10-13 ("tohle je nedostatečné … potřebuji abychom pracovali na real hře") sets the target:
+2026-10-13 ("this is insufficient … I need us to work on a real game") sets the target:
 something playable within the hour, with as little paperwork as possible. **[S]** memory
 `build-the-game-not-papers`.
 
@@ -617,7 +617,7 @@ above, each checked against the live docs page or the actual files. Inline marks
 - `research/studio-stack.md` §2.6 lists exactly the five hook events named; §8.2 proposes
   `services/render` and `/__shot`.
 - Memory `no-big-workflows-without-cost`: 27 agents, ~5 M sub-agent tokens, 4.5 h, "20 %
-  týdenního usage", "nekvalitní práce". Memory `build-the-game-not-papers`: the 2026-10-13 quotes.
+  of the weekly usage", "low-quality work". Memory `build-the-game-not-papers`: the 2026-10-13 quotes.
 - PixelDen: `.claude/commands/new-game.md` (2.5k–5k LOC, one hook technique, 3 concepts via
   `AskUserQuestion`, "Write the code yourself — subagents only for research/verification", two
   consecutive failures → stop) and `game-upgrade.md` (§6 React-fiber walk from the canvas's

@@ -251,7 +251,7 @@ protocol (`window.__nh`-style `advance`, state as text, seeded scripts;
 
 ### 5.1 Agent-verified ≠ good, and the owner playtest is the bottleneck [S]
 
-The ledgers and memory show these games shipped but "čeká playtest" (waiting for a playtest):
+The ledgers and memory show these games shipped but "waiting for a playtest":
 Spire Tycoon, Crystal TD, Scrapwing, Detention Deep, Wobble Cup, Rooftop Rush, Sandcrown,
 Furrowfield, Liftwell and Tumblekin.
 

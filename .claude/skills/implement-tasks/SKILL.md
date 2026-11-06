@@ -253,14 +253,14 @@ commit message.
 In **Czech**; identifiers stay English. Keep it short.
 
 1. **Co se dodalo:** the note, files, commands and tests by name, the commit.
-2. **Odchylky od noty a proč;** session defaults taken.
-3. **Ověření:** the gate result, each Acceptance item with its evidence, the browser pass per
+2. **Deviations from the note and why;** session defaults taken.
+3. **Verification:** the gate result, each Acceptance item with its evidence, the browser pass per
    criterion or why there was none. Readings and inferences stay visibly different things.
    What only the owner can confirm is listed as not checked.
 4. **Owner cally:** each as question · options · recommendation · what it unblocks. Never more
    than the notes list. Never decided by you.
-5. **Další krok:** the next note the queue tool names, or what is blocked.
-6. **Follow-upy:** each new note (file name + one line), or "žádné". Proposals for new work go
+5. **Next step:** the next note the queue tool names, or what is blocked.
+6. **Follow-ups:** each new note (file name + one line), or "none". Proposals for new work go
    here too, marked as proposals.
 
 ## 12. Launch modes

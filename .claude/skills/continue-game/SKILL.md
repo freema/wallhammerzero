@@ -107,10 +107,10 @@ Never pipe the gate through `tail` or `grep`. Commit only your own files. Do not
 ## 7. Report in Czech, then stop
 
 Short:
-- **Co je nového**: what plays differently, and the commit;
-- **Důkazy**: scripts passed, the numbers before and after, the shot verdict;
-- **Neověřeno**: what only the owner can judge, and how to try it (the URL, the keys);
-- **Další krok**: the first Next item, or the question for the owner.
+- **What is new**: what plays differently, and the commit;
+- **Evidence**: scripts passed, the numbers before and after, the shot verdict;
+- **Unverified**: what only the owner can judge, and how to try it (the URL, the keys);
+- **Next step**: the first Next item, or the question for the owner.
 
 Until STATE's Budgets records a measured cost per run, end by asking the owner to read
 `/usage` and say what the run cost.

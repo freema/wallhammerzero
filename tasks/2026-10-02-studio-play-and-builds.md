@@ -3,7 +3,7 @@
 **GATE:** none · **Priority:** P2 · **Size:** M · **Depends on:** player-loop-test-protocol, studio-live-reload
 
 ## Origin
-D11: "ve studiu budeme mít možnost udělat ten build". D23 moves builds from "later" (D22) into
+D11: "in the studio we will be able to make that build". D23 moves builds from "later" (D22) into
 the queue. The owner plays the current state of a game in the studio and makes a build with
 one button; Claude gets the same build and the same checks from the command line.
 

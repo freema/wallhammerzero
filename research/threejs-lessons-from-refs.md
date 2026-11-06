@@ -367,7 +367,7 @@ Checked and confirmed (24):
     motion are not part of any digest".
 13. Vellum: all four `analyzy/*` notes and `plan-voxel-hra.md` are `status: backlog` with `_TODO_`
     sections, last modified 2026-09-24; the index's "Průřezové srovnání" is `_TODO_`. The stale
-    figures are as quoted: 03 says "32 JS souborů, ~9 300 řádků", 02 says "ripples 5×5", 01
+    figures are as quoted: 03 says "32 JS files, ~9,300 lines", 02 says "ripples 5×5", 01
     says "lattice 3 m". Our reports say 102 files / 25,818 lines, 3×3 (`ref-threejs-punk.md:193`)
     and `CELL = 1.5` (`ref-sakura-crossing.md:65`).
 14. `ref-threejs-punk.md` §6.1 (`:572`) gives "r186 (2026-09-24)", which is indeed the patch
