@@ -6,7 +6,8 @@ Wallhammer Zero je vlastní 3D open-world engine v C17, ve kterém veškerou gra
 3. [docs/DECISIONS.md](docs/DECISIONS.md): co je rozhodnuté a proč.
 4. [docs/ROADMAP.md](docs/ROADMAP.md): jediný platný plán, milníky M0–M10.
 5. [docs/CONVENTIONS.md](docs/CONVENTIONS.md): osy, jednotky, ID, jména.
-6. [docs/SETUP.md](docs/SETUP.md): příprava stroje (Mac, Windows).
+6. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): vrstvy, moduly a jejich pravidla.
+7. [docs/SETUP.md](docs/SETUP.md): příprava stroje (Mac, Windows).
 
 ## Zapisuj všechno, průběžně
 Vlastník chce mít zapsané všechno, co chceme dělat, co jsme rozhodli a co už je vyřešené.

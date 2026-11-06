@@ -12,6 +12,7 @@ Stav (2026-11-06): analýza je uzavřená, plán je sepsaný. Kód ještě nevzn
 | [docs/STATUS.md](docs/STATUS.md) | Kde jsme: hotovo, rozpracováno, otevřené otázky, rizika, další krok |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Rozhodnutí: co, kdy a proč |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Jediný platný plán: milníky M0–M10, kritéria, měření |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Architektura: vrstvy, moduly, pravidla závislostí, průběh snímku |
 | [docs/CONVENTIONS.md](docs/CONVENTIONS.md) | Konvence: osy, jednotky, ID buněk, jména, struktura repa |
 | [docs/SETUP.md](docs/SETUP.md) | Příprava vývojového stroje (Mac, Windows) a práce na dvou strojích |
 | [docs/OVERENI.md](docs/OVERENI.md) | Ověření plánu proti zdrojům na webu a otázky pro vlastníka |

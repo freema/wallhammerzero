@@ -2,7 +2,7 @@
 
 Co jsme se rozhodli, kdy a proč. Nové rozhodnutí se přidává na konec s datem; když se něco změní, staré se nemaže, ale označí jako nahrazené a odkáže na nové.
 
-Stav: **D1–D76 zapsané.** D24–D71 jsou potvrzené návrhy z [NAVRHY-ROZHODNUTI.md](NAVRHY-ROZHODNUTI.md) (číslo rozhodnutí = číslo návrhu + 23). Jediná změna proti návrhům: D35 (Xcode se neinstaluje). Plán je v [ROADMAP.md](ROADMAP.md), konvence v [CONVENTIONS.md](CONVENTIONS.md).
+Stav: **D1–D77 zapsané.** D24–D71 jsou potvrzené návrhy z [NAVRHY-ROZHODNUTI.md](NAVRHY-ROZHODNUTI.md) (číslo rozhodnutí = číslo návrhu + 23). Jediná změna proti návrhům: D35 (Xcode se neinstaluje). Plán je v [ROADMAP.md](ROADMAP.md), konvence v [CONVENTIONS.md](CONVENTIONS.md).
 
 ---
 
@@ -368,3 +368,11 @@ Vlastník chce mít `freema/wallhammerzero` jako veřejné repo. Přepnuto 2026-
 - **Licence:** zatím žádná, takže platí „všechna práva vyhrazena“. Kód je vidět, ale nikdo ho nesmí použít. Volba licence je otevřená otázka.
 - **E-mail v commitech:** autor commitů je vidět s e-mailem. Pro další commity lze přepnout na adresu `…@users.noreply.github.com`.
 - **gitleaks** v `.tools/` jako kontrola před commitem a v CI (úkoly M0a).
+
+## D77 — Jedna mapa modulů (2026-11-06)
+[ARCHITECTURE.md](ARCHITECTURE.md) slučuje D7, D25, D28, D30 a D43–D46 s rešerší architektury do jedné mapy vrstev a modulů. Proti rešerši přidává:
+- moduly, které přinesly pozdější zprávy: `eng_log`, `eng_cvar`, `eng_cmd`, `eng_types`, `eng_prof`, `eng_gen_*`, `eng_ui`, `eng_vfx`, `eng_tools`, `eng_debugsrv`, `eng_project`,
+- modul `eng_sim` pro hodiny simulace, `player_cmd`, hromadné entity a globální grafy (D44, D46, D47),
+- generátory jako samostatnou vrstvu pod `eng_asset`, bez GPU a souborů.
+
+Mapu sepsal Claude na žádost vlastníka. Vlastník ji může změnit.
