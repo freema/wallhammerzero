@@ -22,13 +22,13 @@ Each module is one CMake target `eng_<module>` with the folders `include/eng/` (
 | | `eng_types` | type registry: name, version, fields, serialization, JSON Schema (D43), `uid64` and the `ref` field kind (D79) | M0c, M1a |
 | | `eng_prof` | Tracy, phase timers, counters, `stats.json` | M1b |
 | | `eng_gen_core` | **tier A:** `detmath`, RNG, noise, `eng_cell_id`, world shape math | M0b |
-| **3 Generators** | `eng_gen_tex`, `eng_gen_mesh`, `eng_gen_arch`, `eng_gen_world`, `eng_gen_char`, `eng_gen_audio`, `eng_gen_vfx` | **tier A:** pure functions `(recipe, seed) → data`. CPU only, no GPU or files. | M3, M7–M9 |
+| **3 Generators** | `eng_gen_tex`, `eng_gen_mesh`, `eng_gen_arch`, `eng_gen_world`, `eng_gen_char`, `eng_gen_audio`, `eng_gen_vfx` | **tier A:** pure functions `(recipe, seed) → data`. CPU only, no GPU or files. `eng_gen_arch` also emits the part graph `destruct_desc` (D80). | M3, M7–M9 |
 | **4 Resources and GPU** (seam) | `eng_asset` | VFS, resource DB, refcounted graph, IO queue, ports `asset_provider` and `gen_provider`, Merkle cache, uid registry and reverse dependencies, cache GC, bake and pack (D79) | M3a |
 | | `eng_gpu` | RHI built from three portable concepts (D25), SDL_GPU backend and null | M1c |
 | **5 Subsystems** | `eng_render` | render graph, forward+ with clusters (D27), passes, materials | M2 |
 | | `eng_world` | cells, world shape port, archetypes, instances, actors, spatial queries, streaming, LOD | M4, M5, M7 |
-| | `eng_sim` | simulation clock, `player_cmd`, mass entities, global graphs (roads, lane graph from the road generator) (D44, D46, D47, D79) | M1b, M4, M6 |
-| | `eng_phys` (seam) | physics port, Jolt adapter (C++ only inside), null | M4b |
+| | `eng_sim` | simulation clock, `player_cmd`, mass entities, global graphs (roads, lane graph from the road generator), structural graph and destruction events (D44, D46, D47, D79, D80) | M1b, M4, M6 |
+| | `eng_phys` (seam) | physics port, Jolt adapter (C++ only inside), null, cosmetic debris layer (D80) | M4b |
 | | `eng_audio` (seam) | mixer on top of miniaudio, voices, buses | M3d |
 | | `eng_anim` | skeletons, clips, IK, springs | M9 |
 | | `eng_ui` | Clay layout, own drawing, text, tables | M4c, M6 |
@@ -48,7 +48,7 @@ Generators sit low and know nothing about the GPU or files. They reach the world
 4. **Handles instead of pointers:** a 32-bit index and generation. A pointer does not survive a frame, and a handle is never stored in a save (CONVENTIONS, chapter 4).
 5. **Memory:** the platform reserves arenas, and modules get an allocator in `init`. Nobody calls `malloc` directly.
 6. **Every system has its own `save` and `load`** through the type registry. There is no global reflection and no root class.
-7. **Determinism tiers (D28):** a tier A target (`eng_gen_*`, the logic of `eng_sim`) must not link a tier B target (`eng_phys`, `eng_anim`, `eng_audio`). A generator reads only its explicit context struct: no cvars, clock or files (lint). A changed golden hash without a domain version bump fails CI. A local-stability test checks that a change inside a cell does not change output outside the cell and its margin. Cosmetic GPU scatter (grass, clutter) is a separate tier with no IDs, collision, edits or golden hashes (D79).
+7. **Determinism tiers (D28):** a tier A target (`eng_gen_*`, the logic of `eng_sim`) must not link a tier B target (`eng_phys`, `eng_anim`, `eng_audio`). A generator reads only its explicit context struct: no cvars, clock or files (lint). A changed golden hash without a domain version bump fails CI. Debris physics is excluded from tier A hashes (D80). A local-stability test checks that a change inside a cell does not change output outside the cell and its margin. Cosmetic GPU scatter (grass, clutter) is a separate tier with no IDs, collision, edits or golden hashes (D79).
 8. **Init** is a hand-written order in `eng_runtime`, and shutdown runs in reverse.
 
 ## Asset identity, cache and edits (D79)
@@ -61,17 +61,32 @@ Generated content needs the same machinery that shipped engines had to add late.
 - **Explicit generator inputs.** Each generator gets one context struct with everything it may read. Everything in it enters the cache key.
 - **Cache lifecycle.** Each entry records the producer fingerprint (generator, version, build). Writes are atomic (temporary file, rename, manifest last). `wzctl cache gc` evicts. `wzctl bake --region` and `wzctl pack` produce shippable data. A cache shared between machines only after the golden hashes are green on 3 OS.
 - **Blast radius.** A generator commit declares its scope. A hash change outside the scope blocks the merge. This is the main guard against AI-written generator changes.
-- **Output contract.** Every archetype declares its LOD chain, impostor distance, shadow-caster flag and separately cullable parts. CI rejects an archetype without them.
+- **Output contract.** Every archetype declares its LOD chain, impostor distance, shadow-caster flag and separately cullable parts. Destructible archetypes add the part list, the interior material per part and the number of damage states; the cullable parts are the `destruct_desc` parts (D80). CI rejects an archetype without them.
 - **Hand edits survive regeneration:**
   1. anchors come from input space, never from the order of outputs (lint),
   2. ordered edit layers, plus keep-out and hand-authored zones as authored inputs,
-  3. an edit that loses its target goes to a visible orphan queue, never silently away,
+  3. an edit that loses its target goes to a visible orphan queue, never silently away; a destruction state edit coarsens into a ruin of the whole building, never a silent rebuild (D80),
   4. drift detection against the stored absolute position,
   5. each cell stores the domain version it was built with; a cell can be frozen on an old version, with blending at the border,
   6. undo and preview work across regeneration.
 - **Version bump report.** `wzctl world diff --domain` lists changed cells, orphans and drifted edits. The owner approves it.
 - **Bounded work.** A player edit re-solves at most a declared neighbourhood of cells within a work budget.
 - **Iteration.** Regeneration can be paused or limited to a region. A preview-quality parameter is excluded from golden hashes. A slider drag writes no cache entries and no edits.
+
+## Destruction: state, not geometry (D80)
+
+Destruction is stored as a small state per generated part, never as geometry. Research: [environment-destruction.md](research/environment-destruction.md).
+
+1. **The authoritative state is `part uid → damage state`**, kept as a state edit `(cell, uid, state, impact, seed)` in the edit layers. Each cell has a policy: `persist`, `reset_after` or `rebuild_by_sim`.
+2. **The building generator knows the structure.** `eng_gen_arch` emits `destruct_desc` next to the mesh: parts with a stable `uid64` from the building anchor and grammar path, material, role, fixed-point mass, convex pieces and ground anchors, and bonds with the shared face. The per-part state vector is an explicit generator input and part of the cache key. The part graph exists already in the LAYOUT cell state, so an event on an unloaded cell needs no meshes.
+3. **Tier A decides what breaks** (`eng_sim`): canonical destruction events from `player_cmd` or the simulation, a hit test against the convex pieces, connectivity from the anchors in uid order and an optional fixed-iteration fixed-point stress solver. Tier A also chooses the rubble archetype and footprint at the moment of the event.
+4. **Jolt only moves debris.** Debris is cosmetic (tier B1), lives in its own object layer, is never saved and never read by tier A. When it sleeps or its lifetime ends it is swapped for the rubble that tier A already chose.
+5. **Only the rubble footprint** feeds navigation tiles, lane blocking, cover and saves.
+6. **Damage ladder per part:** intact → cracked (shader mask) → breached (cut by the same grammar rule as window openings) → fractured (seeded convex clipping in `detmath`) → gone (rubble).
+7. **The save delta is the network snapshot.** The event log is compacted into per-part states.
+8. **Rendering without bindless:** a per-instance damage sphere slot and a vertex damage channel, swapped part meshes, instanced debris, HLOD and impostors regenerated after damage.
+9. **Indestructible by default:** ground and foundations. Landmarks and zones are protected through keep-out inputs (D79).
+10. **Terrain destruction** waits for voxel volumes (later). Blast is a reference design, not a dependency.
 
 ## Three classes of objects (D44)
 

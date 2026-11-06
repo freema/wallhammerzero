@@ -36,10 +36,11 @@
 | **M6** | Test scene C: strategy cutout | 100,000 entities, a player-built world, time acceleration, UI with a table |
 | **M7** | Generated world, streaming and persistence | a 4×4 km city and a planet without holes, saving changes |
 | **M8** | City content and the open-world renderer | a dense city with weather, 30,000+ instances |
+| **MD** | Destruction | buildings and props break by parts, rubble persists, debris is cosmetic |
 | **M9** | Characters and animation | 200 pedestrians, ragdoll |
 | **M10** | Scaling | a stable frame at 200 km/h across the whole map |
 
-The order of M8 and M9 is reconsidered after gate M4 (D51).
+The order of M8 and M9 is reconsidered after gate M4 (D51). The position of MD is decided at the same gate (D80); by default it follows M8.
 
 ## Conversion of the old numbering
 
@@ -169,6 +170,13 @@ The order of M8 and M9 is reconsidered after gate M4 (D51).
 - Half-edge operations and meshoptimizer.
 - Generators: building v0, road and sidewalk, props. All on top of the scale table. The road generator also emits the lane graph format for `eng_sim` (D79).
 - Output contract lint: every archetype declares its LOD chain, impostor distance, shadow-caster flag and separately cullable parts (D79).
+- **Preparation for destruction (D80):**
+  - The building generator gives every part a stable `uid64` from the building anchor and the grammar path. Inserting a rule upstream changes no existing part uid.
+  - `destruct_desc`: nodes (material, role, fixed-point mass, centroid, convex pieces, anchor flag, number of states) and bonds (shared face area, axis, permanent flag). Golden hash identical on 3 OS. Lint: every non-anchor part reaches an anchor and every bond face matches both parts.
+  - The per-part state vector is an explicit generator input and part of the cache key. Setting a part to "gone" changes output only within its declared neighbourhood.
+  - The output contract adds the destructible part list, interior material and number of damage states.
+  - The part graph is available in the LAYOUT cell state.
+  - A spike of measurement 36 (convex clipping in `detmath`) in the final module.
 - Measurements 5, 9, 10 and the first reading of 13.
 
 **M3c Studio for the art director**
@@ -181,7 +189,7 @@ The order of M8 and M9 is reconsidered after gate M4 (D51).
 
 **M3d Audio basics and effect sources**
 - `eng_audio`: output through `platform`, the miniaudio mixer, buses, pool and virtual voices, 3D with Doppler and offline render (D65).
-- `eng_gen_audio`: UI sounds, modal impacts and impulse responses. An import chain for AI sounds with provenance (D58, D59).
+- `eng_gen_audio`: UI sounds, modal impacts and impulse responses. Impact banks per material and size class, with material IDs shared by fracture patterns and VFX (D80). An import chain for AI sounds with provenance (D58, D59).
   - ElevenLabs sound cannot be regenerated identically (the API has no seed). The stored file is the only source.
   - Generation uses the v3 model. The v2 model ends on 1 March 2027.
   - Before first use the owner chooses a plan. A commercial license starts with the Starter plan.
@@ -208,7 +216,7 @@ One cell with an edge of about 256 m, no streaming.
 
 **M4b Physics and the car**
 - Jolt through joltc (D42), pinned to one commit for all three OS and built with `CROSS_PLATFORM_DETERMINISTIC` from the start.
-- The physics adapter: bodies get IDs from the engine, contact events are sorted by ID before they are passed to the game.
+- The physics adapter: bodies get IDs from the engine, contact events are sorted by ID before they are passed to the game. Bodies are created in sorted `uid64` order. A cosmetic object layer that gameplay never reads; the simulation hash is identical with it on and off (D80).
 - Saving and restoring physics state in our adapter. joltc does not have it and a save needs it (D40).
 - Car generator v0 and a drivable car.
 - Car sound: loops by RPM and load, Doppler and impacts from contacts.
@@ -254,6 +262,7 @@ A new milestone because of strategy games (D23, D50).
   - The road network is a global model: nodes, segments, lanes and turns.
   - After an action, only the changed segments and intersections are regenerated, and from them the affected cells. Each generator declares a bounded re-solve neighbourhood and a work budget, and a player edit touches at most the declared cells (D79, measurement 25).
   - Mass entities route on the lane graph emitted by the road generator, without hand data (D79).
+  - Lane segments carry a `blocked` and capacity flag set by a graph edit. Blocking a segment reroutes affected paths within the path budget (D80).
   - Intersection geometry has its own set of hard cases: a sharp angle, a short segment, many arms, a slope.
 - **Controls (D49):** a strategy camera with zoom from street to the whole map, selection by mouse and box, placement with snapping.
 - **UI (D57):** widgets (tables, lists, tooltips, windows), data binding and a UI description in text files.
@@ -289,8 +298,9 @@ A new milestone because of strategy games (D23, D50).
 - **Version bump report:** `wzctl world diff --domain` lists changed cells, orphans and drifted edits. The owner approves it.
 - **Bake and packs:** `wzctl bake --region` and `wzctl pack`. A local and a shared cache tier only after the golden hashes are green on 3 OS.
 - **Streaming radii:** generate and cleanup radii per level with hysteresis and a view direction weight. Every cell has a single owner.
+- **Destruction state edits (D80):** the edit kind `(cell, uid, state, impact, seed)` with a coarsening fallback for orphans and a per-cell policy `persist`, `reset_after`, `rebuild_by_sim`. Recast tiles nest inside 256 m cells, with a per-frame tile rebuild budget (measurement 33).
 - **Owner decisions before M7:** the default policy for orphaned edits, whether frozen domains keep copies of old generator source, and whether the two development machines share a cache.
-- **Measurements:** 13, 14, 17, 29 and 30.
+- **Measurements:** 13, 14, 17, 29, 30 and 33.
 - **Done when:**
   - a flight through a 4×4 km city and through a planet is without holes and blocking loads,
   - cells generated in any order have the same hashes on 3 OS,
@@ -314,9 +324,31 @@ A new milestone because of strategy games (D23, D50).
 - **Traffic and pedestrians:** the scope is set by the research (D71).
 - **Cosmetic GPU scatter (D79):** grass and clutter on the GPU, with no IDs, collision, edits or golden hashes. Switching it off changes no tier A hash.
 - **Output contract** from M3b is enforced for all city content.
+- **Damage slots (D80):** a per-instance damage sphere slot and a vertex damage channel in the instance and vertex formats. A damaged-instance golden image passes FLIP and the draw count does not change.
 - **Measurements:** 3, 22 and 23.
 - **Done when:** the scene has 30,000+ instances. The number of draws grows with buckets, not with objects. The counter budgets hold. The range lints pass. 200 cars and rain hold the voice and fragment budget.
 - **Owner gate:** a street-level view next to GTA III, district distinguishability and a street in the rain.
+
+## MD Destruction
+
+Position decided at gate M4 together with the M8/M9 order (D51, D80); by default after M8. Rules: ARCHITECTURE, section "Destruction: state, not geometry". Research: [environment-destruction.md](research/environment-destruction.md).
+
+- **Events and solver:** canonical destruction events from `player_cmd` or the simulation, a tier A hit test against `destruct_desc`, connectivity from anchors in uid order. A fixed-iteration fixed-point stress solver only if measurement 31 allows it.
+- **Fracture:** seeded convex clipping in `detmath`, material patterns, cap faces with interior material and triplanar UVs, a breach by the window opening rule. Interiors show back faces only.
+- **Rubble and debris:** the rubble archetype and footprint are chosen at the event. Debris in the Jolt cosmetic layer, with caps and lifetime from measurement 32, swapped for rubble on sleep.
+- **Persistence and network:** event log compaction into per-part states. The save delta is the network snapshot. An overflowing cell budget coarsens into a visible ruin, never a silent rebuild.
+- **Navigation and simulation:** navmesh tile and cover rebuild from rubble footprints, lane blocks from rubble.
+- **Rendering:** HLOD and impostor regeneration after damage, with the old impostor masked meanwhile. Instanced debris.
+- **Audio and effects:** one event stream for `eng_vfx` and `eng_audio`, a debris voice budget and a rubble bed.
+- **Tests:** a headless "big red button" scene per test scene that destroys everything. Debris, event, navigation and draw counters in `eng_prof`.
+- **Measurements:** 31, 32, 33 again, 34, 35 and 36.
+- **Done when:**
+  - the solver and fracture hashes are identical on 3 OS and with 1 and 12 threads,
+  - a replay of a demolition gives identical tier A hashes on 3 OS, and a headless run with debris physics off gives the same tier A hashes,
+  - saving in the middle of a collapse, loading and continuing gives the same tier A hash as an uninterrupted run,
+  - after a collapse no path crosses a rubble footprint,
+  - the city block with every building destroyed holds the counter budgets and the voice budget in CI.
+- **Owner gate:** a street after a demolition next to the intact street.
 
 ## M9 Characters and animation
 
@@ -346,7 +378,7 @@ A new milestone because of strategy games (D23, D50).
 | Work | Note |
 |---|---|
 | Planet content | biomes, villages, creatures and their voices, snow, sand and wind (D68), music from fragments (D61) |
-| Voxel volumes | optional, digging and caves (D39) |
+| Voxel volumes | optional, digging and caves (D39), terrain destruction (D80) |
 | Grand strategy in space | a galaxy map over multiple worlds (D48), scope set by research |
 | Radio music | postponed (D60) |
 | Steam Audio behind a port | only as needed (D63) |
@@ -388,8 +420,14 @@ Each measurement is created as a permanent test or measurement scene in the repo
 | 28 | throughput of the owner's review (renders per hour) | from M2 | gate budgets |
 | 29 | survival of edits after a domain version bump on a heavily edited cell: share reattached exactly, drifted and orphaned | M7 | default orphan policy |
 | 30 | bake time of a 1 km region with no change and after one recipe change | M7 | whether shipping needs packs |
+| 31 | cost of the tier A connectivity and stress solver per building, by part count and iteration count | MD | iteration count, maximum parts per building |
+| 32 | Jolt debris: awake bodies within the physics budget on the Mac and the Windows PC, cost of static-to-dynamic conversion and of removing a `MutableCompoundShape` child | MD | debris caps and lifetime |
+| 33 | Recast tile rebuild time by tile size after a building collapse | M7, again MD | tile size, rebuild budget per frame |
+| 34 | latency of regenerating a building after a part state change, including fracture, mesh and HLOD (p50, p95) | MD | fracture at impact or pre-generated |
+| 35 | size of the destruction delta and replay time of a cell after "destroy all" | MD | compaction, edit budget per cell |
+| 36 | throughput and 3-OS hash of convex clipping in `detmath` | M3b (spike), MD | whether fracture is tier A or cached data |
 
-Measurements 1–12 are from report 3 (the original no. 12 is replaced by D20), 13–17 from report 4, 18–23 from report 6. Measurements 24–28 were added during the review, 29 and 30 by research 7 (D79).
+Measurements 1–12 are from report 3 (the original no. 12 is replaced by D20), 13–17 from report 4, 18–23 from report 6. Measurements 24–28 were added during the review, 29 and 30 by research 7 (D79), 31–36 by research 8 (D80).
 
 On the Mac, measurement is done without Xcode (D35): our own counters and frame times, `powermetrics`, the Metal HUD log (`MTL_HUD_ENABLED=1`) and Tracy. GPU time per pass cannot be measured this way.
 

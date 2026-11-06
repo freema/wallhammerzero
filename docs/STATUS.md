@@ -79,6 +79,7 @@ Where we are, what is resolved, what is open and what comes next. Updated after 
   Conclusion: no decision fell. The justification of physics determinism was corrected (Jolt can do identity across OS), as were the scope of the game UI and strategy games in M6. The shader compiler is the first technical risk. The fixes are recorded as D74.
 - [x] **Research 7: procedural pipeline and modern engines (2026-11-06).** Report: [research/procedural-pipeline-and-modern-engines.md](research/procedural-pipeline-and-modern-engines.md). The procedural core holds up. Gaps are in the machinery around it: stable recipe and rule identity, an explicit generator input contract, a dependency registry, cache lifecycle and hand edits that survive a generator version change. Accepted as D79 and written into ARCHITECTURE, CONVENTIONS and ROADMAP.
 - [x] **Repo translated to English (D78).**
+- [x] **Research 8: environment destruction (2026-11-06).** Report: [research/environment-destruction.md](research/environment-destruction.md). Accepted as D80: destruction is stored as part states, tier A decides, debris is cosmetic. Early work in M3b–M8, the milestone MD and measurements 31–36.
 
 ## Resolved (briefly; details in DECISIONS.md)
 | Topic | State | Decision |
@@ -127,6 +128,7 @@ Three questions for the owner from checking the plan, in detail in [VERIFICATION
 3. May the GTA III and WoW reference screenshots be sent to AI services? Recommendation: no, only locally.
 
 5. Before M7 (D79): the default policy for orphaned edits, whether frozen domains keep old generator source, whether the two machines share a cache.
+6. D80 defaults for destruction (scope, persistence per mode, position of MD) may be changed by the owner; MD position is decided at gate M4.
 
 The rest will be decided by a measurement or a milestone gate.
 

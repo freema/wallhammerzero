@@ -2,7 +2,7 @@
 
 What we decided, when and why. A new decision is added at the end with a date. When something changes, the old decision is not deleted but marked as superseded and linked to the new one.
 
-Status: **D1–D79 recorded.** D24–D71 are the confirmed proposals from [DECISION-PROPOSALS.md](DECISION-PROPOSALS.md) (decision number = proposal number + 23). The only change against the proposals: D35 (Xcode is not installed). The plan is in [ROADMAP.md](ROADMAP.md), the conventions in [CONVENTIONS.md](CONVENTIONS.md).
+Status: **D1–D80 recorded.** D24–D71 are the confirmed proposals from [DECISION-PROPOSALS.md](DECISION-PROPOSALS.md) (decision number = proposal number + 23). The only change against the proposals: D35 (Xcode is not installed). The plan is in [ROADMAP.md](ROADMAP.md), the conventions in [CONVENTIONS.md](CONVENTIONS.md).
 
 ---
 
@@ -392,3 +392,22 @@ The owner accepted the findings of research 7 ([procedural-pipeline-and-modern-e
 - **Open before M7:** the default orphan policy, whether frozen domains keep old generator source, whether the two machines share a cache.
 
 The rules are in [ARCHITECTURE.md](ARCHITECTURE.md), section "Asset identity, cache and edits", and in [ROADMAP.md](ROADMAP.md).
+
+## D80 — Destruction as part states (2026-11-06)
+The owner wants environment destruction and asked for it to be analysed and built into the design. Research 8: [environment-destruction.md](research/environment-destruction.md). Every shipped system (Frostbite, Red Faction, The Finals, Teardown, Chaos, Blast) splits a small authoritative state from disposable debris. Our building grammar already knows the parts, bonds and anchors that those systems reconstruct from meshes.
+- **Destruction is an engine capability** for all three test scenes (D15). The authoritative state is `part uid → damage state` as a state edit in the D79 edit layers. Geometry, fracture and rubble are regenerated from it.
+- **Tier A decides** what breaks and where rubble lies. Jolt moves only cosmetic debris, which is never saved and never read by tier A.
+- **Early work, cheap now and expensive later:** part uids and `destruct_desc` in the building generator and the output contract (M3b), material banks (M3d), body order and a cosmetic layer in physics (M4b), lane blocking (M6), state edits and nested navigation tiles (M7), damage slots in instance and vertex formats (M8).
+- **Milestone MD Destruction** for the solver, fracture, debris, navigation rebuild, HLOD, audio and stress scenes. Its position is decided at gate M4 with the M8/M9 order; by default after M8.
+- **New measurements 31–36.**
+- **Defaults taken from the research recommendation; the owner may change any of them:**
+  - scope of v1: building parts and props; terrain waits for voxel volumes,
+  - structural model: connectivity first, the stress solver only after measurement 31,
+  - indestructible: ground and foundations; landmarks and zones through keep-out inputs,
+  - persistence per mode: city `reset_after`, strategy `rebuild_by_sim`, planet `persist`,
+  - a full cell budget coarsens into a visible ruin, never a silent rebuild,
+  - gameplay-sized chunks are tier A unless measurement 27 proves identity on 3 OS,
+  - Blast is a reference design, not a dependency,
+  - interiors on breach: back faces only in MD; full interiors later.
+
+Rules: [ARCHITECTURE.md](ARCHITECTURE.md), section "Destruction: state, not geometry". Plan: [ROADMAP.md](ROADMAP.md), MD and the destruction items in M3b, M3d, M4b, M6, M7 and M8.
