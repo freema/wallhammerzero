@@ -1,24 +1,21 @@
 # Wallhammer Zero
 
-A **studio + generator** for games written entirely by an AI. A Claude Code session in this
-repo writes the code, graphics, music and game data, and a local studio lets the owner see,
-verify and steer the results.
+Vlastní obecný 3D engine v C17 nad SDL3 a SDL_GPU pro velké světy: město, planetu i strategie. Veškerá grafika (modely, materiály, animace i svět) se generuje kódem.
 
-Two game types:
+Stav (2026-11-06): analýza je uzavřená, plán je sepsaný. Kód ještě nevznikl, prvním krokem je milník M0.
 
-1. **Kairosoft-style management sims** in 2D pixel art (Game Dev Story, Hot Springs Story,
-   Pocket Academy …). **We start here.**
-2. **Voxel games.** These come later and are also rendered as pixel art.
+## Kde co je
 
-> **Status (2026-10-02): foundation only.** No code yet. Agreed decisions, research reports
-> and the work queue for the whole studio and engine are in place.
-
-## Where things are
-
-| Path | What |
+| Cesta | Co |
 |---|---|
-| [docs/DECISIONS.md](docs/DECISIONS.md) | What the owner has decided (and when) |
-| [docs/references.md](docs/references.md) | Where the ideas come from and how others do it |
-| [research/README.md](research/README.md) | Deep research reports, security scans and the conclusions that repeat across them |
-| [tasks/README.md](tasks/README.md) | The work queue and its rules |
-| [CLAUDE.md](CLAUDE.md) | Working rules for Claude Code sessions in this repo |
+| [docs/VISION.md](docs/VISION.md) | Co chceme postavit |
+| [docs/STATUS.md](docs/STATUS.md) | Kde jsme: hotovo, rozpracováno, otevřené otázky, rizika, další krok |
+| [docs/DECISIONS.md](docs/DECISIONS.md) | Rozhodnutí: co, kdy a proč |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Jediný platný plán: milníky M0–M10, kritéria, měření |
+| [docs/CONVENTIONS.md](docs/CONVENTIONS.md) | Konvence: osy, jednotky, ID buněk, jména, struktura repa |
+| [docs/OVERENI.md](docs/OVERENI.md) | Ověření plánu proti zdrojům na webu a otázky pro vlastníka |
+| [docs/NAVRHY-ROZHODNUTI.md](docs/NAVRHY-ROZHODNUTI.md) | Záznam 48 návrhů s možnostmi a důvody (potvrzeno jako D24–D71) |
+| [docs/REVIZE.md](docs/REVIZE.md) | Revize dokumentace z 2026-11-06: slabá místa, která plán řeší |
+| [docs/research/](docs/research/) | Rešeršní zprávy a poznámky, ze kterých vznikly |
+
+Práce se sleduje v Linearu: projekt [Wallhammer Zero](https://linear.app/nsoft/project/wallhammer-zero-3576c061ad78).

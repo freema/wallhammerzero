@@ -1,11 +1,15 @@
-node_modules/
-dist/
-build/
-coverage/
-.vite/
+# Tools, build output and run output stay local (D6)
 .tools/
-*.log
-*.tsbuildinfo
+build/
+runs/
+
+# Secrets and third-party reference footage never go into git
 .env
 .env.*
+reference/
+
+# OS and editor noise
 .DS_Store
+*.swp
+.vscode/
+.idea/
