@@ -77,7 +77,7 @@ Where we are, what is resolved, what is open and what comes next. Updated after 
 - [x] **Project in Linear (D22):** [Wallhammer Zero](https://linear.app/nsoft/project/wallhammer-zero-3576c061ad78), team Nsoft, milestones M0–M10, tasks for M0 and M1.
 - [x] **Checking the plan against web sources (2026-11-06):** notes in [research/notes/plan-verification/](research/notes/plan-verification/), conclusions in [VERIFICATION.md](VERIFICATION.md).
   Conclusion: no decision fell. The justification of physics determinism was corrected (Jolt can do identity across OS), as were the scope of the game UI and strategy games in M6. The shader compiler is the first technical risk. The fixes are recorded as D74.
-- [x] **Research 7: procedural pipeline and modern engines (2026-11-06).** Report: [research/procedural-pipeline-and-modern-engines.md](research/procedural-pipeline-and-modern-engines.md). The procedural core holds up. Gaps are in the machinery around it: stable recipe and rule identity, an explicit generator input contract, a dependency registry, cache lifecycle and hand edits that survive a generator version change. The proposed changes to ARCHITECTURE and ROADMAP wait for the owner's decision.
+- [x] **Research 7: procedural pipeline and modern engines (2026-11-06).** Report: [research/procedural-pipeline-and-modern-engines.md](research/procedural-pipeline-and-modern-engines.md). The procedural core holds up. Gaps are in the machinery around it: stable recipe and rule identity, an explicit generator input contract, a dependency registry, cache lifecycle and hand edits that survive a generator version change. Accepted as D79 and written into ARCHITECTURE, CONVENTIONS and ROADMAP.
 - [x] **Repo translated to English (D78).**
 
 ## Resolved (briefly; details in DECISIONS.md)
@@ -126,7 +126,7 @@ Three questions for the owner from checking the plan, in detail in [VERIFICATION
 2. May game data assemble conditions and effects from parts programmed in C? Recommendation: yes.
 3. May the GTA III and WoW reference screenshots be sent to AI services? Recommendation: no, only locally.
 
-5. Accept the additions from research 7 into ARCHITECTURE and ROADMAP? Recommendation: yes, mostly M0c, M3a and M7.
+5. Before M7 (D79): the default policy for orphaned edits, whether frozen domains keep old generator source, whether the two machines share a cache.
 
 The rest will be decided by a measurement or a milestone gate.
 

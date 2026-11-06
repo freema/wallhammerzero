@@ -2,7 +2,7 @@
 
 What we decided, when and why. A new decision is added at the end with a date. When something changes, the old decision is not deleted but marked as superseded and linked to the new one.
 
-Status: **D1–D78 recorded.** D24–D71 are the confirmed proposals from [DECISION-PROPOSALS.md](DECISION-PROPOSALS.md) (decision number = proposal number + 23). The only change against the proposals: D35 (Xcode is not installed). The plan is in [ROADMAP.md](ROADMAP.md), the conventions in [CONVENTIONS.md](CONVENTIONS.md).
+Status: **D1–D79 recorded.** D24–D71 are the confirmed proposals from [DECISION-PROPOSALS.md](DECISION-PROPOSALS.md) (decision number = proposal number + 23). The only change against the proposals: D35 (Xcode is not installed). The plan is in [ROADMAP.md](ROADMAP.md), the conventions in [CONVENTIONS.md](CONVENTIONS.md).
 
 ---
 
@@ -379,3 +379,16 @@ Claude wrote the map at the owner's request. The owner may change it.
 
 ## D78 — Everything in the repository is in English (2026-11-06)
 The owner made the repository public (D76) and requires that nothing on GitHub is in Czech. All documentation, research reports and notes, file and folder names, CLAUDE.md and commit messages are in English. Replaces the earlier rule that documentation is in Czech. Conversation with the owner may stay in Czech; Linear issues are not on GitHub and may stay in Czech. The GitHub repository description was also corrected: it still described the old project.
+
+## D79 — Identity, cache and edits for generated content (2026-11-06)
+The owner accepted the findings of research 7 ([procedural-pipeline-and-modern-engines.md](research/procedural-pipeline-and-modern-engines.md)): the procedural core holds up, but the machinery around it, which shipped engines added late, must be in the design before saves and edit files exist.
+- **Identity:** recipes, presets and authored inputs have a 64-bit `uid`; references go by uid. Rules and domains have immutable IDs separate from display names, with a rename map. Changes CONVENTIONS, chapter 4: object IDs use `rule_id` and `domain_id` instead of name hashes, anchors come from input space.
+- **Inputs and versions:** an explicit context struct per generator (lint against cvars, clock and files). A changed golden hash without a domain version bump fails CI. A local-stability test.
+- **Dependencies:** `uid64` and the `ref` field kind in `eng_types`; `wzctl deps` and `wzctl rdeps`; a blast-radius gate on generator commits.
+- **Cache:** producer fingerprint, atomic writes, `wzctl cache gc`, `wzctl bake --region`, `wzctl pack`. A cache shared between machines only after golden hashes are green on 3 OS.
+- **Hand edits:** six rules (input-space anchors, edit layers and zones, orphan queue, drift detection, per-cell version stamp and frozen cells, undo across regeneration) and a version bump report approved by the owner.
+- **Smaller items:** output contract for archetypes, lane graph from the road generator, bounded re-solve per player edit, streaming radii with hysteresis, cosmetic GPU scatter tier, pause and region-limited regeneration, no node-graph editor.
+- **Milestones:** mostly M0c and M3a, edit survival in M7. New measurements 29 and 30.
+- **Open before M7:** the default orphan policy, whether frozen domains keep old generator source, whether the two machines share a cache.
+
+The rules are in [ARCHITECTURE.md](ARCHITECTURE.md), section "Asset identity, cache and edits", and in [ROADMAP.md](ROADMAP.md).

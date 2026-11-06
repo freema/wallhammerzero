@@ -58,13 +58,15 @@ The variant `face = 0` for a flat world from report 5 does not apply.
 
 ## 4. Stable object IDs
 
-- **Generated objects:** `id = H64(world_seed, shape_hash, domain_name_hash, rule_name_hash, anchor_key)`.
+- **Generated objects:** `id = H64(world_seed, shape_hash, domain_id, rule_id, anchor_key)`.
   - The anchor is an integer key in the rule's grid. It does not depend on the cell size.
-  - The rule name is a hash of an authored string, not an index in an array. A new rule therefore does not renumber old objects.
+  - `rule_id` and `domain_id` are immutable IDs assigned once, separate from the display name, not an index in an array. A new rule therefore does not renumber old objects, and renaming a rule changes nothing. The domain manifest keeps a rename map (D79).
+  - The anchor comes from input space (grid, curve parameter, authored point), never from the order in which a generator emits outputs.
 - **Player objects:** `H64(player_namespace, counter in the save)`.
 - **Mass entities:** own 64-bit IDs assigned by the table (D44).
 - **Changes in the save** are keyed by the pair `(owner cell, id)`.
 - **Runtime handles** (index and generation) are never stored or sent outside the process.
+- **Recipes, presets and authored inputs** have a 64-bit `uid`. References are by uid; a path is only for display. A content hash is a cache key, never an identity (D79).
 
 The local index variant from report 2 does not apply.
 

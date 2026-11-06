@@ -85,10 +85,11 @@ The order of M8 and M9 is reconsidered after gate M4 (D51).
 - `eng_cvar` and `eng_cmd`.
 - Run modes `--gpu=null --frames --fixed-dt --seed --script --dump`, output to `runs/<id>/`.
 - `eng_project` and the project `projects/sandbox`.
-- Type registry v0: name, version, fields and JSON Schema export (D43).
+- Type registry v0: name, version, fields and JSON Schema export (D43). The `uid64` type and the `ref` field kind (uid + target type), so the dependency graph of a schema is derived without hand-written code (D79).
 - `eng_tools`: the tool registry and two transports, `wzmcp` (MCP) and `wzctl` (CLI). The first three tools: `wz_status`, `golden_check` and `log_tail` (D30).
 - A lint against a hard-coded "up" (D31).
 - `milestones/*.json` and a progress file.
+- The golden manifest stores the domain version of each hash. `golden_check` reports a changed hash without a version bump (D79).
 - Done when: `wz --gpu=null --frames 600 --dump` has 0 errors in `log.jsonl` on 3 OS. A deliberate assert creates `crash.txt` with the scope stack. Claude Code reads the result of `golden_check` as structured JSON through both `wzmcp` and `wzctl`.
 
 **Owner gate:** approves the milestone format and this plan.
@@ -151,12 +152,23 @@ The order of M8 and M9 is reconsidered after gate M4 (D51).
 - Hot reload of generator DLLs.
 - `wzctl gen` (sheets), `wzctl lint`, golden tests and a dump of intermediate stages in JSON.
 - Parameter schema: a panel, validation, documentation and JSON Schema come from it. Presets with distributions and a recipe trace.
+- **Identity and cache (D79):**
+  - `uid` in every recipe, preset and authored input. Immutable rule IDs and a rename map in the domain manifest.
+  - An explicit context struct per generator. A lint forbids cvars, clock and files in `eng_gen_*`.
+  - A producer fingerprint per cache entry, atomic writes and `wzctl cache gc`.
+  - `wzctl deps` and `wzctl rdeps` over recipes, archetypes and cells.
+  - Blast-radius gate in CI: a generator commit declares its scope and a hash change outside it blocks the merge.
+  - A changed golden hash without a domain version bump fails CI. A local-stability perturbation test for assets.
+  - Pause and region-limited regeneration. A preview-quality parameter outside the golden hashes.
+  - One style and constraint file read by both generators and lints. An API reference for the agent generated from the schema.
+  - Done when: moving or renaming a recipe file or a rule breaks no reference and changes no object ID, killing the process during a cache write leaves no readable truncated file, and a deliberately changed generator without a version bump fails CI.
 
 **M3b Textures, geometry and the first generators**
 - `eng_gen_tex`: operators, tileability, palette and derived maps. Import of AI sources with extended provenance (D14, D55).
 - C2PA: the original file stays unchanged, its hash and the output of `c2patool` (binary in `.tools/`) are stored. Missing C2PA is not an error.
 - Half-edge operations and meshoptimizer.
-- Generators: building v0, road and sidewalk, props. All on top of the scale table.
+- Generators: building v0, road and sidewalk, props. All on top of the scale table. The road generator also emits the lane graph format for `eng_sim` (D79).
+- Output contract lint: every archetype declares its LOD chain, impostor distance, shadow-caster flag and separately cullable parts (D79).
 - Measurements 5, 9, 10 and the first reading of 13.
 
 **M3c Studio for the art director**
@@ -187,7 +199,8 @@ One cell with an edge of about 256 m, no streaming.
 **M4a Simulation and the game DLL**
 - The world as an object (D48). The simulation clock with tick groups (D47). Fixed step and `FrameParams`.
 - The simulation input is player commands `player_cmd` (D41).
-- The game DLL with hot reload and the stable C ABI `eng_api` (D45).
+- The game DLL with hot reload and the stable C ABI `eng_api` (D45). On reload, types in `eng_types` are registered again with a version check and game tables are reloaded. A changed type version is refused cleanly, not with a crash (D79).
+- One keep-out zone in the city block as an authored input that enters the generator keys (D79).
 - Actors with components registered by the game (D44).
 - The extraction protocol into the renderer in three channels.
 - Replay `.wzr` with subsystem hashes, a bug bundle and `--repro`. The replay carries a build fingerprint (engine, Jolt and compiler versions), and a replay from another build is rejected.
@@ -239,7 +252,8 @@ A new milestone because of strategy games (D23, D50).
 - **Pathfinding:** a service with a request queue, a per-frame budget, computation on multiple cores and a cache. After a graph edit, the affected paths are invalidated. The default method is A*.
 - **Player-built world (D39):** a player command (road, zone, building) is a generator input.
   - The road network is a global model: nodes, segments, lanes and turns.
-  - After an action, only the changed segments and intersections are regenerated, and from them the affected cells.
+  - After an action, only the changed segments and intersections are regenerated, and from them the affected cells. Each generator declares a bounded re-solve neighbourhood and a work budget, and a player edit touches at most the declared cells (D79, measurement 25).
+  - Mass entities route on the lane graph emitted by the road generator, without hand data (D79).
   - Intersection geometry has its own set of hard cases: a sharp angle, a short segment, many arms, a slope.
 - **Controls (D49):** a strategy camera with zoom from street to the whole map, selection by mouse and box, placement with snapping.
 - **UI (D57):** widgets (tables, lists, tooltips, windows), data binding and a UI description in text files.
@@ -271,8 +285,12 @@ A new milestone because of strategy games (D23, D50).
 - **Debugging:** debug draw and its dump, visualization of cells, states and tickets, a headless dump of states in JSON lines. Tools `world_query`, `world_inspect` and `world_pick`.
 - **Persistence (D40):** changes on top of regeneration, stable IDs from the anchor, the full simulation state from the type registry, region change files, a world manifest, domain classes and a migration report.
 - **Audio:** acoustic cell metadata, point emitters from `gen_world`, ambience by zones and banks streamed with cells.
-- **Cooker and packs** only to the extent needed.
-- **Measurements:** 13, 14 and 17.
+- **Edits that survive regeneration (D79):** input-space anchors (lint), ordered edit layers, keep-out and hand-authored zones in the world, an orphan queue (data here, studio view in M3c), drift detection against the stored absolute position, a domain version stamp per cell in the world manifest, frozen cells and blending at their border.
+- **Version bump report:** `wzctl world diff --domain` lists changed cells, orphans and drifted edits. The owner approves it.
+- **Bake and packs:** `wzctl bake --region` and `wzctl pack`. A local and a shared cache tier only after the golden hashes are green on 3 OS.
+- **Streaming radii:** generate and cleanup radii per level with hysteresis and a view direction weight. Every cell has a single owner.
+- **Owner decisions before M7:** the default policy for orphaned edits, whether frozen domains keep copies of old generator source, and whether the two development machines share a cache.
+- **Measurements:** 13, 14, 17, 29 and 30.
 - **Done when:**
   - a flight through a 4×4 km city and through a planet is without holes and blocking loads,
   - cells generated in any order have the same hashes on 3 OS,
@@ -280,7 +298,9 @@ A new milestone because of strategy games (D23, D50).
   - a save from one OS loads on another with the same IDs,
   - during a headless drive of 8 km at 200 km/h no frame waits for generation,
   - a car drives through a cell in the LAYOUT state and does not fall through,
-  - raising the version of a free domain does not break a save, and migration of a frozen domain deletes nothing.
+  - raising the version of a free domain does not break a save, and migration of a frozen domain deletes nothing,
+  - a perturbed upstream rule produces orphans in the queue, never silent drops, and a frozen cell survives a domain bump bit-identically,
+  - a baked region loads with zero generator jobs, and a headless back-and-forth drive across a cell border causes no load thrashing.
 - **Owner gate:** a map of districts and a biome seen from above.
 
 ## M8 City content and the open-world renderer
@@ -292,6 +312,8 @@ A new milestone because of strategy games (D23, D50).
 - **Effects:** half-resolution smoke, neon and ambient city effects. A choice between sorting and WBOIT according to measurement.
 - **Audio (D63):** occlusion, reverb zones, ducking and snapshots, a traffic voice budget, a music clock.
 - **Traffic and pedestrians:** the scope is set by the research (D71).
+- **Cosmetic GPU scatter (D79):** grass and clutter on the GPU, with no IDs, collision, edits or golden hashes. Switching it off changes no tier A hash.
+- **Output contract** from M3b is enforced for all city content.
 - **Measurements:** 3, 22 and 23.
 - **Done when:** the scene has 30,000+ instances. The number of draws grows with buckets, not with objects. The counter budgets hold. The range lints pass. 200 cars and rain hold the voice and fragment budget.
 - **Owner gate:** a street-level view next to GTA III, district distinguishability and a street in the rain.
@@ -364,8 +386,10 @@ Each measurement is created as a permanent test or measurement scene in the repo
 | 26 | whether a native Metal layer can be created next to an SDL3 window | M1 | whether the fallback backend is feasible |
 | 27 | agreement of a drive replay on the same platform and across 3 OS (Jolt through joltc and clang-cl), double precision in joltc | M4 | raising gate M4, physics on the planet |
 | 28 | throughput of the owner's review (renders per hour) | from M2 | gate budgets |
+| 29 | survival of edits after a domain version bump on a heavily edited cell: share reattached exactly, drifted and orphaned | M7 | default orphan policy |
+| 30 | bake time of a 1 km region with no change and after one recipe change | M7 | whether shipping needs packs |
 
-Measurements 1–12 are from report 3 (the original no. 12 is replaced by D20), 13–17 from report 4, 18–23 from report 6. Measurements 24–28 were added during the review.
+Measurements 1–12 are from report 3 (the original no. 12 is replaced by D20), 13–17 from report 4, 18–23 from report 6. Measurements 24–28 were added during the review, 29 and 30 by research 7 (D79).
 
 On the Mac, measurement is done without Xcode (D35): our own counters and frame times, `powermetrics`, the Metal HUD log (`MTL_HUD_ENABLED=1`) and Tracy. GPU time per pass cannot be measured this way.
 
