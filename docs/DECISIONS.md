@@ -1,378 +1,381 @@
-# Rozhodnutí
+# Decisions
 
-Co jsme se rozhodli, kdy a proč. Nové rozhodnutí se přidává na konec s datem; když se něco změní, staré se nemaže, ale označí jako nahrazené a odkáže na nové.
+What we decided, when and why. A new decision is added at the end with a date. When something changes, the old decision is not deleted but marked as superseded and linked to the new one.
 
-Stav: **D1–D77 zapsané.** D24–D71 jsou potvrzené návrhy z [NAVRHY-ROZHODNUTI.md](NAVRHY-ROZHODNUTI.md) (číslo rozhodnutí = číslo návrhu + 23). Jediná změna proti návrhům: D35 (Xcode se neinstaluje). Plán je v [ROADMAP.md](ROADMAP.md), konvence v [CONVENTIONS.md](CONVENTIONS.md).
-
----
-
-## D1 — Nový začátek (2026-11-05)
-Starý Wallhammer Zero (TypeScript/WebGL studio, Kairosoft simulace, New Hope, Tidewright) končí. Zůstává jen jako inspirace v privátním repu `freema/wallhammerzero`, větev `implementation`. Nový projekt začíná od nuly ve stejném jméně.
-
-## D2 — Nativní engine, tři platformy (2026-11-05)
-Vlastní engine s vlastním rendererem. Vyvíjí se na macOS (MacBook Pro M4 Pro, 12 jader 8P+4E, 16jádrové GPU, 24 GB, Metal 3), musí běžet i na Linuxu a Windows.
-
-## D3 — Čistě 3D open world (2026-11-05)
-Žádné 2D. Cílem je 3D open world. Inspirací jsou architektury RAGE a GTA (streaming světa, LOD, archetypy a instance), nekopírujeme konkrétní hru.
-
-## D4 — Jazyk C17 (2026-11-05, navrženo)
-Jádro enginu v C17. C++ knihovny (např. fyzika Jolt) se smí použít jen za C API v adaptéru a dál nepronikají.
-*Stav: doporučeno, vlastník zatím výslovně nepotvrdil.*
-*Potvrzeno 2026-11-06, viz D24.*
-
-## D5 — SDL3 + SDL_GPU pod vlastním tenkým RHI (2026-11-05, navrženo)
-Okna, vstup, audio, vlákna a async IO bere engine z SDL3. Render jde přes SDL_GPU (Metal / Vulkan / D3D12) schované za vlastní tenkou vrstvou s handly, aby šel později doplnit nativní backend.
-Známé limity SDL_GPU: chybí bindless (zamítnuto 2026-06), multi-draw indirect je na Metalu CPU smyčka, nejsou timestamp queries.
-*Potvrzeno 2026-11-06, viz D25.*
-
-## D6 — Nezaneřádit systém (2026-11-05)
-Všechno je soběstačné ve složce projektu: nástroje (cmake, ninja) se stahují do `.tools/`, knihovny jsou git submoduly v `external/`, build jde do `build/`. Do systému se nic neinstaluje. Používá se jen to, co macOS už má: Command Line Tools, git a curl.
-*Potvrzeno bez výjimek 2026-11-06, viz D35: Xcode se neinstaluje.*
-
-## D7 — Architektura (2026-11-05)
-Vrstvy podle Gregoryho vynucené CMake targety, porty a adaptéry jen na hrubých švech, žádné generické ECS (archetypy, instance a handly), work-stealing job systém bez fiberů, streaming po buňkách 128–256 m.
-Podrobně: [research/Architektura open world enginu.md](research/Architektura%20open%20world%20enginu.md).
-
-## D8 — Všechna grafika z kódu (2026-11-05)
-Žádný Blender ani jiný DCC nástroj. Textury, materiály, modely, animace i svět generuje kód. Asset = program + parametry + seed, výsledek se cachuje podle hashe. Procedurální generování je hlavní část enginu: buňka světa může přijít z předpečených souborů i z generátoru ve stejném formátu.
-
-## D9 — Fotorealismus ne (2026-11-05)
-Cílem je nejdosažitelnější dobře vypadající styl, ne fotorealismus. Ze zvažovaných kandidátů je hlavní 3D pixel art (render v nízkém rozlišení, omezená paleta), mimo jiné kvůli výkonu.
-
-## D10 — Výtvarný styl (otevřené)
-Konkrétní styl čeká na dokončení analýzy. Rámec už je daný v D12.
-*Rozhodnuto 2026-11-06, viz D52.*
-
-## D12 — Plné 3D s volnou kamerou (2026-11-05)
-Žádná pevná izometrie ve stylu GTA 1/2 ani striktní ortografický 3D pixel art. Hra je plně 3D s volnou perspektivní kamerou (třetí osoba, kamera za autem, volná rotace). Fotorealismus stále ne (D9): styl bude stylizované 3D, které s volnou kamerou funguje. Tím se z D9 ruší 3D pixel art jako hlavní kandidát.
-
-## D13 — Laťka kvality: aspoň GTA III / World of Warcraft (2026-11-05)
-Izometrie a pixel art nestačí. Minimální vizuální úroveň je GTA III (2001) nebo World of Warcraft (2004): plné 3D v nativním rozlišení, otexturované povrchy s výrazným stylizovaným charakterem (WoW), husté město s budovami, auty a chodci (GTA III). Nižší vnitřní rozlišení zůstává jen jako volitelné nastavení výkonu, ne jako styl.
-
-## D14 — Textury ze dvou zdrojů: kód i obrázkový AI model (2026-11-05)
-Zpřesňuje D8. Každý materiál si vybere zdroj: **procedurální program**, nebo **obrázek vygenerovaný jednou AI modelem**. Obrázek se uloží do repa jako zdrojový asset a k němu původ (model, prompt, seed, datum). Vygenerované obrázky vždy projdou kódem: dlaždicovatelnost, přemapování na paletu a color grade, odvození normal, height a roughness map, procedurální opotřebení a variace. Oba zdroje mají stejné linty, review i schvalování. Geometrie, animace a svět zůstávají generované kódem.
-
-## D15 — Obecný engine, ne engine pro jednu hru (2026-11-05)
-Engine nestavíme pro konkrétní hru. Musí zvládnout různé typy 3D open worldů: husté město ve stylu GTA, velkou procedurální planetu ve stylu Light No Fire (biomy, vesnice, pevnosti, mounti, zakřivení viditelné z výšky) i jejich kombinace. Plán voxelové hry z Vellumu (`projects/grafika-reference/plan-voxel-hra.md`) je jedna z možných her nad enginem, ne jeho zadání.
-Důsledky: tvar světa (plochá mřížka buněk, nebo cube-sphere s octree) musí být vyměnitelný za portem, ne natvrdo. Souřadnice, streaming, generátory terénu a gravitace/„nahoru“ s tím musí počítat. GTA město je referenční scénář pro první milníky.
-
-## D11 — Nejdřív kompletní analýza, pak kód (2026-11-05)
-Žádné prototypy ani pokusy, dokud není hotová analýza všech oblastí: architektura, procedurální grafika a to, co AI reálně zvládne.
-
-## Role
-- **Vlastník** je art director: píše specifikace, dodává reference a schvaluje.
-- **Claude** je programátor a technical artist: píše generátory, linty a review rendery.
-
-## D16 — Měřítko a proporce jsou součástí enginu od začátku (2026-11-05)
-V minulém projektu byly postavy moc velké vůči příliš malému městu. Proto měřítko neřeší každý generátor po svém:
-- **Jednotka:** 1 jednotka = 1 metr.
-- **Tabulka měřítek:** rozměry jsou v jedné centrální tabulce (postava, dveře, patro, pruh, auto, blok…) a čtou je všechny generátory.
-- **Kontrola:** linty hlídají poměry mezi třídami assetů a každý náhled ukazuje referenční figurínu.
-- **Stylizace:** odchylka od reálných rozměrů (jako u WoW nebo GTA) se nastavuje vědomě, jedním místem.
-
-Konkrétní čísla dodá rešerše 5 (téma měřítko a proporce).
-*Doplněno (2026-11-06):* návrh je hotový ve zprávě [Srovnání enginu a návrhy zlepšení](research/Srovnání%20enginu%20a%20návrhy%20zlepšení.md), sekce o měřítku. Čísla tabulky čekají na schválení vlastníkem.
-
-## D17 — Ladicí nástroje, headless režim a logování jsou základ enginu (2026-11-05)
-Vlastník je považuje za důležité téma. Kód píše hlavně AI, která engine nevidí na obrazovce, takže engine musí jít pozorovat a ovládat strojově. Požadavky:
-- **Headless režim:** běh bez okna i bez GPU, deterministický krok času, „spusť N snímků a vypiš stav“.
-- **Logování:** strukturované, po kanálech a úrovních, strojově čitelné (JSON lines) i pro člověka.
-- **Konzole a proměnné:** konzole a CVars.
-- **Ladicí server:** dotazy na stav, screenshoty na požádání, zastavení a krokování času.
-- **Ladicí kreslení a inspektor:** debug draw a inspektor (ImGui).
-- **Profilování:** profiler a rozpočty, které shodí CI.
-- **Opakovatelnost a pády:** záznam a přehrání vstupu, zachycení pádů.
-
-Patří do prvních milníků, ne až na konec. Konkrétní návrh dodá rešerše 5 (téma ladění, headless a logování).
-*Doplněno (2026-11-06):* návrh je hotový ve stejné zprávě, sekce o ladění.
-
-## D18 — Vestavěné studio, MCP nástroje, UI a projekty (2026-11-05)
-Vlastník chce na enginu a hrách pracovat pomocí AI. Engine proto dostane:
-- **Studio (editor):** postavené nad enginem. Má viewport, inspektor, panely parametrů generátorů a A/B review.
-- **MCP server přímo v enginu nebo studiu:** AI agent (Claude Code a další) přes něj ovládá engine: dotazy na svět, spouštění generátorů, screenshoty, linty, krokování času, CVars, logy, build a hot reload. Staví na ladicím serveru z D17.
-- **UI systém:** pro herní UI a HUD i pro samotné studio.
-- **Systém projektů:** víc her nad jedním enginem (D15). Každý projekt má vlastní herní DLL, data, generátory, style bible a tabulku měřítek (D16) a kontext pro AI.
-
-„Podpora projektylu“ chápeme jako projekty. Pokud šlo o projektily (střely), doplní se.
-Konkrétní návrh dodá rešerše 5 (téma studio, MCP, UI a projekty).
-*Doplněno (2026-11-06):* návrh je hotový ve stejné zprávě, sekce o registru nástrojů a studiu.
-
-## D19 — D15 platí, varování z postmortemů se zamítá (2026-11-05)
-Rešerše 5 upozornila, že obecné enginy bez vlajkové hry (The Machinery, Stingray, Hazel) skončily nebo stojí, a doporučila stavět engine pro jednu hru. Vlastník to zamítl: jdeme úplně jinou cestou než tyto enginy. Kód píše AI, obsah generuje kód a vlastník je art director.
-Důsledky:
-- D15 (obecný engine pro město i planetu) zůstává beze změny.
-- Doporučení „engine pro jednu hru“ se znovu neotevírá.
-- Referenční scény (městský blok, zárodek planety) v návrzích milníků slouží jen jako testovací scény enginu, ne jako zúžení na jednu hru.
-
-> Zpřesněno v D75: Windows stroj je od M0 druhý vývojový stroj, ne jen testovací.
-
-## D20 — Testování platforem: Mac primárně, Windows později zvlášť, bez upgradu macOS (2026-11-05)
-- **Vývojový Mac:** engine se vyvíjí a ladí na MacBooku M4 Pro (Metal). Pro vývoj ani jako primární platforma to podle analýzy problém není.
-- **Windows a D3D12:** budou se testovat později a zvlášť, na Windows stroji.
-- **macOS:** upgrade na macOS 26 se kvůli Vulkanu dělat nebude. Vulkan backend (KosmicKrisp) se proto na Macu netestuje.
-- **Vulkan:** ověřuje se v Linux CI. Shadery se validují do SPIR-V a vykreslují softwarově přes lavapipe (headless a golden image testy). Na reálném GPU se ověří, až se bude testovat Linux.
-- **Co tím ztrácíme:** chyby specifické pro Vulkan na reálném GPU se ukážou později. Metal 4 SDL_GPU stejně nepoužívá.
-- **Doplněno (2026-11-05):** primární a jediný vývojový stroj je tento MacBook; Linux a Windows slouží jen k testům. Vlastník má testovací stroje s Linuxem i Windows, což stačí. Vulkan se tedy ověří i na reálném GPU (Linux) a D3D12 na Windows stroji. CI s lavapipe zůstává jako automatická pojistka.
-
-## D21 — Žádný Three.js ani JavaScript v enginu (2026-11-05)
-Engine neobsahuje Three.js, JavaScript, WebGL ani webový runtime. Žádný jejich kód ani závislost. Referenční repa z Vellumu (Sakura Crossing, Voxel Musou, Threejs-Punk) jsou psaná v Three.js a slouží jen jako zdroj nápadů a technik. Ty se píšou znovu od nuly v C17 a HLSL nad SDL3 a SDL_GPU.
-
-## D22 — Implementační plán povedeme v Linearu, postupně (2026-11-06)
-Implementační plán enginu se bude zakládat postupně v Linearu. Podkladem jsou dokumenty v `docs/`.
-- **Nejdřív revize:** před založením plánu prošla dokumentace revizí slabých míst, viz [REVIZE.md](REVIZE.md).
-- **Dělba:** `docs/` zůstává zdrojem pravdy pro rozhodnutí, návrh a kritéria milníků. Linear sleduje práci (úkoly, stav, pořadí).
-- **Postupně:** úkoly se rozepisují jen pro nejbližší milníky, vzdálenější až když se blíží.
-- D11 platí dál: kód nevzniká, dokud vlastník analýzu neukončí.
-
-## D23 — Engine musí podporovat i strategie (2026-11-06)
-Rozšiřuje D15. Vedle města ve stylu GTA a planety ve stylu Light No Fire musí engine zvládnout strategické hry: budovatelskou strategii ve stylu Cities: Skylines a velkou strategii ve stylu Stellaris.
-Důsledky pro návrh (jako návrhy k potvrzení jsou v [NAVRHY-ROZHODNUTI.md](NAVRHY-ROZHODNUTI.md), body 16, 21 a 23–27, 34):
-- **Simulace celého světa:** běží i mimo kameru. Globální data simulace jsou oddělená od buněk, které se streamují pro kreslení.
-- **Hromadné entity:** statisíce obyvatel, aut nebo populací v hustých tabulkách, bez fyziky.
-- **Svět stavěný hráčem:** zásah hráče je vstup generátoru a buňka se přegeneruje za běhu.
-- **Ovládání:** strategická kamera, výběr myší, umisťování s přichytáváním.
-- **Čas:** pauza a zrychlení, pomalé tiky ekonomiky vedle rychlé fyziky.
-- **UI:** tabulky, seznamy, tooltipy, okna.
-- **Ověření:** třetí testovací scéna enginu „strategický výřez“.
+Status: **D1–D78 recorded.** D24–D71 are the confirmed proposals from [DECISION-PROPOSALS.md](DECISION-PROPOSALS.md) (decision number = proposal number + 23). The only change against the proposals: D35 (Xcode is not installed). The plan is in [ROADMAP.md](ROADMAP.md), the conventions in [CONVENTIONS.md](CONVENTIONS.md).
 
 ---
 
-# Potvrzení návrhů (2026-11-06)
+## D1 — A new beginning (2026-11-05)
+The old Wallhammer Zero (TypeScript/WebGL studio, Kairosoft simulation, New Hope, Tidewright) ends. It remains only as inspiration in the private repo `freema/wallhammerzero`, branch `implementation`. The new project starts from zero under the same name.
 
-Vlastník potvrdil všech 48 návrhů z [NAVRHY-ROZHODNUTI.md](NAVRHY-ROZHODNUTI.md) najednou („beru vše“). Jedinou výjimkou je návrh 12 (Xcode), který zamítl. Číslo rozhodnutí je číslo návrhu + 23. Čísla milníků v textu odpovídají [ROADMAP.md](ROADMAP.md) (M0–M10).
+## D2 — A native engine, three platforms (2026-11-05)
+A custom engine with a custom renderer. It is developed on macOS (MacBook Pro M4 Pro, 12 cores 8P+4E, 16-core GPU, 24 GB, Metal 3) and must also run on Linux and Windows.
 
-### Skupina A. Základy
+## D3 — Purely a 3D open world (2026-11-05)
+No 2D. The goal is a 3D open world. The inspiration is the architectures of RAGE and GTA (world streaming, LOD, archetypes and instances). We do not copy a specific game.
 
-## D24 — Jazyk C17 je potvrzený (2026-11-06)
-Potvrzuje D4. Jádro je v C17 se sanitizery (ASan, UBSan, TSan), `-Werror` a fuzzingem loaderů. C++ je povolené jen uvnitř adaptérů knihoven.
+## D4 — Language C17 (2026-11-05, proposed)
+The engine core is in C17. C++ libraries (for example the Jolt physics) may be used only behind a C API in an adapter and do not spread further.
+*Status: recommended, the owner has not explicitly confirmed yet.*
+*Confirmed 2026-11-06, see D24.*
 
-## D25 — SDL3 + SDL_GPU za vlastním RHI je potvrzené (2026-11-06)
-Potvrzuje D5. RHI stojí na třech přenosných pojmech: handly podobné adresám bufferů, materiálová tabulka textur a proud nepřímých drawů. Nativní Metal 3 backend vznikne jen tehdy, když ho vynutí měření ceny drawu v M1.
+## D5 — SDL3 + SDL_GPU under our own thin RHI (2026-11-05, proposed)
+The engine takes windows, input, audio, threads and async IO from SDL3. Rendering goes through SDL_GPU (Metal / Vulkan / D3D12) hidden behind our own thin layer with handles, so a native backend can be added later.
+Known SDL_GPU limits: no bindless (rejected 2026-06), multi-draw indirect is a CPU loop on Metal, there are no timestamp queries.
+*Confirmed 2026-11-06, see D25.*
 
-## D26 — Clang na všech třech OS (2026-11-06)
-Na Windows se staví přes clang-cl, MSVC se nepoužívá. Důvod: MSVC má C11 atomics jen experimentálně a jedna rodina překladače zmenší rozdíly ve floatech.
+## D6 — Do not clutter the system (2026-11-05)
+Everything is self-contained in the project folder: tools (cmake, ninja) are downloaded into `.tools/`, libraries are git submodules in `external/`, the build goes into `build/`. Nothing is installed into the system. Only what macOS already has is used: Command Line Tools, git and curl.
+*Confirmed without exceptions 2026-11-06, see D35: Xcode is not installed.*
 
-## D27 — Renderer je forward+ s clusterovanými světly (2026-11-06)
-Bez povinného depth prepassu. Nahrazuje deferred G-buffer ze zpráv 1 a 2. Potvrdí se měřením 1 v M2.
+## D7 — Architecture (2026-11-05)
+Layers after Gregory enforced by CMake targets, ports and adapters only at coarse seams, no generic ECS (archetypes, instances and handles), a work-stealing job system without fibers, streaming by cells of 128–256 m.
+In detail: [research/open-world-engine-architecture.md](research/open-world-engine-architecture.md).
 
-## D28 — Determinismus ve dvou úrovních (2026-11-06)
-- **Úroveň A (bitově shodné na 3 OS):** generátory a logika simulace. Píšou se nad celými čísly, fixed-pointem a `detmath`.
-- **Úroveň B (shodné jen na stejné platformě a buildu):** fyzika, animace a mix zvuku.
-Brána M4 se podle toho mění: replay jízdy je bitově shodný na stejné platformě, hash logické simulace na všech třech OS.
-*Zpřesněno v D74: Jolt shodu mezi OS umí, úroveň B se dělí na B1 a B2.*
+## D8 — All graphics from code (2026-11-05)
+No Blender or any other DCC tool. Code generates textures, materials, models, animation and the world. An asset = program + parameters + seed, and the result is cached by hash. Procedural generation is the main part of the engine: a world cell can come from pre-baked files or from a generator in the same format.
 
-## D29 — Plán je přijatý, platí jen ROADMAP.md (2026-11-06)
-Přijímá se sjednocený plán ze zprávy 5, doplněný o zprávy 4 a 6 a o testovací scénu strategie. Milníky M0, M3 a M4 jsou rozdělené na fáze. Podrobnosti číslování jsou v D72.
+## D9 — No photorealism (2026-11-05)
+The goal is the most achievable good-looking style, not photorealism. Among the candidates considered, the main one is 3D pixel art (low-resolution render, limited palette), among other reasons for performance.
 
-## D30 — Jeden registr nástrojů, dva transporty (2026-11-06)
-Zpřesňuje D18. Nástroje pro AI se registrují jednou a volají se přes MCP i přes CLI. Nástroj „spusť libovolný kód“ neexistuje.
+## D10 — Art style (open)
+The specific style waits for the analysis to finish. The frame is already given in D12.
+*Decided 2026-11-06, see D52.*
 
-## D31 — Osa Z míří nahoru (2026-11-06)
-Pravotočivý systém, X je východ, Y sever, Z nahoru, jednotkou je metr. Lint zakáže natvrdo zadané „nahoru“. Podrobnosti jsou v CONVENTIONS.
+## D12 — Full 3D with a free camera (2026-11-05)
+No fixed isometry in the style of GTA 1/2 and no strictly orthographic 3D pixel art. The game is fully 3D with a free perspective camera (third person, a camera behind a car, free rotation). Still no photorealism (D9): the style will be stylized 3D that works with a free camera. This removes 3D pixel art as the main candidate from D9.
+
+## D13 — Quality bar: at least GTA III / World of Warcraft (2026-11-05)
+Isometry and pixel art are not enough. The minimum visual level is GTA III (2001) or World of Warcraft (2004): full 3D at native resolution, textured surfaces with a strong stylized character (WoW), a dense city with buildings, cars and pedestrians (GTA III). A lower internal resolution remains only as an optional performance setting, not as a style.
+
+## D14 — Textures from two sources: code and an image AI model (2026-11-05)
+Refines D8. Each material chooses a source: a **procedural program**, or **an image generated once by an AI model**. The image is stored in the repo as a source asset together with its origin (model, prompt, seed, date). Generated images always go through code: tileability, remapping to the palette and color grade, deriving normal, height and roughness maps, procedural wear and variation. Both sources have the same lints, review and approval. Geometry, animation and the world stay generated by code.
+
+## D15 — A general-purpose engine, not an engine for one game (2026-11-05)
+We do not build the engine for a specific game. It must handle different types of 3D open worlds: a dense GTA-style city, a large Light No Fire-style procedural planet (biomes, villages, fortresses, mounts, curvature visible from height) and combinations of them. The voxel game plan from Vellum (`projects/grafika-reference/plan-voxel-hra.md`) is one of the possible games on top of the engine, not its specification.
+Consequences: the world shape (a flat grid of cells, or a cube-sphere with an octree) must be replaceable behind a port, not hard-coded. Coordinates, streaming, terrain generators and gravity/"up" must account for this. The GTA city is the reference scenario for the first milestones.
+
+## D11 — A complete analysis first, then code (2026-11-05)
+No prototypes or experiments until the analysis of all areas is done: architecture, procedural graphics and what AI can realistically do.
+
+## Roles
+- The **owner** is the art director: writes specifications, supplies references and approves.
+- **Claude** is the programmer and technical artist: writes generators, lints and review renders.
+
+## D16 — Scale and proportions are part of the engine from the start (2026-11-05)
+In the previous project, characters were too big for a too-small city. So scale is not solved by each generator on its own:
+- **Unit:** 1 unit = 1 meter.
+- **Scale table:** dimensions are in one central table (character, door, floor, lane, car, block…) and all generators read it.
+- **Check:** lints guard the ratios between asset classes, and every preview shows a reference mannequin.
+- **Stylization:** a deviation from real dimensions (as in WoW or GTA) is set deliberately, in one place.
+
+The specific numbers will come from research 5 (the scale and proportions topic).
+*Added (2026-11-06):* the proposal is done in the report [Engine comparison and improvement proposals](research/engine-comparison-and-improvements.md), the section on scale. The table's numbers wait for the owner's approval.
+
+## D17 — Debugging tools, headless mode and logging are the foundation of the engine (2026-11-05)
+The owner considers them an important topic. The code is written mainly by AI, which does not see the engine on a screen, so the engine must be observable and controllable by machine. Requirements:
+- **Headless mode:** a run without a window and without a GPU, deterministic time step, "run N frames and print the state".
+- **Logging:** structured, by channels and levels, machine-readable (JSON lines) and human-readable.
+- **Console and variables:** a console and CVars.
+- **Debug server:** queries for state, screenshots on request, stopping and stepping time.
+- **Debug drawing and inspector:** debug draw and an inspector (ImGui).
+- **Profiling:** a profiler and budgets that fail CI.
+- **Repeatability and crashes:** recording and replaying input, capturing crashes.
+
+They belong in the first milestones, not at the end. A specific proposal will come from research 5 (the topic of debugging, headless mode and logging).
+*Added (2026-11-06):* the proposal is done in the same report, the section on debugging.
+
+## D18 — A built-in studio, MCP tools, UI and projects (2026-11-05)
+The owner wants to work on the engine and games with the help of AI. So the engine gets:
+- **A studio (editor):** built on top of the engine. It has a viewport, an inspector, generator parameter panels and A/B review.
+- **An MCP server directly in the engine or studio:** an AI agent (Claude Code and others) controls the engine through it: world queries, running generators, screenshots, lints, time stepping, CVars, logs, build and hot reload. It builds on the debug server from D17.
+- **A UI system:** for game UI and HUD and for the studio itself.
+- **A project system:** multiple games on one engine (D15). Each project has its own game DLL, data, generators, style bible and scale table (D16), and context for AI.
+
+We understand "projectile support" as projects. If projectiles (shots) were meant, it will be added.
+A specific proposal will come from research 5 (the topic of studio, MCP, UI and projects).
+*Added (2026-11-06):* the proposal is done in the same report, the section on the tool registry and studio.
+
+## D19 — D15 stands, the warning from postmortems is rejected (2026-11-05)
+Research 5 pointed out that general-purpose engines without a flagship game (The Machinery, Stingray, Hazel) ended or stalled, and recommended building the engine for one game. The owner rejected this: we go a completely different way from these engines. The code is written by AI, the content is generated by code and the owner is the art director.
+Consequences:
+- D15 (a general-purpose engine for a city and a planet) stays unchanged.
+- The recommendation "an engine for one game" is not reopened.
+- The reference scenes (a city block, a planet seed) in the milestone proposals serve only as engine test scenes, not as narrowing to one game.
+
+> Refined in D75: the Windows machine is the second development machine from M0, not just a test machine.
+
+## D20 — Platform testing: Mac primarily, Windows later and separately, no macOS upgrade (2026-11-05)
+- **Development Mac:** the engine is developed and debugged on the MacBook M4 Pro (Metal). By the analysis this is not a problem for development or as the primary platform.
+- **Windows and D3D12:** they will be tested later and separately, on a Windows machine.
+- **macOS:** an upgrade to macOS 26 will not be done because of Vulkan. The Vulkan backend (KosmicKrisp) is therefore not tested on the Mac.
+- **Vulkan:** verified in Linux CI. Shaders are validated to SPIR-V and rendered in software through lavapipe (headless and golden image tests). It will be verified on a real GPU when Linux is tested.
+- **What we lose:** Vulkan-specific bugs on a real GPU will show up later. SDL_GPU does not use Metal 4 anyway.
+- **Added (2026-11-05):** the primary and only development machine is this MacBook; Linux and Windows serve only for tests. The owner has test machines with Linux and Windows, which is enough. So Vulkan will be verified on a real GPU too (Linux) and D3D12 on the Windows machine. CI with lavapipe stays as an automatic safeguard.
+
+## D21 — No Three.js and no JavaScript in the engine (2026-11-05)
+The engine contains no Three.js, JavaScript, WebGL or web runtime. No code or dependency from them. The reference repos from Vellum (Sakura Crossing, Voxel Musou, Threejs-Punk) are written in Three.js and serve only as a source of ideas and techniques. Those are written again from scratch in C17 and HLSL on top of SDL3 and SDL_GPU.
+
+## D22 — We keep the implementation plan in Linear, step by step (2026-11-06)
+The engine implementation plan will be set up gradually in Linear. The basis is the documents in `docs/`.
+- **Review first:** before the plan was set up, the documentation went through a review of weak spots, see [REVIEW.md](REVIEW.md).
+- **Division:** `docs/` stays the source of truth for decisions, design and milestone criteria. Linear tracks work (tasks, state, order).
+- **Gradually:** tasks are written out only for the nearest milestones, and the more distant ones when they approach.
+- D11 still applies: no code is written until the owner closes the analysis.
+
+## D23 — The engine must support strategy games too (2026-11-06)
+Extends D15. Besides a GTA-style city and a Light No Fire-style planet, the engine must handle strategy games: a Cities: Skylines-style city builder and a Stellaris-style grand strategy game.
+Consequences for the design (as proposals for confirmation they are in [DECISION-PROPOSALS.md](DECISION-PROPOSALS.md), items 16, 21, 23–27, 34):
+- **Simulation of the whole world:** it runs outside the camera too. Global simulation data is separate from cells, which are streamed for drawing.
+- **Mass entities:** hundreds of thousands of residents, cars or populations in dense tables, without physics.
+- **A player-built world:** the player's action is a generator input and the cell is regenerated at run time.
+- **Controls:** a strategy camera, mouse selection, placement with snapping.
+- **Time:** pause and acceleration, slow economy ticks next to fast physics.
+- **UI:** tables, lists, tooltips, windows.
+- **Verification:** a third engine test scene, the "strategy cutout".
+
+---
+
+# Confirmation of proposals (2026-11-06)
+
+The owner confirmed all 48 proposals from [DECISION-PROPOSALS.md](DECISION-PROPOSALS.md) at once ("I take everything"). The only exception is proposal 12 (Xcode), which he rejected. The decision number is the proposal number + 23. The milestone numbers in the text match [ROADMAP.md](ROADMAP.md) (M0–M10).
+
+### Group A. Foundations
+
+## D24 — Language C17 is confirmed (2026-11-06)
+Confirms D4. The core is in C17 with sanitizers (ASan, UBSan, TSan), `-Werror` and fuzzing of loaders. C++ is allowed only inside library adapters.
+
+## D25 — SDL3 + SDL_GPU behind our own RHI is confirmed (2026-11-06)
+Confirms D5. The RHI stands on three portable concepts: handles similar to buffer addresses, a material table of textures and a stream of indirect draws. A native Metal 3 backend will appear only if the draw cost measurement in M1 forces it.
+
+## D26 — Clang on all three OS (2026-11-06)
+On Windows it is built with clang-cl, MSVC is not used. The reason: MSVC has C11 atomics only experimentally, and one compiler family reduces float differences.
+
+## D27 — The renderer is forward+ with clustered lights (2026-11-06)
+Without a mandatory depth prepass. It replaces the deferred G-buffer from reports 1 and 2. It will be confirmed by measurement 1 in M2.
+
+## D28 — Determinism in two tiers (2026-11-06)
+- **Tier A (bit-identical on 3 OS):** generators and simulation logic. They are written on integers, fixed-point and `detmath`.
+- **Tier B (identical only on the same platform and build):** physics, animation and audio mix.
+Gate M4 changes accordingly: a driving replay is bit-identical on the same platform, the hash of the logical simulation on all three OS.
+*Refined in D74: Jolt can do identity across OS, tier B is split into B1 and B2.*
+
+## D29 — The plan is accepted, only ROADMAP.md applies (2026-11-06)
+The unified plan from report 5 is accepted, supplemented with reports 4 and 6 and the strategy test scene. Milestones M0, M3 and M4 are split into phases. Details of the numbering are in D72.
+
+## D30 — One tool registry, two transports (2026-11-06)
+Refines D18. Tools for AI are registered once and called through MCP and through the CLI. A "run arbitrary code" tool does not exist.
+
+## D31 — The Z axis points up (2026-11-06)
+A right-handed system, X is east, Y north, Z up, the unit is a meter. A lint forbids a hard-coded "up". Details are in CONVENTIONS.
 
 ## D32 — Monorepo (2026-11-06)
-Engine je v `engine/`, hry v `projects/<hra>/`. CI testuje všechny projekty, aby engine zůstal obecný (D15, D23).
+The engine is in `engine/`, games in `projects/<game>/`. CI tests all projects so the engine stays general-purpose (D15, D23).
 
-## D33 — Hosting a CI (2026-11-06)
-> Zpřesněno v D76: repo je veřejné a hostovaný macOS běží při každém pushi.
+## D33 — Hosting and CI (2026-11-06)
+> Refined in D76: the repo is public and hosted macOS runs on every push.
 
-Privátní repo `freema/wallhammerzero`, větev `main`. Linux a Windows běží v hostovaném CI při každém pushi. Testy na macOS běží lokálně jedním skriptem před merge, hostovaný macOS jen jako noční běh.
+Private repo `freema/wallhammerzero`, branch `main`. Linux and Windows run in hosted CI on every push. macOS tests run locally with one script before merge, and hosted macOS only as a nightly run.
 
-## D34 — Review ve sdružených branách (2026-11-06)
-Každý milník má hodinový rozpočet review vlastníka. Brány se sdružují do pevných termínů. Propustnost review se měří od M2.
+## D34 — Review in grouped gates (2026-11-06)
+Each milestone has an hour budget of the owner's review. Gates are grouped into fixed dates. Review throughput is measured from M2.
 
-## D35 — Xcode se neinstaluje, D6 platí bez výjimek (2026-11-06)
-Návrh 12 (povolit Xcode jako jedinou systémovou instalaci) vlastník **zamítl**: nic podstatného nepřináší a na vývojový notebook se instalovat nebude. Téma se znovu neotevírá.
-Důsledky:
-- **Build:** stačí Command Line Tools. Shadery pro Metal se dodávají jako zdrojový text MSL a SDL_GPU je překládá za běhu. Offline překladač `metal` se nepoužívá.
-- **Měření GPU na Macu:** vlastní čítače a časy snímků enginu, `powermetrics` a Metal HUD, které macOS už má. Tracy je v `.tools/`.
-- **Ladění GPU:** RenderDoc na testovacích strojích s Linuxem a Windows, na Macu ladicí skupiny a vlastní výpisy.
-- **Co tím ztrácíme:** rozpad času GPU po jednotlivých passech na Metalu. Rozpočty se proto vedou v počtech (drawy, fragmenty, částice), jak to už navrhuje zpráva 6.
+## D35 — Xcode is not installed, D6 applies without exceptions (2026-11-06)
+The owner **rejected** proposal 12 (allow Xcode as the only system-wide install): it brings nothing essential and will not be installed on the development laptop. The topic is not reopened.
+Consequences:
+- **Build:** Command Line Tools are enough. Shaders for Metal are shipped as MSL source text and SDL_GPU translates them at run time. The offline `metal` compiler is not used.
+- **GPU measurement on the Mac:** the engine's own counters and frame times, `powermetrics` and the Metal HUD, which macOS already has. Tracy is in `.tools/`.
+- **GPU debugging:** RenderDoc on the Linux and Windows test machines, on the Mac debug groups and our own printouts.
+- **What we lose:** a breakdown of GPU time per pass on Metal. Budgets are therefore kept in counts (draws, fragments, particles), as report 6 already proposes.
 
-## D36 — Konec analýzy (2026-11-06)
-Doplňuje D11. Analýza končí, když jsou potvrzená rozhodnutí D24–D37, existuje `ROADMAP.md` a `CONVENTIONS.md` a v Linearu jsou úkoly pro M0 a M1. Zbylé rešerše (D71) běží vedle implementace.
-*Stav 2026-11-06: všechny podmínky jsou splněné. Analýza je uzavřená, první kód vznikne úkolem M0a na pokyn vlastníka.*
+## D36 — End of the analysis (2026-11-06)
+Extends D11. The analysis ends when decisions D24–D37 are confirmed, `ROADMAP.md` and `CONVENTIONS.md` exist, and Linear has tasks for M0 and M1. The remaining research (D71) runs alongside the implementation.
+*Status 2026-11-06: all conditions are met. The analysis is closed, and the first code will be written as task M0a on the owner's go.*
 
-## D37 — Co engine nedělá (2026-11-06)
-Mobil a konzole, fotorealismus, VR, editor pro třetí strany a zatím ani síťový kód. Žánry seznam neomezuje.
+## D37 — What the engine does not do (2026-11-06)
+Mobile and consoles, photorealism, VR, an editor for third parties and, for now, network code. The list does not limit genres.
 
-### Skupina B. Svět a simulace
+### Group B. World and simulation
 
-## D38 — Typ světa volí projekt (2026-11-06)
-Svět ze seedu s ručními přepisy, nový svět na každou hru, nebo svět stavěný hráčem. Nekonečný svět není cíl.
+## D38 — The project chooses the world type (2026-11-06)
+A world from a seed with manual overrides, a new world for each game, or a player-built world. An infinite world is not a goal.
 
-## D39 — Svět je plně upravitelný příkazy hráče (2026-11-06)
-Zásah hráče (silnice, zóna, budova) je vstup generátoru a dotčená buňka se přegeneruje za běhu. Voxelové kopání je volitelný pozdější milník.
+## D39 — The world is fully editable by player commands (2026-11-06)
+The player's action (road, zone, building) is a generator input and the affected cell is regenerated at run time. Voxel digging is an optional later milestone.
 
-## D40 — Ukládají se změny nad regenerací a stav simulace (2026-11-06)
-Save obsahuje změny nad deterministicky regenerovaným světem, stabilní ID z kotvy a plný stav simulace z registru typů. Formát je verzovaný.
+## D40 — Changes on top of regeneration and the simulation state are saved (2026-11-06)
+A save contains changes on top of a deterministically regenerated world, stable IDs from the anchor and the full simulation state from the type registry. The format is versioned.
 
-## D41 — Síť: jen tvar (2026-11-06)
-Simulace má tvar serveru a vstupem jsou příkazy hráče. Síťový kód nevzniká. Díky D28 zůstává otevřená cesta k lockstep multiplayeru strategií.
+## D41 — Network: shape only (2026-11-06)
+The simulation has the shape of a server and the input is player commands. No network code is written. Thanks to D28, the path to lockstep multiplayer for strategy games stays open.
 
-## D42 — Fyzika je Jolt přes joltc (2026-11-06)
-Dává aktivní ragdoll a vozidla z čistého C API. C++ zůstává uvnitř adaptéru.
+## D42 — Physics is Jolt through joltc (2026-11-06)
+It provides active ragdoll and vehicles from a pure C API. C++ stays inside the adapter.
 
-## D43 — Registr typů od M0 (2026-11-06)
-Registr (jméno, verze, pole) slouží savu, inspektoru a schématům nástrojů. Verze v0 vzniká v M0, verzovaná serializace v M1.
+## D43 — Type registry from M0 (2026-11-06)
+The registry (name, version, fields) serves saves, the inspector and tool schemas. Version v0 appears in M0, versioned serialization in M1.
 
-## D44 — Tři třídy objektů (2026-11-06)
-Zpřesňuje D7.
-- **Statické instance** po buňkách.
-- **Aktéři** s komponentami registrovanými hrou (tisíce, s fyzikou).
-- **Hromadné entity** (statisíce, husté tabulky, bez fyziky, vlastní 64bitová ID).
-V enginu není generické ECS. Herní DLL si ho smí přinést.
+## D44 — Three classes of objects (2026-11-06)
+Refines D7.
+- **Static instances** per cell.
+- **Actors** with components registered by the game (thousands, with physics).
+- **Mass entities** (hundreds of thousands, dense tables, no physics, own 64-bit IDs).
+There is no generic ECS in the engine. The game DLL may bring its own.
 
-## D45 — Žádný skriptovací jazyk (2026-11-06)
-Hra se píše proti stabilnímu C ABI. Herní data (budovy, technologie, události) jsou textové tabulky načítané přes registr typů.
+## D45 — No scripting language (2026-11-06)
+The game is written against a stable C ABI. Game data (buildings, technologies, events) are text tables loaded through the type registry.
 
-## D46 — Simulace má dvě vrstvy (2026-11-06)
-Globální data simulace (silniční graf, tabulky budov a entit) jsou vždy v paměti a tikají v celém světě. Buňky se streamují jen pro kreslení a fyziku.
+## D46 — The simulation has two layers (2026-11-06)
+Global simulation data (road graph, building and entity tables) is always in memory and ticks in the whole world. Cells are streamed only for drawing and physics.
 
-## D47 — Hodiny simulace (2026-11-06)
-Pauza a násobky rychlosti. Skupiny tiků mají různou frekvenci (fyzika 60 Hz, ekonomika pomalu) a práce se rozkládá přes snímky. Kreslení zůstává plynulé nezávisle na rychlosti.
+## D47 — Simulation clock (2026-11-06)
+Pause and speed multiples. Tick groups have different frequencies (physics 60 Hz, economy slow) and work is spread across frames. Drawing stays smooth regardless of speed.
 
-## D48 — Svět je objekt (2026-11-06)
-Svět není globální proměnná a může jich existovat víc najednou (mapa galaxie a pohled do soustavy).
+## D48 — A world is an object (2026-11-06)
+A world is not a global variable, and several can exist at once (a galaxy map and a view into a system).
 
-## D49 — Základ strategického ovládání je v enginu (2026-11-06)
-Strategická kamera, výběr myší a rámečkem a umisťování s přichytáváním. Pravidla hry zůstávají v herní DLL. Stejné nástroje používá studio.
+## D49 — The basics of strategy controls are in the engine (2026-11-06)
+A strategy camera, selection by mouse and box, and placement with snapping. Game rules stay in the game DLL. The studio uses the same tools.
 
-## D50 — Testovací scéna C „strategický výřez“ (2026-11-06)
-Vlastní milník M6 po zárodku planety: kamera shora, 100 000 entit na silničním grafu, hráčem nakreslená silnice, zrychlení času a panel s tabulkou.
+## D50 — Test scene C "strategy cutout" (2026-11-06)
+Its own milestone M6 after the planet seed: top-down camera, 100,000 entities on a road graph, a player-drawn road, time acceleration and a panel with a table.
 
-## D51 — Obsah města před postavami (2026-11-06)
-M8 (obsah města) jde před M9 (postavy). Pořadí se přehodnotí po bráně M4.
+## D51 — City content before characters (2026-11-06)
+M8 (city content) goes before M9 (characters). The order is reconsidered after gate M4.
 
-### Skupina C. Vzhled a obsah
+### Group C. Look and content
 
-## D52 — Výtvarný styl: stylizované malované 3D (2026-11-06)
-Uzavírá D10. Textury se zapečeným světlem ve stylu WoW, rampové světlo s tónovaným stínem, jedna globální paleta a LUT, mlha a vzdušná perspektiva, hustota města jako GTA III. Obrysy jsou vypnuté a zůstávají jako volitelný parametr. Potvrdí se na scéně v M2 vedle referencí.
+## D52 — Art style: stylized painted 3D (2026-11-06)
+Closes D10. Textures with baked light in the WoW style, ramp lighting with tinted shadow, one global palette and LUT, fog and aerial perspective, city density like GTA III. Outlines are off and remain as an optional parameter. It will be confirmed on a scene in M2 next to the references.
 
-## D53 — Výchozí profil měřítka (2026-11-06)
-Zpřesňuje D16. Postava 1,80 m, otvory ×1,20, podlaží ×1,10, pruhy ×1,15, vzdálenosti ×0,5, modul 0,5 m. Profil se zmrazí v M2 vedle referencí. Každý projekt má vlastní tabulku.
+## D53 — Default scale profile (2026-11-06)
+Refines D16. Character 1.80 m, openings ×1.20, floors ×1.10, lanes ×1.15, distances ×0.5, module 0.5 m. The profile is frozen in M2 next to the references. Each project has its own table.
 
-## D54 — Interně 1080p a vlastní upscale (2026-11-06)
-UI se kreslí v nativním rozlišení. Potvrdí se měřeními 1 a 6.
+## D54 — Internally 1080p and own upscale (2026-11-06)
+UI is drawn at native resolution. It will be confirmed by measurements 1 and 6.
 
-## D55 — Rozšíření D14 (2026-11-06)
-AI zdrojem smí být celá sada map. K provenanci přibývá licence a C2PA a z provenance se generuje report pro Steam.
+## D55 — Extension of D14 (2026-11-06)
+A whole map set may be an AI source. Provenance gains a license and C2PA, and a report for Steam is generated from provenance.
 
-## D56 — Druhý hodnotitel od jiného dodavatele (2026-11-06)
-Povolený je levný model jiného dodavatele. Povinný je jen u rizikových kategorií (postavy, auta, malované textury). Rendery se tím posílají další službě.
+## D56 — A second judge from another vendor (2026-11-06)
+A cheap model from another vendor is allowed. It is mandatory only for risky categories (characters, cars, painted textures). Renders are thereby sent to another service.
 
-## D57 — UI: studio na Dear ImGui, hra na vlastním eng_ui (2026-11-06)
-`eng_ui` stojí nad Clay a SDL_ttf a má widgety (tabulky, seznamy, tooltipy, okna), vazbu na data a popis UI v textových souborech. RmlUi se vyhodnotí jako záloha.
+## D57 — UI: the studio on Dear ImGui, the game on its own eng_ui (2026-11-06)
+`eng_ui` stands on top of Clay and SDL_ttf and has widgets (tables, lists, tooltips, windows), data binding and a UI description in text files. RmlUi will be evaluated as a fallback.
 
-### Skupina D. Zvuk a efekty
+### Group D. Audio and effects
 
-## D58 — AI zvuk jen pro efekty a ambience (2026-11-06)
-S provenancí jako u D14. Hudba z AI ne.
+## D58 — AI audio only for effects and ambience (2026-11-06)
+With provenance as in D14. No AI music.
 
-## D59 — Model pro zvuky: ElevenLabs (2026-11-06)
-S připnutou verzí modelu. Před prvním použitím je potřeba přečíst podmínky služby, z primárního zdroje ověřené nejsou.
+## D59 — Model for sounds: ElevenLabs (2026-11-06)
+With a pinned model version. The service terms must be read before first use; they are not verified from the primary source.
 
-## D60 — Hudba rádia se odkládá (2026-11-06)
-Engine se staví nezávisle na zdroji hudby.
+## D60 — Radio music is postponed (2026-11-06)
+The engine is built independent of the music source.
 
-## D61 — Hudba planety a strategie z kódu (2026-11-06)
-Fragmenty skládané podle místa a situace, kurátorem je vlastník.
+## D61 — Planet and strategy music from code (2026-11-06)
+Fragments composed by place and situation, the owner is the curator.
 
-## D62 — Stylizovaná zvuková paleta (2026-11-06)
-Sladěná s obrazem (D52).
+## D62 — A stylized sound palette (2026-11-06)
+Matched to the image (D52).
 
-## D63 — Prostorový zvuk (2026-11-06)
-Stylizovaná okluze a dozvukové zóny. Steam Audio až později za portem.
+## D63 — Spatial audio (2026-11-06)
+Stylized occlusion and reverb zones. Steam Audio only later behind a port.
 
-## D64 — Hlasitost (2026-11-06)
-Cíl −23 LUFS, špičky do −1 dBTP a hlasitější profil pro reproduktory notebooku.
+## D64 — Loudness (2026-11-06)
+Target −23 LUFS, peaks up to −1 dBTP and a louder profile for laptop speakers.
 
-## D65 — Zvukové zařízení a mixer (2026-11-06)
-SDL3 dodává zařízení, mixuje miniaudio. Nahrazuje „mixer SDL3“ ze zprávy 5.
+## D65 — Audio device and mixer (2026-11-06)
+SDL3 supplies the device, miniaudio mixes. It replaces the "SDL3 mixer" from report 5.
 
-## D66 — Pravidla efektů jako linty (2026-11-06)
-Přebírají se pravidla Riotu. Konkrétní čísla schvaluje vlastník ve style bible.
+## D66 — Effect rules as lints (2026-11-06)
+Riot's rules are adopted. The owner approves the specific numbers in the style bible.
 
-## D67 — Efekty z kódu, malý AI arch tahů štětcem povolen (2026-11-06)
-AI obrázky pro efekty podléhají D14 a D55.
+## D67 — Effects from code, a small AI sheet of brush strokes allowed (2026-11-06)
+AI images for effects are subject to D14 and D55.
 
-## D68 — Rozsah počasí (2026-11-06)
-Déšť, mlha a blesky přicházejí s městem. Sníh, písek a vítr s planetou.
+## D68 — Weather scope (2026-11-06)
+Rain, fog and lightning come with the city. Snow, sand and wind with the planet.
 
-### Skupina E. Organizace
+### Group E. Organization
 
-## D69 — „Projektylu“ v D18 znamená projekty (2026-11-06)
-Projektily (střely) patří do herní DLL. Engine dává fyzikální dotazy a efekty.
+## D69 — "Projektylu" in D18 means projects (2026-11-06)
+Projectiles (shots) belong in the game DLL. The engine provides physics queries and effects.
 
-## D70 — Dokumentace se commituje hned (2026-11-06)
-Do repa `freema/wallhammerzero`, větev `main`. Od D76 je repo veřejné.
+## D70 — Documentation is committed right away (2026-11-06)
+To the repo `freema/wallhammerzero`, branch `main`. From D76 the repo is public.
 
-## D71 — Čtyři rešerše souběžně s M0 a M1 (2026-11-06)
-1. Doprava, chodci a hromadná simulace entit.
-2. Fyzika jízdy.
-3. Světlo, obloha a denní doba.
-4. Strategie: datově bohaté UI a datově řízený obsah.
+## D71 — Four research topics in parallel with M0 and M1 (2026-11-06)
+1. Traffic, pedestrians and mass entity simulation.
+2. Driving physics.
+3. Light, sky and time of day.
+4. Strategy games: data-rich UI and data-driven content.
 
-### Skupina F. Konsolidace
+### Group F. Consolidation
 
-Tato dvě rozhodnutí sepsal Claude při slučování zpráv do jednoho plánu, na základě D29 a D31. Vlastník je může změnit.
+Claude wrote these two decisions while merging the reports into one plan, based on D29 and D31. The owner may change them.
 
-## D72 — Číslování milníků M0–M10 (2026-11-06)
-Scéna strategie (D50) je vložená jako M6. Milníky M6–M9 ze zprávy 5 se tím posouvají na M7–M10. Zprávy 1, 2, 4 a 6 používají starší číslování. Převodní tabulka je v ROADMAP. Voxelové objemy a obsah planety zůstávají bez čísla jako pozdější práce.
+## D72 — Milestone numbering M0–M10 (2026-11-06)
+The strategy scene (D50) is inserted as M6. Milestones M6–M9 from report 5 thereby shift to M7–M10. Reports 1, 2, 4 and 6 use the older numbering. The conversion table is in ROADMAP. Voxel volumes and planet content stay without a number as later work.
 
-## D73 — Závazné konvence (2026-11-06)
-[CONVENTIONS.md](CONVENTIONS.md) řeší rozpory mezi zprávami:
-- **ID buňky:** 64 bitů `[face:3][level:5][x:28][y:28]`, plochý svět má `face = 7` (zpráva 4).
-- **Pozice:** double na CPU, float jen relativně k buňce nebo kameře (zpráva 4).
-- **Stabilní ID:** z kotvy a jména pravidla (zpráva 4).
-- **Prefix:** identifikátory enginu začínají `eng_`. Prefix `wh_` ze zprávy 4 se nepoužívá.
-- **Nástroje:** `wz` (engine), `wz_studio`, `wzmcp` (MCP) a `wzctl` (CLI). Jména `engctl`, `wzcli`, `gencli` a `genlint` se nahrazují příkazy `wzctl`.
+## D73 — Binding conventions (2026-11-06)
+[CONVENTIONS.md](CONVENTIONS.md) settles contradictions between the reports:
+- **Cell ID:** 64 bits `[face:3][level:5][x:28][y:28]`, a flat world has `face = 7` (report 4).
+- **Position:** double on the CPU, float only relative to the cell or camera (report 4).
+- **Stable IDs:** from the anchor and the rule name (report 4).
+- **Prefix:** engine identifiers start with `eng_`. The prefix `wh_` from report 4 is not used.
+- **Tools:** `wz` (engine), `wz_studio`, `wzmcp` (MCP) and `wzctl` (CLI). The names `engctl`, `wzcli`, `gencli` and `genlint` are replaced by `wzctl` commands.
 
-## D74 — Opravy plánu po ověření proti zdrojům (2026-11-06)
-Vlastník požádal o ověření plánu proti článkům a dokumentaci na webu. Výsledek je v [OVERENI.md](OVERENI.md). Žádné rozhodnutí nepadlo. Tyto opravy sepsal Claude a vlastník je může změnit:
-- **D28:** zdůvodnění bylo mylné. Jolt bitově shodnou simulaci mezi OS umí a testuje ji. Jolt se staví s `CROSS_PLATFORM_DETERMINISTIC` od začátku. Úroveň B se dělí na B1 (fyzika, cíl 3 OS) a B2 (animace, zvuk). Brána M4 zůstává „stejná platforma“, o zvednutí rozhodne měření 27.
-- **D27:** bez depth prepassu jen na GPU Apple. Na Vulkanu a D3D12 je prepass volitelný. Rozpočet je stovky skutečných světel v záběru.
-- **D35:** potvrzeno, že Command Line Tools stačí. Čas GPU po passech na Macu měřit nejde, engine dostane vlastní ladicí pohledy.
-- **D42:** uložení a obnovu stavu fyziky dopíšeme ve vlastním adaptéru, joltc ji nemá.
-- **D57:** `eng_ui` obsahuje i vlastní kreslení přes SDL_GPU, textový vstup a tabulky. Clay dává jen rozvržení.
-- **D59:** generuje se modelem v3. Uložený zvuk je jediný zdroj, znovu stejně ho vygenerovat nejde.
-- **Shadery:** kompilátor shaderů je první úkol fáze M1c. DXIL smí vznikat v CI.
-- **M6:** doplněno uspávání entit, služba hledání cest, silniční síť jako globální model a přísnější testovací scéna.
+## D74 — Plan fixes after checking against sources (2026-11-06)
+The owner asked for the plan to be checked against articles and documentation on the web. The result is in [VERIFICATION.md](VERIFICATION.md). No decision fell. Claude wrote these fixes and the owner may change them:
+- **D28:** the justification was wrong. Jolt can do a bit-identical simulation across OS and tests it. Jolt is built with `CROSS_PLATFORM_DETERMINISTIC` from the start. Tier B is split into B1 (physics, target 3 OS) and B2 (animation, audio). Gate M4 stays "same platform", and measurement 27 will decide whether it is raised.
+- **D27:** no depth prepass only on Apple GPUs. On Vulkan and D3D12 the prepass is optional. The budget is hundreds of real lights in view.
+- **D35:** confirmed that Command Line Tools are enough. GPU time per pass cannot be measured on the Mac, so the engine gets its own debug views.
+- **D42:** we write saving and restoring physics state in our own adapter, joltc does not have it.
+- **D57:** `eng_ui` also includes own drawing through SDL_GPU, text input and tables. Clay gives only layout.
+- **D59:** generation uses the v3 model. The stored sound is the only source, it cannot be regenerated identically.
+- **Shaders:** the shader compiler is the first task of phase M1c. DXIL may be produced in CI.
+- **M6:** added entity sleeping, a pathfinding service, the road network as a global model and a stricter test scene.
 
-Tři otázky čekají na vlastníka: hostovaný macOS v CI (mění D33, vyřešeno v D76), podmínky a efekty v datech (zpřesňuje D45) a posílání referenčních screenshotů AI službám.
+Three questions wait for the owner: hosted macOS in CI (changes D33, resolved in D76), conditions and effects in data (refines D45) and sending reference screenshots to AI services.
 
-## D75 — Druhý vývojový stroj: Windows PC s NVIDIA (2026-11-06)
-Vlastník bude pracovat i na Windows PC s grafikou NVIDIA. Práce se mezi stroji sdílí přes GitHub repo `freema/wallhammerzero`, Linear a dokumentaci v repu. Zpřesňuje D20 a D33.
-- **Role strojů:**
-  - **MacBook M4 Pro:** hlavní vývoj, výkonnostní rozpočty, Metal a obrazové goldeny pro Metal.
-  - **Windows PC s NVIDIA:** druhý vývojový stroj od M0. Hlavní stroj na profilování GPU (Nsight Graphics, RenderDoc, PIX), protože na Macu bez Xcode čas GPU po passech měřit nejde (D35). Dále D3D12 a Vulkan na skutečné grafice, determinismus na Windows a výkon, jaký uvidí běžný hráč.
-  - **Hostované CI:** Linux a Windows při každém pushi.
-- **Překladač na Windows:** clang-cl (D26) s Visual Studio Build Tools a Windows SDK. Je to jediná systémová instalace a jen na Windows stroji. Ostatní nástroje se stahují do `.tools/` jako na Macu. Na Macu se nic nemění, Xcode se dál nepoužívá (D35).
-- **Přenosné skripty:** bootstrap a `scripts/check` jsou CMake skripty (`cmake -P`), ne bash. Musí běžet na obou strojích.
-- **Dřívější ověření Windows:** D3D12 na skutečné grafice se poprvé ověří v M1c spolu s měřením ceny drawu, ne až na konci M4. Strop drawů se změří na Macu i na NVIDIA.
-- **Spolupráce dvou strojů:** pravidla jsou v [CONVENTIONS.md](CONVENTIONS.md), kapitola 12.
-- **Doplnit:** model grafické karty, procesor a paměť Windows PC.
+## D75 — A second development machine: a Windows PC with NVIDIA (2026-11-06)
+The owner will also work on a Windows PC with an NVIDIA graphics card. Work is shared between the machines through the GitHub repo `freema/wallhammerzero`, Linear and the documentation in the repo. Refines D20 and D33.
+- **Roles of the machines:**
+  - **MacBook M4 Pro:** main development, performance budgets, Metal and image goldens for Metal.
+  - **Windows PC with NVIDIA:** the second development machine from M0. The main machine for GPU profiling (Nsight Graphics, RenderDoc, PIX), because on a Mac without Xcode GPU time per pass cannot be measured (D35). Also D3D12 and Vulkan on a real graphics card, determinism on Windows and the performance an ordinary player will see.
+  - **Hosted CI:** Linux and Windows on every push.
+- **Compiler on Windows:** clang-cl (D26) with Visual Studio Build Tools and the Windows SDK. This is the only system-wide install, and only on the Windows machine. Other tools are downloaded into `.tools/` as on the Mac. Nothing changes on the Mac, Xcode is still not used (D35).
+- **Portable scripts:** bootstrap and `scripts/check` are CMake scripts (`cmake -P`), not bash. They must run on both machines.
+- **Earlier verification of Windows:** D3D12 on a real graphics card is first verified in M1c together with the draw cost measurement, not only at the end of M4. The draw cap is measured on the Mac and on NVIDIA.
+- **Collaboration of two machines:** the rules are in [CONVENTIONS.md](CONVENTIONS.md), chapter 12.
+- **To add:** the graphics card model, processor and memory of the Windows PC.
 
-Rozdělení rolí a volbu Build Tools navrhl Claude. Vlastník je může změnit.
+The division of roles and the choice of Build Tools were proposed by Claude. The owner may change them.
 
-## D76 — Repo je veřejné (2026-11-06)
-Vlastník chce mít `freema/wallhammerzero` jako veřejné repo. Přepnuto 2026-11-06 včetně větve `implementation` se starým projektem. Před přepnutím Claude prošel celou historii: žádné klíče ani cizí chráněný obsah.
-- **Zabezpečení na GitHubu** (u veřejného repa zdarma):
-  - Hlídání klíčů (secret scanning) a blokace pushe s klíčem (push protection).
-  - Upozornění Dependabotu na zranitelné závislosti.
-  - Pravidlo `protect-main`: větev `main` nejde smazat ani přepsat force pushem. Přímý push zůstává povolený kvůli dokumentaci (D70).
-  - GitHub Actions smí používat jen akce od GitHubu a ověřených vydavatelů, připnuté na commit.
-  - Wiki a Projects jsou vypnuté (plán je v Linearu), větve se po merge mažou samy.
-- **CI zdarma:** standardní hostované runnery jsou pro veřejná repa bez poplatku. Otázka 1 z [OVERENI.md](OVERENI.md) tím odpadá: hostovaný macOS (`macos-15`) běží při každém pushi vedle Linuxu a Windows. Nemá použitelné GPU, takže dělá build, unit testy, null GPU a golden hashe. Metal dál hlídá `scripts/check` na MacBooku.
-- **AI zvuky z ElevenLabs** se nesmí šířit jako samostatné soubory, proto do veřejného repa nepatří. Budou v odděleném privátním úložišti (rozhodne se před M3d). Pravidlo je v CONVENTIONS, kapitola 11.
-- **Licence:** zatím žádná, takže platí „všechna práva vyhrazena“. Kód je vidět, ale nikdo ho nesmí použít. Volba licence je otevřená otázka.
-- **E-mail v commitech:** autor commitů je vidět s e-mailem. Pro další commity lze přepnout na adresu `…@users.noreply.github.com`.
-- **gitleaks** v `.tools/` jako kontrola před commitem a v CI (úkoly M0a).
+## D76 — The repo is public (2026-11-06)
+The owner wants `freema/wallhammerzero` to be a public repo. Switched 2026-11-06 including the `implementation` branch with the old project. Before the switch, Claude went through the whole history: no keys and no third-party protected content.
+- **Security on GitHub** (free for a public repo):
+  - Key scanning (secret scanning) and blocking a push with a key (push protection).
+  - Dependabot alerts for vulnerable dependencies.
+  - The rule `protect-main`: the `main` branch cannot be deleted or overwritten by a force push. Direct push stays allowed because of documentation (D70).
+  - GitHub Actions may use only actions from GitHub and verified publishers, pinned to a commit.
+  - Wiki and Projects are off (the plan is in Linear), and branches are deleted automatically after merge.
+- **Free CI:** standard hosted runners are free of charge for public repos. Question 1 from [VERIFICATION.md](VERIFICATION.md) is thereby void: hosted macOS (`macos-15`) runs on every push next to Linux and Windows. It has no usable GPU, so it does the build, unit tests, null GPU and golden hashes. Metal is still guarded by `scripts/check` on the MacBook.
+- **AI sounds from ElevenLabs** must not be distributed as standalone files, so they do not belong in the public repo. They will be in a separate private storage (to be decided before M3d). The rule is in CONVENTIONS, chapter 11.
+- **License:** none yet, so "all rights reserved" applies. The code is visible, but nobody may use it. The choice of license is an open question.
+- **E-mail in commits:** the commit author is visible with an e-mail. For further commits it is possible to switch to an address `…@users.noreply.github.com`.
+- **gitleaks** in `.tools/` as a check before a commit and in CI (M0a tasks).
 
-## D77 — Jedna mapa modulů (2026-11-06)
-[ARCHITECTURE.md](ARCHITECTURE.md) slučuje D7, D25, D28, D30 a D43–D46 s rešerší architektury do jedné mapy vrstev a modulů. Proti rešerši přidává:
-- moduly, které přinesly pozdější zprávy: `eng_log`, `eng_cvar`, `eng_cmd`, `eng_types`, `eng_prof`, `eng_gen_*`, `eng_ui`, `eng_vfx`, `eng_tools`, `eng_debugsrv`, `eng_project`,
-- modul `eng_sim` pro hodiny simulace, `player_cmd`, hromadné entity a globální grafy (D44, D46, D47),
-- generátory jako samostatnou vrstvu pod `eng_asset`, bez GPU a souborů.
+## D77 — One module map (2026-11-06)
+[ARCHITECTURE.md](ARCHITECTURE.md) merges D7, D25, D28, D30 and D43–D46 with the architecture research into one map of layers and modules. Against the research it adds:
+- modules that later reports brought: `eng_log`, `eng_cvar`, `eng_cmd`, `eng_types`, `eng_prof`, `eng_gen_*`, `eng_ui`, `eng_vfx`, `eng_tools`, `eng_debugsrv`, `eng_project`,
+- the module `eng_sim` for the simulation clock, `player_cmd`, mass entities and global graphs (D44, D46, D47),
+- generators as a separate layer below `eng_asset`, without the GPU and files.
 
-Mapu sepsal Claude na žádost vlastníka. Vlastník ji může změnit.
+Claude wrote the map at the owner's request. The owner may change it.
+
+## D78 — Everything in the repository is in English (2026-11-06)
+The owner made the repository public (D76) and requires that nothing on GitHub is in Czech. All documentation, research reports and notes, file and folder names, CLAUDE.md and commit messages are in English. Replaces the earlier rule that documentation is in Czech. Conversation with the owner may stay in Czech; Linear issues are not on GitHub and may stay in Czech. The GitHub repository description was also corrected: it still described the old project.

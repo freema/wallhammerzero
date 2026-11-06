@@ -1,42 +1,42 @@
-# Příprava vývojového stroje
+# Setting up a development machine
 
-Jak rozběhnout práci na novém stroji. Práce se mezi stroji sdílí jen přes GitHub repo [`freema/wallhammerzero`](https://github.com/freema/wallhammerzero) (veřejné, D76) a Linear (D75). Pravidla spolupráce jsou v [CONVENTIONS.md](CONVENTIONS.md), kapitola 12.
+How to start working on a new machine. Work is shared between machines only through the GitHub repo [`freema/wallhammerzero`](https://github.com/freema/wallhammerzero) (public, D76) and Linear (D75). The collaboration rules are in [CONVENTIONS.md](CONVENTIONS.md), chapter 12.
 
-Build enginu zatím neexistuje. Vznikne v M0a (NSO-581 až NSO-586). Do té doby stačí na stroji Git, Claude Code a klon repa. Kroky k buildu se sem doplní, jakmile bude hotová kostra.
+The engine build does not exist yet. It will appear in M0a (NSO-581 to NSO-586). Until then a machine needs only Git, Claude Code and a clone of the repo. The build steps will be added here once the skeleton is ready.
 
 ## Windows PC (NVIDIA)
 
-### 1. Programy
+### 1. Programs
 
-| Program | Odkud | Poznámka |
+| Program | From | Note |
 |---|---|---|
-| Git for Windows | `winget install Git.Git` | Claude Code ho potřebuje. |
-| GitHub CLI | `winget install GitHub.cli` | Přihlášení ke GitHubu bez ručních SSH klíčů. |
-| Claude Code | v PowerShellu `irm https://claude.ai/install.ps1 \| iex` | Přihlásit se stejným účtem jako na Macu. Linear se pak připojí sám. |
-| Visual Studio Build Tools | [visualstudio.microsoft.com/downloads](https://visualstudio.microsoft.com/downloads/), sekce Tools, „Build Tools for Visual Studio“ | Jediná systémová instalace (D75), viz níže. |
+| Git for Windows | `winget install Git.Git` | Claude Code needs it. |
+| GitHub CLI | `winget install GitHub.cli` | Sign in to GitHub without manual SSH keys. |
+| Claude Code | in PowerShell `irm https://claude.ai/install.ps1 \| iex` | Sign in with the same account as on the Mac. Linear then connects by itself. |
+| Visual Studio Build Tools | [visualstudio.microsoft.com/downloads](https://visualstudio.microsoft.com/downloads/), Tools section, "Build Tools for Visual Studio" | The only system-wide install (D75), see below. |
 
-Ve Visual Studio Installeru vyber:
-- workload **Desktop development with C++**,
-- komponentu **C++ Clang tools for Windows** (clang-cl, D26),
-- komponentu **Windows 11 SDK** (nejnovější).
+In the Visual Studio Installer select:
+- the workload **Desktop development with C++**,
+- the component **C++ Clang tools for Windows** (clang-cl, D26),
+- the component **Windows 11 SDK** (the newest).
 
-Celé Visual Studio není potřeba. cmake a ninja se neinstalují, stáhne je skript do `.tools/` (D6).
+Full Visual Studio is not needed. cmake and ninja are not installed. A script downloads them into `.tools/` (D6).
 
-### 2. Nastavení Gitu
+### 2. Git configuration
 
 ```powershell
 git config --global core.autocrlf false
 git config --global core.longpaths true
 git config --global user.name "Tomáš Grasl"
-git config --global user.email "<stejný e-mail jako na Macu>"
+git config --global user.email "<same e-mail as on the Mac>"
 gh auth login
 ```
 
-Konce řádků hlídá `.gitattributes` v repu, proto `autocrlf` zůstává vypnuté.
+Line endings are controlled by `.gitattributes` in the repo, so `autocrlf` stays off.
 
-### 3. Klon repa
+### 3. Cloning the repo
 
-Krátká cesta kvůli limitu délky cest na Windows:
+A short path because of the path length limit on Windows:
 
 ```powershell
 mkdir C:\dev
@@ -46,25 +46,25 @@ cd wallhammerzero
 claude
 ```
 
-Claude Code si po startu přečte `CLAUDE.md` a z něj celou dokumentaci. Paměť z Macu na Windows není, všechno potřebné je v repu.
+After start, Claude Code reads `CLAUDE.md` and from it all the documentation. The Mac's memory is not on Windows. Everything needed is in the repo.
 
-### 4. Údaje o stroji
+### 4. Machine details
 
-Do D75 v [DECISIONS.md](DECISIONS.md) doplň model grafiky, procesor a paměť. Najdeš je ve Správci úloh na záložce Výkon. Stačí je napsat Claudovi.
+Add the graphics card model, processor and memory to D75 in [DECISIONS.md](DECISIONS.md). You can find them in Task Manager on the Performance tab. Just tell Claude.
 
-### 5. Kontrola
+### 5. Check
 
-V Claude Code napiš: „Přečti STATUS a řekni, na čem jsme.“ Odpověď má sedět s tím, co vidíš na Macu.
+In Claude Code type: "Read STATUS and tell me where we are." The answer should match what you see on the Mac.
 
 ## MacBook (M4 Pro)
 
-- Command Line Tools (`xcode-select --install`). Xcode se neinstaluje (D35).
-- Klon repa a Claude Code. Do systému se nic dalšího neinstaluje, nástroje se stahují do `.tools/` (D6).
+- Command Line Tools (`xcode-select --install`). Xcode is not installed (D35).
+- A clone of the repo and Claude Code. Nothing else is installed system-wide. Tools are downloaded into `.tools/` (D6).
 
-## Jak se pracuje na dvou strojích
+## How to work on two machines
 
-1. Na začátku sezení `git pull`.
-2. Vyber úkol v Linearu a přepni ho na In Progress. Úkol, který je In Progress na druhém stroji, nech být.
-3. Kód vzniká na větvi úkolu (jméno větve nabízí Linear, například `graslt/nso-581-…`).
-4. Před merge do `main` projde `scripts/check` (vznikne v M0a).
-5. Na konci sezení commit a push. Nic nezůstává jen na jednom stroji.
+1. At the start of a session, `git pull`.
+2. Pick a task in Linear and switch it to In Progress. Leave alone a task that is In Progress on the other machine.
+3. Code is written on the task's branch (Linear suggests the branch name, for example `graslt/nso-581-…`).
+4. Before merging into `main`, `scripts/check` must pass (it will appear in M0a).
+5. At the end of a session, commit and push. Nothing stays on one machine only.

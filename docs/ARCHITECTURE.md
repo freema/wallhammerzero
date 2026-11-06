@@ -1,92 +1,92 @@
-# Architektura enginu
+# Engine architecture
 
-Jedna mapa modulů a pravidel. Shrnuje rozhodnutí D7, D25, D28, D30, D43–D46 a rešerši [Architektura open world enginu](research/Architektura%20open%20world%20enginu.md). Kde se rešerše s tímto souborem rozchází, platí tento soubor. Přesná API (hlavičky) vznikají spolu s kódem.
+One map of modules and rules. It summarizes decisions D7, D25, D28, D30, D43–D46 and the research report [Open-world engine architecture](research/open-world-engine-architecture.md). Where the research report differs from this file, this file wins. The exact APIs (headers) are created together with the code.
 
-Platí od 2026-11-06.
+Valid from 2026-11-06.
 
-## Princip v jedné větě
+## The principle in one sentence
 
-Vrstvy podle Gregoryho, vynucené CMake targety s jednosměrnými závislostmi. Porty a adaptéry (hexagon) jen na hrubých švech: platforma, GPU, assety, fyzika, zvuk a herní kód. Uvnitř vrstev data-oriented design: husté pole, generační handly, žádné generické ECS.
+Layers after Gregory, enforced by CMake targets with one-way dependencies. Ports and adapters (hexagon) only at coarse seams: platform, GPU, assets, physics, audio and game code. Inside the layers, data-oriented design: dense arrays, generational handles, no generic ECS.
 
-## Vrstvy a moduly
+## Layers and modules
 
-Každý modul je jeden CMake target `eng_<modul>` se složkami `include/eng/` (veřejné) a `src/` (soukromé). Modul smí záviset jen na nižších vrstvách. Moduly stejné vrstvy se navzájem nelinkují; data mezi nimi přelévá `eng_runtime`.
+Each module is one CMake target `eng_<module>` with the folders `include/eng/` (public) and `src/` (private). A module may depend only on lower layers. Modules of the same layer do not link to each other. `eng_runtime` moves data between them.
 
-| Vrstva | Moduly | Co dělají | Milník |
+| Layer | Modules | What they do | Milestone |
 |---|---|---|---|
-| **0 Základ** | `eng_base` | typy, assert, makra handlů, inline vektorová matematika, atomics | M0a |
-| **1 Platforma** (šev) | `eng_platform` | jediné místo s SDL3: okno, vstup, čas, soubory a AsyncIO, vlákna, načítání DLL | M0a |
-| **2 Jádro** | `eng_core` | arény, tagovaný heap, joby, kontejnery, SPSC fronty | M1a |
-| | `eng_log` | JSONL log, kanály, `ENG_ASSERT`, `ENG_SCOPE`, crash handler | M0c |
-| | `eng_cvar`, `eng_cmd` | nastavení a pojmenované příkazy (konzole, CLI, socket) | M0c |
-| | `eng_types` | registr typů: jméno, verze, pole, serializace, JSON Schema (D43) | M0c, M1a |
-| | `eng_prof` | Tracy, fázové časovače, čítače, `stats.json` | M1b |
-| | `eng_gen_core` | **úroveň A:** `detmath`, RNG, šum, `eng_cell_id`, matematika tvarů světa | M0b |
-| **3 Generátory** | `eng_gen_tex`, `eng_gen_mesh`, `eng_gen_arch`, `eng_gen_world`, `eng_gen_char`, `eng_gen_audio`, `eng_gen_vfx` | **úroveň A:** čisté funkce `(recept, seed) → data`. Jen CPU, žádné GPU ani soubory. | M3, M7–M9 |
-| **4 Zdroje a GPU** (šev) | `eng_asset` | VFS, resource DB, refcountovaný graf, IO fronta, porty `asset_provider` a `gen_provider`, Merkleho cache | M3a |
-| | `eng_gpu` | RHI ze tří přenosných pojmů (D25), backend SDL_GPU a null | M1c |
-| **5 Subsystémy** | `eng_render` | render graph, forward+ s clustery (D27), passy, materiály | M2 |
-| | `eng_world` | buňky, port tvaru světa, archetypy, instance, aktéři, prostorové dotazy, streaming, LOD | M4, M5, M7 |
-| | `eng_sim` | hodiny simulace, `player_cmd`, hromadné entity, globální grafy (silnice) (D44, D46, D47) | M1b, M4, M6 |
-| | `eng_phys` (šev) | port fyziky, adaptér Jolt (C++ jen uvnitř), null | M4b |
-| | `eng_audio` (šev) | mixer nad miniaudio, hlasy, sběrnice | M3d |
-| | `eng_anim` | kostry, klipy, IK, pružiny | M9 |
-| | `eng_ui` | rozvržení Clay, vlastní kreslení, text, tabulky | M4c, M6 |
-| | `eng_vfx` | částice a efekty | M4c |
-| **6 Runtime** | `eng_runtime` | mediátor: pořadí init a shutdown, smyčka snímku, protokol extrakce, `eng_api` pro hru | M0c → M4 |
-| **7 Nástroje** | `eng_tools`, `eng_debugsrv`, `eng_project` | registr nástrojů (D30), ladicí server, projekty | M0c, M1b |
-| **Programy** | `wz`, `wz_studio`, `wzmcp`, `wzctl` | engine, studio (Dear ImGui), MCP, CLI | M0–M2 |
-| **Hra** | `projects/<hra>/game` | herní DLL, vidí jen `eng_api.h` | M4 |
+| **0 Base** | `eng_base` | types, assert, handle macros, inline vector math, atomics | M0a |
+| **1 Platform** (seam) | `eng_platform` | the only place with SDL3: window, input, time, files and AsyncIO, threads, DLL loading | M0a |
+| **2 Core** | `eng_core` | arenas, tagged heap, jobs, containers, SPSC queues | M1a |
+| | `eng_log` | JSONL log, channels, `ENG_ASSERT`, `ENG_SCOPE`, crash handler | M0c |
+| | `eng_cvar`, `eng_cmd` | settings and named commands (console, CLI, socket) | M0c |
+| | `eng_types` | type registry: name, version, fields, serialization, JSON Schema (D43) | M0c, M1a |
+| | `eng_prof` | Tracy, phase timers, counters, `stats.json` | M1b |
+| | `eng_gen_core` | **tier A:** `detmath`, RNG, noise, `eng_cell_id`, world shape math | M0b |
+| **3 Generators** | `eng_gen_tex`, `eng_gen_mesh`, `eng_gen_arch`, `eng_gen_world`, `eng_gen_char`, `eng_gen_audio`, `eng_gen_vfx` | **tier A:** pure functions `(recipe, seed) → data`. CPU only, no GPU or files. | M3, M7–M9 |
+| **4 Resources and GPU** (seam) | `eng_asset` | VFS, resource DB, refcounted graph, IO queue, ports `asset_provider` and `gen_provider`, Merkle cache | M3a |
+| | `eng_gpu` | RHI built from three portable concepts (D25), SDL_GPU backend and null | M1c |
+| **5 Subsystems** | `eng_render` | render graph, forward+ with clusters (D27), passes, materials | M2 |
+| | `eng_world` | cells, world shape port, archetypes, instances, actors, spatial queries, streaming, LOD | M4, M5, M7 |
+| | `eng_sim` | simulation clock, `player_cmd`, mass entities, global graphs (roads) (D44, D46, D47) | M1b, M4, M6 |
+| | `eng_phys` (seam) | physics port, Jolt adapter (C++ only inside), null | M4b |
+| | `eng_audio` (seam) | mixer on top of miniaudio, voices, buses | M3d |
+| | `eng_anim` | skeletons, clips, IK, springs | M9 |
+| | `eng_ui` | Clay layout, own drawing, text, tables | M4c, M6 |
+| | `eng_vfx` | particles and effects | M4c |
+| **6 Runtime** | `eng_runtime` | mediator: init and shutdown order, frame loop, extraction protocol, `eng_api` for the game | M0c → M4 |
+| **7 Tools** | `eng_tools`, `eng_debugsrv`, `eng_project` | tool registry (D30), debug server, projects | M0c, M1b |
+| **Programs** | `wz`, `wz_studio`, `wzmcp`, `wzctl` | engine, studio (Dear ImGui), MCP, CLI | M0–M2 |
+| **Game** | `projects/<game>/game` | game DLL, sees only `eng_api.h` | M4 |
 
-Generátory leží nízko a nevědí nic o GPU ani o souborech. Do světa se dostanou přes port `gen_provider` v `eng_asset`. Buňka tak může přijít z generátoru i z předpečeného souboru ve stejném formátu (D8).
+Generators sit low and know nothing about the GPU or files. They reach the world through the `gen_provider` port in `eng_asset`. A cell can therefore come from a generator or from a pre-baked file in the same format (D8).
 
-## Pravidla, která drží strukturu
+## Rules that hold the structure
 
-1. **Směr závislostí** hlídá CMake a lint v CI. Porušení je chyba buildu.
-2. **Veřejné hlavičky** includují jen `eng/base/types.h` a standardní `<stdint.h>`, `<stdbool.h>`, `<stddef.h>`. Cizí typy se deklarují dopředu.
-3. **SDL3** se linkuje jen do `eng_platform`, `eng_gpu` a programů. **C++** jen v adaptérech (Jolt, Dear ImGui) za čistě céčkovou hlavičkou.
-4. **Handly místo ukazatelů:** 32bitový index a generace. Ukazatel nepřežije snímek, handle se nikdy neukládá do savu (CONVENTIONS, kapitola 4).
-5. **Paměť:** platforma rezervuje arény, moduly dostávají alokátor v `init`. Nikdo nevolá `malloc` přímo.
-6. **Každý systém má vlastní `save` a `load`** přes registr typů. Globální reflexe ani kořenová třída neexistují.
-7. **Úrovně determinismu (D28):** target úrovně A (`eng_gen_*`, logika `eng_sim`) nesmí linkovat target úrovně B (`eng_phys`, `eng_anim`, `eng_audio`).
-8. **Init** je ručně napsané pořadí v `eng_runtime`, shutdown v opačném pořadí.
+1. **Dependency direction** is enforced by CMake and a lint in CI. A violation is a build error.
+2. **Public headers** include only `eng/base/types.h` and the standard `<stdint.h>`, `<stdbool.h>`, `<stddef.h>`. Foreign types are forward-declared.
+3. **SDL3** is linked only into `eng_platform`, `eng_gpu` and the programs. **C++** only in adapters (Jolt, Dear ImGui) behind a pure C header.
+4. **Handles instead of pointers:** a 32-bit index and generation. A pointer does not survive a frame, and a handle is never stored in a save (CONVENTIONS, chapter 4).
+5. **Memory:** the platform reserves arenas, and modules get an allocator in `init`. Nobody calls `malloc` directly.
+6. **Every system has its own `save` and `load`** through the type registry. There is no global reflection and no root class.
+7. **Determinism tiers (D28):** a tier A target (`eng_gen_*`, the logic of `eng_sim`) must not link a tier B target (`eng_phys`, `eng_anim`, `eng_audio`).
+8. **Init** is a hand-written order in `eng_runtime`, and shutdown runs in reverse.
 
-## Tři třídy objektů (D44)
+## Three classes of objects (D44)
 
-| Třída | Počet | Uložení | Příklad |
+| Class | Count | Storage | Example |
 |---|---|---|---|
-| Statické instance | desítky tisíc na buňku | SoA pole po buňkách, archetyp + transformace | budovy, lampy, stromy |
-| Aktéři | tisíce | správci komponent s hustými poli, komponenty registruje hra | auto hráče, NPC, dveře |
-| Hromadné entity | statisíce | husté tabulky, bez fyziky, vlastní 64bitová ID | auta a chodci ve strategii |
+| Static instances | tens of thousands per cell | SoA arrays per cell, archetype + transform | buildings, lamps, trees |
+| Actors | thousands | component managers with dense arrays, components registered by the game | player car, NPCs, doors |
+| Mass entities | hundreds of thousands | dense tables, no physics, own 64-bit IDs | cars and pedestrians in a strategy game |
 
-## Jeden snímek
+## One frame
 
 ```
-platforma: události SDL ──► vstup ──► player_cmd (tick N)
+platform: SDL events ──► input ──► player_cmd (tick N)
                                           │
-simulace (pevný krok, úroveň A):          ▼
-  eng_sim tick ─► herní DLL game_fixed_update ─► eng_phys krok
+simulation (fixed step, tier A):          ▼
+  eng_sim tick ─► game DLL game_fixed_update ─► eng_phys step
                                           │
-extrakce (eng_runtime):                   ▼
-  změny transformací a instancí ─► render world (FrameParams)
+extraction (eng_runtime):                 ▼
+  transform and instance changes ─► render world (FrameParams)
                                           │
 render:                                   ▼
-  culling ─► render graph ─► eng_gpu (SDL_GPU / null) ─► obraz
+  culling ─► render graph ─► eng_gpu (SDL_GPU / null) ─► image
 ```
 
-- **Simulace** běží v pevném kroku a nezávisí na renderu, zvuku ani kameře. Headless běh (`--gpu=null`) je plnohodnotný režim, ne zkratka.
-- **Vstup** do simulace jsou jen příkazy hráče (`player_cmd`). Stejný kanál používá replay, AI agent i budoucí síť.
-- **Vlákna:** hlavní vlákno vlastní okno a odesílání na GPU. Joby (`jobs_run`, `jobs_wait`) dělají generování, streaming a dávky simulace. Zvuk má vlastní vlákno. Plný work-stealing a souběh simulace N+1 s renderem N přijde v M10.
-- **Streaming:** buňky 256 m, šest stavů buňky, tickety podle vzdálenosti a rychlosti, zrušení zastaralé práce epochou. Rodičovský LOD je vidět, dokud nedorazí potomci.
+- **Simulation** runs at a fixed step and does not depend on rendering, audio or the camera. A headless run (`--gpu=null`) is a full mode, not a shortcut.
+- **Input** to the simulation is only player commands (`player_cmd`). Replay, the AI agent and the future network use the same channel.
+- **Threads:** the main thread owns the window and GPU submission. Jobs (`jobs_run`, `jobs_wait`) do generation, streaming and simulation batches. Audio has its own thread. Full work-stealing and running simulation N+1 in parallel with rendering N come in M10.
+- **Streaming:** 256 m cells, six cell states, tickets by distance and speed, cancelling stale work by epoch. The parent LOD stays visible until the children arrive.
 
-## Šev pro hru
+## The seam for the game
 
-Herní DLL (`game.dylib`, `.so`, `.dll`) vidí jedinou hlavičku `eng_api.h`: tabulku funkcí s číslem verze (svět, vstup, zvuk, joby, ladění). Exportuje `game_load`, `game_fixed_update` a `game_unload`. Za vývoje se DLL načítá znovu bez restartu enginu (hot reload), ve vydané hře je linkovaná staticky. Skriptovací jazyk není (D45). Herní data jsou textové tabulky načtené přes registr typů.
+The game DLL (`game.dylib`, `.so`, `.dll`) sees a single header, `eng_api.h`: a function table with a version number (world, input, audio, jobs, debugging). It exports `game_load`, `game_fixed_update` and `game_unload`. During development the DLL is reloaded without restarting the engine (hot reload). In a released game it is linked statically. There is no scripting language (D45). Game data are text tables loaded through the type registry.
 
-## Co se záměrně nedělá
+## What is deliberately not done
 
-- Generické ECS v enginu (hra si ho smí přinést).
-- Fibery (zatím, API jobů je tvarované tak, aby šly doplnit).
-- Plně GPU-driven renderer s bindless (SDL_GPU ho nemá, D5).
-- Port pro každý malý případ užití, DI kontejnery a mapování mezi „doménovým“ a „infrastrukturním“ modelem.
-- Hot reload celého enginu (jen herní DLL a shadery).
+- A generic ECS in the engine (the game may bring its own).
+- Fibers (for now; the jobs API is shaped so they can be added).
+- A fully GPU-driven renderer with bindless (SDL_GPU does not have it, D5).
+- A port for every small use case, DI containers and mapping between a "domain" and an "infrastructure" model.
+- Hot reload of the whole engine (only the game DLL and shaders).
