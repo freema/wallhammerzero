@@ -13,6 +13,7 @@ Stav (2026-11-06): analýza je uzavřená, plán je sepsaný. Kód ještě nevzn
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Rozhodnutí: co, kdy a proč |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Jediný platný plán: milníky M0–M10, kritéria, měření |
 | [docs/CONVENTIONS.md](docs/CONVENTIONS.md) | Konvence: osy, jednotky, ID buněk, jména, struktura repa |
+| [docs/SETUP.md](docs/SETUP.md) | Příprava vývojového stroje (Mac, Windows) a práce na dvou strojích |
 | [docs/OVERENI.md](docs/OVERENI.md) | Ověření plánu proti zdrojům na webu a otázky pro vlastníka |
 | [docs/NAVRHY-ROZHODNUTI.md](docs/NAVRHY-ROZHODNUTI.md) | Záznam 48 návrhů s možnostmi a důvody (potvrzeno jako D24–D71) |
 | [docs/REVIZE.md](docs/REVIZE.md) | Revize dokumentace z 2026-11-06: slabá místa, která plán řeší |

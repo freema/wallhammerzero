@@ -6,6 +6,7 @@ Wallhammer Zero je vlastní 3D open-world engine v C17, ve kterém veškerou gra
 3. [docs/DECISIONS.md](docs/DECISIONS.md): co je rozhodnuté a proč.
 4. [docs/ROADMAP.md](docs/ROADMAP.md): jediný platný plán, milníky M0–M10.
 5. [docs/CONVENTIONS.md](docs/CONVENTIONS.md): osy, jednotky, ID, jména.
+6. [docs/SETUP.md](docs/SETUP.md): příprava stroje (Mac, Windows).
 
 ## Zapisuj všechno, průběžně
 Vlastník chce mít zapsané všechno, co chceme dělat, co jsme rozhodli a co už je vyřešené.
@@ -28,4 +29,5 @@ Pracuje se na MacBooku M4 Pro i na Windows PC s grafikou NVIDIA. Práce se sdíl
 - Na začátku sezení `git pull`, na konci commit a push.
 - Úkol v Linearu přepni na In Progress dřív, než na něm začneš. Úkol, který je In Progress, nedělej.
 - Paměť Claude Code je jen na jednom stroji. Co má platit všude, zapiš sem nebo do `docs/`.
+- Zamítnuté věci se znovu nenavrhují: Xcode (D35), engine jen pro jednu hru (D19), Three.js nebo JS v enginu (D21).
 - Vlastník se rozčiluje, když se opakovaně navrhuje věc, kterou už zamítl. Před návrhem zkontroluj `docs/DECISIONS.md`.
