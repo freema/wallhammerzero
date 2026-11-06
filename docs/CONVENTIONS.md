@@ -152,7 +152,7 @@ wallhammerzero/
 └─ runs/                výstupy běhů (není v gitu)
 ```
 
-- Do systému se nic neinstaluje (D6, D35). Xcode se nepoužívá.
+- Do systému se nic neinstaluje (D6, D35). Xcode se nepoužívá. Jediná výjimka je Visual Studio Build Tools na Windows vývojovém stroji (D75).
 - Vrstvy modulů hlídá CMake a lint závislostí. Moduly stejné vrstvy se navzájem nelinkují.
 - Engine nesmí obsahovat nic, co patří jedné hře. Pravidla hry jsou v `projects/<hra>/`.
 
@@ -179,10 +179,20 @@ wallhammerzero/
 - Zvuky z ElevenLabs se nesmí šířit jako samostatné soubory. Repo proto zůstává privátní a hra je dodává zabalené v archivu.
 - Hra má soubor s licencemi knihoven třetích stran a obrazovku s nimi. FreeType se bere pod licencí FTL. Tracy se do vydané verze nepřekládá.
 
-## 12. Git a CI (D33)
+## 12. Git, CI a dva vývojové stroje (D33, D75)
 
 - Hlavní větev je `main`.
-- Před merge do `main` projde na Macu `scripts/check`. Linux a Windows hlídá hostované CI.
+- Před merge do `main` projde lokálně `scripts/check` (na Macu i na Windows stroji). Linux a Windows navíc hlídá hostované CI.
+- **Dva vývojové stroje** (MacBook a Windows PC) sdílejí práci jen přes GitHub a Linear:
+  - Před začátkem práce `git pull`. Na konci sezení se všechno commitne a pushne, nic nezůstává jen lokálně.
+  - Úkol se v Linearu přepne na In Progress dřív, než se na něm začne. Jeden úkol nedělají dva stroje současně.
+  - Kód vzniká na větvi úkolu (jméno větve z Linearu, například `graslt/nso-581-…`). Dokumentace smí jít přímo do `main` (D70).
+  - Když běží Claude Code na obou strojích současně, každý bere jiný úkol, nejlépe z jiné fáze nebo modulu.
+  - Paměť Claude Code je uložená jen na jednom stroji. Co má platit všude, patří do `CLAUDE.md` nebo do `docs/`.
+- **Soubory pro oba systémy:**
+  - Konce řádků řídí `.gitattributes` (v repu LF).
+  - Jména souborů se neliší jen velikostí písmen. Žádné symlinky. Cesty kratší než 200 znaků.
+  - Skripty jsou CMake skripty (`cmake -P`), ne bash ani PowerShell.
 - Hostované runnery se zadávají s číslem verze (`macos-15`), ne jako `latest`.
 - Golden soubory se mění jen nástrojem `golden_accept`, který vyžaduje potvrzení vlastníka.
 - Položky v `milestones/*.json` přepíná jen úspěšný příkaz, položky s bránou jen vlastník.

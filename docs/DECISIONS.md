@@ -2,7 +2,7 @@
 
 Co jsme se rozhodli, kdy a proč. Nové rozhodnutí se přidává na konec s datem; když se něco změní, staré se nemaže, ale označí jako nahrazené a odkáže na nové.
 
-Stav: **D1–D74 zapsané.** D24–D71 jsou potvrzené návrhy z [NAVRHY-ROZHODNUTI.md](NAVRHY-ROZHODNUTI.md) (číslo rozhodnutí = číslo návrhu + 23). Jediná změna proti návrhům: D35 (Xcode se neinstaluje). Plán je v [ROADMAP.md](ROADMAP.md), konvence v [CONVENTIONS.md](CONVENTIONS.md).
+Stav: **D1–D75 zapsané.** D24–D71 jsou potvrzené návrhy z [NAVRHY-ROZHODNUTI.md](NAVRHY-ROZHODNUTI.md) (číslo rozhodnutí = číslo návrhu + 23). Jediná změna proti návrhům: D35 (Xcode se neinstaluje). Plán je v [ROADMAP.md](ROADMAP.md), konvence v [CONVENTIONS.md](CONVENTIONS.md).
 
 ---
 
@@ -103,6 +103,8 @@ Důsledky:
 - D15 (obecný engine pro město i planetu) zůstává beze změny.
 - Doporučení „engine pro jednu hru“ se znovu neotevírá.
 - Referenční scény (městský blok, zárodek planety) v návrzích milníků slouží jen jako testovací scény enginu, ne jako zúžení na jednu hru.
+
+> Zpřesněno v D75: Windows stroj je od M0 druhý vývojový stroj, ne jen testovací.
 
 ## D20 — Testování platforem: Mac primárně, Windows později zvlášť, bez upgradu macOS (2026-11-05)
 - **Vývojový Mac:** engine se vyvíjí a ladí na MacBooku M4 Pro (Metal). Pro vývoj ani jako primární platforma to podle analýzy problém není.
@@ -336,3 +338,17 @@ Vlastník požádal o ověření plánu proti článkům a dokumentaci na webu. 
 - **M6:** doplněno uspávání entit, služba hledání cest, silniční síť jako globální model a přísnější testovací scéna.
 
 Tři otázky čekají na vlastníka: hostovaný macOS v CI (mění D33), podmínky a efekty v datech (zpřesňuje D45) a posílání referenčních screenshotů AI službám.
+
+## D75 — Druhý vývojový stroj: Windows PC s NVIDIA (2026-11-06)
+Vlastník bude pracovat i na Windows PC s grafikou NVIDIA. Práce se mezi stroji sdílí přes GitHub repo `freema/wallhammerzero`, Linear a dokumentaci v repu. Zpřesňuje D20 a D33.
+- **Role strojů:**
+  - **MacBook M4 Pro:** hlavní vývoj, výkonnostní rozpočty, Metal a obrazové goldeny pro Metal.
+  - **Windows PC s NVIDIA:** druhý vývojový stroj od M0. Hlavní stroj na profilování GPU (Nsight Graphics, RenderDoc, PIX), protože na Macu bez Xcode čas GPU po passech měřit nejde (D35). Dále D3D12 a Vulkan na skutečné grafice, determinismus na Windows a výkon, jaký uvidí běžný hráč.
+  - **Hostované CI:** Linux a Windows při každém pushi.
+- **Překladač na Windows:** clang-cl (D26) s Visual Studio Build Tools a Windows SDK. Je to jediná systémová instalace a jen na Windows stroji. Ostatní nástroje se stahují do `.tools/` jako na Macu. Na Macu se nic nemění, Xcode se dál nepoužívá (D35).
+- **Přenosné skripty:** bootstrap a `scripts/check` jsou CMake skripty (`cmake -P`), ne bash. Musí běžet na obou strojích.
+- **Dřívější ověření Windows:** D3D12 na skutečné grafice se poprvé ověří v M1c spolu s měřením ceny drawu, ne až na konci M4. Strop drawů se změří na Macu i na NVIDIA.
+- **Spolupráce dvou strojů:** pravidla jsou v [CONVENTIONS.md](CONVENTIONS.md), kapitola 12.
+- **Doplnit:** model grafické karty, procesor a paměť Windows PC.
+
+Rozdělení rolí a volbu Build Tools navrhl Claude. Vlastník je může změnit.

@@ -64,11 +64,12 @@ Pořadí M8 a M9 se přehodnotí po bráně M4 (D51).
 - CMake targety po vrstvách: `eng_base`, `eng_platform`, `eng_gpu`. Lint závislostí mezi vrstvami.
 - SDL3 jako submodul. `wz` otevře okno a vyčistí ho barvou.
 - Clang na 3 OS, `-Werror`, ASan, UBSan a TSan (D24, D26).
+- Windows vývojový stroj (D75): Visual Studio Build Tools, clang-cl, bootstrap a `scripts/check` jako CMake skripty, `.gitattributes`.
 - Testy: utest a štítky CTest.
 - CI: Linux a Windows hostovaně při každém pushi, macOS lokálně skriptem `scripts/check` (D33). Hostovaný macOS čeká na rozhodnutí vlastníka, viz [OVERENI.md](OVERENI.md). Pokud poběží, tak na `macos-15`, ne na `macos-latest`.
 - Vlákna a atomics: vlákna z SDL3, ne `<threads.h>`. Atomics přes `<stdatomic.h>` clangu.
 - Vendorované knihovny pro zvuk: miniaudio a libebur128.
-- Hotovo, když: build a unit testy jsou zelené na 3 OS a `wz` na Macu otevře okno.
+- Hotovo, když: build a unit testy jsou zelené na 3 OS a `wz` otevře okno na Macu i na Windows stroji.
 
 **M0b Determinismus**
 - `eng_gen_core`: `detmath`, RNG a šum.
@@ -117,7 +118,7 @@ Pořadí M8 a M9 se přehodnotí po bráně M4 (D51).
 - Hot reload shaderů.
 - Validace Metalu (`MTL_DEBUG_LAYER`, `MTL_SHADER_VALIDATION`) zapnutá při každém vývojovém běhu.
 - Trvalá měřicí scéna ceny drawu.
-- Měření 2, 4, 11 a 26.
+- Měření 2, 4, 11 a 26. Měření 2 (cena drawu) běží na Macu (Metal) i na Windows stroji (D3D12 na NVIDIA, D75). Na Windows se čas GPU po passech ověří v Nsight Graphics.
 - Hotovo, když: výsledky jsou uložené v repu jako baseline a v sekci „Strop drawů“ níže je zapsaný strop a spouštěč nativního Metal backendu.
 
 **Brána vlastníka:** žádná, je to technický milník.
@@ -401,8 +402,8 @@ Předpoklady, které zprávy označily jako neověřené. Každý dostane úkol 
 - **Hostované CI (Linux, Windows):** od M0 při každém pushi build, unit testy, null GPU, replay, golden hashe a kompilace shaderů do všech formátů. GitHub účtuje v dolarech: plán Free má 12 USD měsíčně, což podle odhadu stačí asi na 150 pushů s Linuxem a Windows.
 - **Lavapipe v Linux CI:** od M2 obrazové goldeny Vulkanu.
 - **MacBook M4 Pro:** skript `scripts/check` před každým merge. Metal goldeny, časové rozpočty a rendery pro review.
-- **Testovací Linux stroj:** reálný Vulkan na konci M2, M7 a M10.
-- **Testovací Windows stroj:** D3D12 poprvé na konci M4, pak na konci každého dalšího milníku.
+- **Linux na skutečné grafice:** na konci M2, M7 a M10, případně jako druhý systém na Windows PC.
+- **Windows PC s NVIDIA (D75):** druhý vývojový stroj od M0. `scripts/check` před každým merge, D3D12 a Vulkan na skutečné grafice od M1c, hlavní stroj na profilování GPU (Nsight Graphics, RenderDoc, PIX).
 
 ## Strop drawů a spouštěč nativního Metal backendu
 

@@ -21,4 +21,11 @@ Analýza je uzavřená (D36). Další je **implementace podle [docs/ROADMAP.md](
 Dokumentace je česky. Kód, identifikátory a komentáře v kódu jsou anglicky.
 
 ## Nástroje
-Do systému se nic neinstaluje (D6). **Xcode se nepoužívá a nenavrhuje (D35).** Nástroje se stahují do `.tools/`.
+Do systému se nic neinstaluje (D6). **Xcode se nepoužívá a nenavrhuje (D35).** Nástroje se stahují do `.tools/`. Jediná výjimka je Visual Studio Build Tools na Windows PC (D75).
+
+## Dva vývojové stroje (D75)
+Pracuje se na MacBooku M4 Pro i na Windows PC s grafikou NVIDIA. Práce se sdílí jen přes GitHub (`freema/wallhammerzero`) a Linear, pravidla jsou v [docs/CONVENTIONS.md](docs/CONVENTIONS.md), kapitola 12.
+- Na začátku sezení `git pull`, na konci commit a push.
+- Úkol v Linearu přepni na In Progress dřív, než na něm začneš. Úkol, který je In Progress, nedělej.
+- Paměť Claude Code je jen na jednom stroji. Co má platit všude, zapiš sem nebo do `docs/`.
+- Vlastník se rozčiluje, když se opakovaně navrhuje věc, kterou už zamítl. Před návrhem zkontroluj `docs/DECISIONS.md`.

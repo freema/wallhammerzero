@@ -100,6 +100,7 @@ Kde jsme, co je vyřešené, co je otevřené a co přijde dál. Aktualizuje se 
 | Vestavěné studio, MCP server v enginu, UI, systém projektů | ✅ princip i návrh (zpráva 5) | D18 |
 | D15 platí, varování „engine pro jednu hru“ zamítnuto | ✅ | D19 |
 | Mac primárně, testovací stroje Linux a Windows, bez upgradu macOS | ✅ | D20 |
+| Druhý vývojový stroj: Windows PC s NVIDIA, sdílení přes GitHub | ✅ | D75 |
 | Žádný Three.js ani JS v enginu, z referencí jen nápady | ✅ | D21 |
 | Implementační plán v Linearu, postupně | ✅ | D22 |
 | Engine podporuje i strategie (Cities: Skylines, Stellaris) | ✅ | D23, D44, D46–D50 |
@@ -144,6 +145,7 @@ Tři Three.js repa a jedna technická analýza, zapsané 2026-09-24. Hloubková 
 - Strategie (D23) přidávají dva velké subsystémy, se kterými plán dosud nepočítal: hromadnou simulaci entit a datově bohaté UI.
 
 ## Další krok
+0. Na Windows PC: naklonovat repo, nainstalovat Visual Studio Build Tools a Claude Code, doplnit model grafiky do D75 (úkol NSO-620 v Linearu).
 1. Vlastník odpoví na tři otázky výše.
 2. Na pokyn vlastníka začne M0a (kostra a CI). Úkoly jsou v Linearu.
 3. Souběžně čtyři rešerše mezer (D71). Světlo a obloha musí být hotové před M2.
