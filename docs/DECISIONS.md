@@ -2,7 +2,7 @@
 
 Co jsme se rozhodli, kdy a proč. Nové rozhodnutí se přidává na konec s datem; když se něco změní, staré se nemaže, ale označí jako nahrazené a odkáže na nové.
 
-Stav: **D1–D75 zapsané.** D24–D71 jsou potvrzené návrhy z [NAVRHY-ROZHODNUTI.md](NAVRHY-ROZHODNUTI.md) (číslo rozhodnutí = číslo návrhu + 23). Jediná změna proti návrhům: D35 (Xcode se neinstaluje). Plán je v [ROADMAP.md](ROADMAP.md), konvence v [CONVENTIONS.md](CONVENTIONS.md).
+Stav: **D1–D76 zapsané.** D24–D71 jsou potvrzené návrhy z [NAVRHY-ROZHODNUTI.md](NAVRHY-ROZHODNUTI.md) (číslo rozhodnutí = číslo návrhu + 23). Jediná změna proti návrhům: D35 (Xcode se neinstaluje). Plán je v [ROADMAP.md](ROADMAP.md), konvence v [CONVENTIONS.md](CONVENTIONS.md).
 
 ---
 
@@ -174,6 +174,8 @@ Pravotočivý systém, X je východ, Y sever, Z nahoru, jednotkou je metr. Lint 
 Engine je v `engine/`, hry v `projects/<hra>/`. CI testuje všechny projekty, aby engine zůstal obecný (D15, D23).
 
 ## D33 — Hosting a CI (2026-11-06)
+> Zpřesněno v D76: repo je veřejné a hostovaný macOS běží při každém pushi.
+
 Privátní repo `freema/wallhammerzero`, větev `main`. Linux a Windows běží v hostovaném CI při každém pushi. Testy na macOS běží lokálně jedním skriptem před merge, hostovaný macOS jen jako noční běh.
 
 ## D34 — Review ve sdružených branách (2026-11-06)
@@ -303,7 +305,7 @@ Déšť, mlha a blesky přicházejí s městem. Sníh, písek a vítr s planetou
 Projektily (střely) patří do herní DLL. Engine dává fyzikální dotazy a efekty.
 
 ## D70 — Dokumentace se commituje hned (2026-11-06)
-Do privátního repa `freema/wallhammerzero`, větev `main`.
+Do repa `freema/wallhammerzero`, větev `main`. Od D76 je repo veřejné.
 
 ## D71 — Čtyři rešerše souběžně s M0 a M1 (2026-11-06)
 1. Doprava, chodci a hromadná simulace entit.
@@ -337,7 +339,7 @@ Vlastník požádal o ověření plánu proti článkům a dokumentaci na webu. 
 - **Shadery:** kompilátor shaderů je první úkol fáze M1c. DXIL smí vznikat v CI.
 - **M6:** doplněno uspávání entit, služba hledání cest, silniční síť jako globální model a přísnější testovací scéna.
 
-Tři otázky čekají na vlastníka: hostovaný macOS v CI (mění D33), podmínky a efekty v datech (zpřesňuje D45) a posílání referenčních screenshotů AI službám.
+Tři otázky čekají na vlastníka: hostovaný macOS v CI (mění D33, vyřešeno v D76), podmínky a efekty v datech (zpřesňuje D45) a posílání referenčních screenshotů AI službám.
 
 ## D75 — Druhý vývojový stroj: Windows PC s NVIDIA (2026-11-06)
 Vlastník bude pracovat i na Windows PC s grafikou NVIDIA. Práce se mezi stroji sdílí přes GitHub repo `freema/wallhammerzero`, Linear a dokumentaci v repu. Zpřesňuje D20 a D33.
@@ -352,3 +354,17 @@ Vlastník bude pracovat i na Windows PC s grafikou NVIDIA. Práce se mezi stroji
 - **Doplnit:** model grafické karty, procesor a paměť Windows PC.
 
 Rozdělení rolí a volbu Build Tools navrhl Claude. Vlastník je může změnit.
+
+## D76 — Repo je veřejné (2026-11-06)
+Vlastník chce mít `freema/wallhammerzero` jako veřejné repo. Přepnuto 2026-11-06 včetně větve `implementation` se starým projektem. Před přepnutím Claude prošel celou historii: žádné klíče ani cizí chráněný obsah.
+- **Zabezpečení na GitHubu** (u veřejného repa zdarma):
+  - Hlídání klíčů (secret scanning) a blokace pushe s klíčem (push protection).
+  - Upozornění Dependabotu na zranitelné závislosti.
+  - Pravidlo `protect-main`: větev `main` nejde smazat ani přepsat force pushem. Přímý push zůstává povolený kvůli dokumentaci (D70).
+  - GitHub Actions smí používat jen akce od GitHubu a ověřených vydavatelů, připnuté na commit.
+  - Wiki a Projects jsou vypnuté (plán je v Linearu), větve se po merge mažou samy.
+- **CI zdarma:** standardní hostované runnery jsou pro veřejná repa bez poplatku. Otázka 1 z [OVERENI.md](OVERENI.md) tím odpadá: hostovaný macOS (`macos-15`) běží při každém pushi vedle Linuxu a Windows. Nemá použitelné GPU, takže dělá build, unit testy, null GPU a golden hashe. Metal dál hlídá `scripts/check` na MacBooku.
+- **AI zvuky z ElevenLabs** se nesmí šířit jako samostatné soubory, proto do veřejného repa nepatří. Budou v odděleném privátním úložišti (rozhodne se před M3d). Pravidlo je v CONVENTIONS, kapitola 11.
+- **Licence:** zatím žádná, takže platí „všechna práva vyhrazena“. Kód je vidět, ale nikdo ho nesmí použít. Volba licence je otevřená otázka.
+- **E-mail v commitech:** autor commitů je vidět s e-mailem. Pro další commity lze přepnout na adresu `…@users.noreply.github.com`.
+- **gitleaks** v `.tools/` jako kontrola před commitem a v CI (úkoly M0a).

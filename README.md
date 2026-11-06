@@ -20,3 +20,7 @@ Stav (2026-11-06): analýza je uzavřená, plán je sepsaný. Kód ještě nevzn
 | [docs/research/](docs/research/) | Rešeršní zprávy a poznámky, ze kterých vznikly |
 
 Práce se sleduje v Linearu: projekt [Wallhammer Zero](https://linear.app/nsoft/project/wallhammer-zero-3576c061ad78).
+
+## Licence
+
+Zatím žádná: všechna práva vyhrazena. Kód je veřejně vidět, ale bez svolení autora se nesmí používat ani šířit (D76).

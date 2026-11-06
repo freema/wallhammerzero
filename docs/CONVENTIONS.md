@@ -176,7 +176,9 @@ wallhammerzero/
 - Provenance ani log klíč nikdy neobsahují.
 - Referenční záběry z cizích her leží v `reference/`, které je v `.gitignore`. Do repa se necommitují.
 - Referenční záběry se nepoužijí ve hře, v marketingu ani ve veřejném srovnání.
-- Zvuky z ElevenLabs se nesmí šířit jako samostatné soubory. Repo proto zůstává privátní a hra je dodává zabalené v archivu.
+- **Repo je veřejné (D76).** Nic, co se nesmí zveřejnit, do něj nepatří.
+- Zvuky z ElevenLabs se nesmí šířit jako samostatné soubory. Do veřejného repa se proto necommitují: leží v odděleném privátním úložišti (rozhodne se před M3d) a hra je dodává zabalené v archivu. V repu zůstává jen soubor s provenancí a hash zvuku.
+- gitleaks hlídá klíče před commitem i v CI, GitHub navíc blokuje push s rozpoznaným klíčem.
 - Hra má soubor s licencemi knihoven třetích stran a obrazovku s nimi. FreeType se bere pod licencí FTL. Tracy se do vydané verze nepřekládá.
 
 ## 12. Git, CI a dva vývojové stroje (D33, D75)
@@ -193,6 +195,7 @@ wallhammerzero/
   - Konce řádků řídí `.gitattributes` (v repu LF).
   - Jména souborů se neliší jen velikostí písmen. Žádné symlinky. Cesty kratší než 200 znaků.
   - Skripty jsou CMake skripty (`cmake -P`), ne bash ani PowerShell.
-- Hostované runnery se zadávají s číslem verze (`macos-15`), ne jako `latest`.
+- Hostované CI běží na Linuxu, Windows a macOS (D76). Runnery se zadávají s číslem verze (`macos-15`), ne jako `latest`.
+- Větev `main` nejde smazat ani přepsat force pushem (pravidlo `protect-main`). Akce v CI jen od GitHubu a ověřených vydavatelů, připnuté na commit.
 - Golden soubory se mění jen nástrojem `golden_accept`, který vyžaduje potvrzení vlastníka.
 - Položky v `milestones/*.json` přepíná jen úspěšný příkaz, položky s bránou jen vlastník.

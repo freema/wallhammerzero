@@ -12,7 +12,7 @@ Nic se nestavělo ani neměřilo. „Potvrzeno“ znamená shodu s dokumentací 
 
 | # | Otázka | Doporučení | Proč |
 |---|---|---|---|
-| 1 | **macOS v hostovaném CI.** Noční běh na macOS by stál asi 18,60 USD měsíčně. Celý volný objem GitHubu je 12 USD. Platit, nebo ho vynechat? | **Vynechat.** Mac se testuje lokálně skriptem před každým merge, hostovaně běží jen Linux a Windows. | MacBook je vývojový stroj, takže testy na něm běží tak jako tak. Mění to D33. |
+| 1 | **macOS v hostovaném CI.** Noční běh na macOS by stál asi 18,60 USD měsíčně. Celý volný objem GitHubu je 12 USD. Platit, nebo ho vynechat? | ~~Vynechat.~~ **Vyřešeno v D76:** repo je veřejné, hostované runnery jsou zdarma a macOS běží při každém pushi. | Mění to D33. |
 | 2 | **Podmínky a efekty zapsané v datech.** Hra typu Stellaris má tisíce událostí typu „když platí X, stane se Y“. Smí je herní data skládat z hotových dílů, které jsou naprogramované v C? | **Ano.** Není to skriptovací jazyk, logika zůstává v C. Engine z toho umí vyrobit tooltip a událost bezpečně uložit. | Bez toho by se každá událost psala ručně v C. Zpřesňuje to D45. |
 | 3 | **Screenshoty GTA III a WoW a AI služby.** Smí se referenční záběry posílat AI modelům k porovnání? | **Neposílat jiným službám.** Zůstanou lokálně mimo repo, vedle renderu je posuzuješ ty. Druhý hodnotitel od jiného dodavatele dostane jen naše rendery. | Je to cizí chráněný obsah a poskytovatelé AI si berou práva ke vstupům. |
 
@@ -58,7 +58,7 @@ Nic se nestavělo ani neměřilo. „Potvrzeno“ znamená shodu s dokumentací 
 | 8 | **Na hru typu Stellaris nestačí tabulky dat.** Chybí podmínky a efekty, fronta událostí a modifikátory. | Otázka 2 výše. Zbytek prověří rešerše UI a datově řízeného obsahu (D71). |
 | 9 | **Strategie potřebuje víc než „přegenerovat buňku“.** Silniční síť je globální model, nejtěžší jsou křižovatky. Chybělo uspávání entit, služba hledání cest a pravidlo pro paralelní tiky. | Doplněno do M6 včetně přísnější testovací scény. |
 | 10 | **Cities: Skylines II potopilo kreslení, ne simulace.** | Scéna C hlídá i strop drawů při pohledu na celou mapu. |
-| 11 | **Zvuk z ElevenLabs nejde vygenerovat znovu stejně** (API nemá seed) a model v2 končí 1. 3. 2027. Zvuky se nesmí šířit jako samostatné soubory. | Uložený soubor je jediný zdroj, generuje se modelem v3, repo zůstává privátní (CONVENTIONS). |
+| 11 | **Zvuk z ElevenLabs nejde vygenerovat znovu stejně** (API nemá seed) a model v2 končí 1. 3. 2027. Zvuky se nesmí šířit jako samostatné soubory. | Uložený soubor je jediný zdroj, generuje se modelem v3, AI zvuky leží mimo veřejné repo (CONVENTIONS, D76). |
 | 12 | **GitHub účtuje v dolarech, ne v násobcích minut.** `macos-latest` už znamená macOS 26. | Otázka 1 výše. V CI se píše `macos-15`. |
 | 13 | **Autorské právo chrání jen lidský podíl,** ne čistý výstup AI. | Provenance zapisuje i lidský podíl: výběr a ruční úpravy. |
 

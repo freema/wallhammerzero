@@ -66,7 +66,8 @@ Pořadí M8 a M9 se přehodnotí po bráně M4 (D51).
 - Clang na 3 OS, `-Werror`, ASan, UBSan a TSan (D24, D26).
 - Windows vývojový stroj (D75): Visual Studio Build Tools, clang-cl, bootstrap a `scripts/check` jako CMake skripty, `.gitattributes`.
 - Testy: utest a štítky CTest.
-- CI: Linux a Windows hostovaně při každém pushi, macOS lokálně skriptem `scripts/check` (D33). Hostovaný macOS čeká na rozhodnutí vlastníka, viz [OVERENI.md](OVERENI.md). Pokud poběží, tak na `macos-15`, ne na `macos-latest`.
+- CI: Linux, Windows a macOS (`macos-15`) hostovaně při každém pushi, zdarma, protože repo je veřejné (D76). Metal hlídá lokálně `scripts/check` (D33).
+- gitleaks v `.tools/` jako kontrola před commitem a v CI (D76).
 - Vlákna a atomics: vlákna z SDL3, ne `<threads.h>`. Atomics přes `<stdatomic.h>` clangu.
 - Vendorované knihovny pro zvuk: miniaudio a libebur128.
 - Hotovo, když: build a unit testy jsou zelené na 3 OS a `wz` otevře okno na Macu i na Windows stroji.
@@ -399,7 +400,7 @@ Předpoklady, které zprávy označily jako neověřené. Každý dostane úkol 
 
 ## Ověřování platforem
 
-- **Hostované CI (Linux, Windows):** od M0 při každém pushi build, unit testy, null GPU, replay, golden hashe a kompilace shaderů do všech formátů. GitHub účtuje v dolarech: plán Free má 12 USD měsíčně, což podle odhadu stačí asi na 150 pushů s Linuxem a Windows.
+- **Hostované CI (Linux, Windows, macOS):** od M0 při každém pushi build, unit testy, null GPU, replay, golden hashe a kompilace shaderů do všech formátů. Pro veřejné repo zdarma (D76).
 - **Lavapipe v Linux CI:** od M2 obrazové goldeny Vulkanu.
 - **MacBook M4 Pro:** skript `scripts/check` před každým merge. Metal goldeny, časové rozpočty a rendery pro review.
 - **Linux na skutečné grafice:** na konci M2, M7 a M10, případně jako druhý systém na Windows PC.

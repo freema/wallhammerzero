@@ -1,6 +1,6 @@
 # Příprava vývojového stroje
 
-Jak rozběhnout práci na novém stroji. Práce se mezi stroji sdílí jen přes GitHub repo [`freema/wallhammerzero`](https://github.com/freema/wallhammerzero) (privátní) a Linear (D75). Pravidla spolupráce jsou v [CONVENTIONS.md](CONVENTIONS.md), kapitola 12.
+Jak rozběhnout práci na novém stroji. Práce se mezi stroji sdílí jen přes GitHub repo [`freema/wallhammerzero`](https://github.com/freema/wallhammerzero) (veřejné, D76) a Linear (D75). Pravidla spolupráce jsou v [CONVENTIONS.md](CONVENTIONS.md), kapitola 12.
 
 Build enginu zatím neexistuje. Vznikne v M0a (NSO-581 až NSO-586). Do té doby stačí na stroji Git, Claude Code a klon repa. Kroky k buildu se sem doplní, jakmile bude hotová kostra.
 

@@ -101,6 +101,7 @@ Kde jsme, co je vyřešené, co je otevřené a co přijde dál. Aktualizuje se 
 | D15 platí, varování „engine pro jednu hru“ zamítnuto | ✅ | D19 |
 | Mac primárně, testovací stroje Linux a Windows, bez upgradu macOS | ✅ | D20 |
 | Druhý vývojový stroj: Windows PC s NVIDIA, sdílení přes GitHub | ✅ | D75 |
+| Veřejné repo se zabezpečením, CI na 3 OS zdarma | ✅ | D76 |
 | Žádný Three.js ani JS v enginu, z referencí jen nápady | ✅ | D21 |
 | Implementační plán v Linearu, postupně | ✅ | D22 |
 | Engine podporuje i strategie (Cities: Skylines, Stellaris) | ✅ | D23, D44, D46–D50 |
@@ -117,7 +118,8 @@ Kde jsme, co je vyřešené, co je otevřené a co přijde dál. Aktualizuje se 
 
 ## Otevřené otázky
 Tři otázky pro vlastníka z ověření plánu, podrobně v [OVERENI.md](OVERENI.md). Žádná neblokuje M0.
-1. Hostovaný macOS v CI: platit asi 18,60 USD měsíčně, nebo vynechat? Doporučení: vynechat.
+1. ~~Hostovaný macOS v CI~~: vyřešeno v D76, repo je veřejné a CI je zdarma.
+4. Licence veřejného repa (D76). Zatím žádná, tedy „všechna práva vyhrazena“.
 2. Smí herní data skládat podmínky a efekty z dílů naprogramovaných v C? Doporučení: ano.
 3. Smí se referenční screenshoty GTA III a WoW posílat AI službám? Doporučení: ne, jen lokálně.
 
