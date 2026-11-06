@@ -76,6 +76,7 @@ Kde jsme, co je vyřešené, co je otevřené a co přijde dál. Aktualizuje se 
 - [x] **[CONVENTIONS.md](CONVENTIONS.md):** osy a jednotky, pozice, ID buňky, stabilní ID, determinismus, jména, programy, struktura repa, tajné klíče.
 - [x] **Projekt v Linearu (D22):** [Wallhammer Zero](https://linear.app/nsoft/project/wallhammer-zero-3576c061ad78), tým Nsoft, milníky M0–M10, úkoly pro M0 a M1.
 - [x] **Ověření plánu proti zdrojům na webu (2026-11-06):** poznámky v [research/notes/Ověření plánu/](research/notes/Ověření%20plánu/), závěry v [OVERENI.md](OVERENI.md).
+  Závěr: žádné rozhodnutí nepadlo. Opraveno zdůvodnění determinismu fyziky (Jolt shodu mezi OS umí), rozsah herního UI a strategie v M6. Kompilátor shaderů je první technické riziko. Opravy jsou zapsané jako D74.
 
 ## Vyřešeno (krátce; podrobnosti v DECISIONS.md)
 | Téma | Stav | Rozhodnutí |
@@ -114,7 +115,12 @@ Kde jsme, co je vyřešené, co je otevřené a co přijde dál. Aktualizuje se 
 | Zvuk a efekty | ✅ | D58–D68 |
 
 ## Otevřené otázky
-Rozhodnutí z analýzy jsou uzavřená. Otevřené zůstává jen to, co rozhodne měření nebo brána milníku, a otázky z ověření plánu v [OVERENI.md](OVERENI.md).
+Tři otázky pro vlastníka z ověření plánu, podrobně v [OVERENI.md](OVERENI.md). Žádná neblokuje M0.
+1. Hostovaný macOS v CI: platit asi 18,60 USD měsíčně, nebo vynechat? Doporučení: vynechat.
+2. Smí herní data skládat podmínky a efekty z dílů naprogramovaných v C? Doporučení: ano.
+3. Smí se referenční screenshoty GTA III a WoW posílat AI službám? Doporučení: ne, jen lokálně.
+
+Ostatní rozhodne měření nebo brána milníku.
 
 ## Reference z Vellumu (`projects/grafika-reference/`)
 Tři Three.js repa a jedna technická analýza, zapsané 2026-09-24. Hloubková analýza kódu je hotová, viz [research/notes/Reference repa/](research/notes/Reference%20repa/).
@@ -132,9 +138,12 @@ Tři Three.js repa a jedna technická analýza, zapsané 2026-09-24. Hloubková 
 - 14" šasi přiškrcuje výkon při současné zátěži CPU a GPU.
 - Rešeršní zprávy používají starší číslování milníků. Platí jen `ROADMAP.md` a jeho převodní tabulka.
 - Bez Xcode (D35) nejde na Macu rozpadnout čas GPU po passech. Rozpočty se vedou v počtech.
+- Kompilátor shaderů: SDL_shadercross nemá vydání a DXC pro macOS se musí stavět ze zdrojů. Ověří první úkol M1c.
+- Herní UI je víc práce, než se čekalo: Clay dává jen rozvržení.
+- joltc neumí uložit stav fyziky, dopíše se ve vlastním adaptéru.
 - Strategie (D23) přidávají dva velké subsystémy, se kterými plán dosud nepočítal: hromadnou simulaci entit a datově bohaté UI.
 
 ## Další krok
-1. Vlastník projde otázky v [OVERENI.md](OVERENI.md).
+1. Vlastník odpoví na tři otázky výše.
 2. Na pokyn vlastníka začne M0a (kostra a CI). Úkoly jsou v Linearu.
 3. Souběžně čtyři rešerše mezer (D71). Světlo a obloha musí být hotové před M2.

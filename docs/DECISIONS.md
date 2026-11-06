@@ -2,7 +2,7 @@
 
 Co jsme se rozhodli, kdy a proč. Nové rozhodnutí se přidává na konec s datem; když se něco změní, staré se nemaže, ale označí jako nahrazené a odkáže na nové.
 
-Stav: **D1–D73 zapsané.** D24–D71 jsou potvrzené návrhy z [NAVRHY-ROZHODNUTI.md](NAVRHY-ROZHODNUTI.md) (číslo rozhodnutí = číslo návrhu + 23). Jediná změna proti návrhům: D35 (Xcode se neinstaluje). Plán je v [ROADMAP.md](ROADMAP.md), konvence v [CONVENTIONS.md](CONVENTIONS.md).
+Stav: **D1–D74 zapsané.** D24–D71 jsou potvrzené návrhy z [NAVRHY-ROZHODNUTI.md](NAVRHY-ROZHODNUTI.md) (číslo rozhodnutí = číslo návrhu + 23). Jediná změna proti návrhům: D35 (Xcode se neinstaluje). Plán je v [ROADMAP.md](ROADMAP.md), konvence v [CONVENTIONS.md](CONVENTIONS.md).
 
 ---
 
@@ -157,6 +157,7 @@ Bez povinného depth prepassu. Nahrazuje deferred G-buffer ze zpráv 1 a 2. Potv
 - **Úroveň A (bitově shodné na 3 OS):** generátory a logika simulace. Píšou se nad celými čísly, fixed-pointem a `detmath`.
 - **Úroveň B (shodné jen na stejné platformě a buildu):** fyzika, animace a mix zvuku.
 Brána M4 se podle toho mění: replay jízdy je bitově shodný na stejné platformě, hash logické simulace na všech třech OS.
+*Zpřesněno v D74: Jolt shodu mezi OS umí, úroveň B se dělí na B1 a B2.*
 
 ## D29 — Plán je přijatý, platí jen ROADMAP.md (2026-11-06)
 Přijímá se sjednocený plán ze zprávy 5, doplněný o zprávy 4 a 6 a o testovací scénu strategie. Milníky M0, M3 a M4 jsou rozdělené na fáze. Podrobnosti číslování jsou v D72.
@@ -322,3 +323,16 @@ Scéna strategie (D50) je vložená jako M6. Milníky M6–M9 ze zprávy 5 se t�
 - **Stabilní ID:** z kotvy a jména pravidla (zpráva 4).
 - **Prefix:** identifikátory enginu začínají `eng_`. Prefix `wh_` ze zprávy 4 se nepoužívá.
 - **Nástroje:** `wz` (engine), `wz_studio`, `wzmcp` (MCP) a `wzctl` (CLI). Jména `engctl`, `wzcli`, `gencli` a `genlint` se nahrazují příkazy `wzctl`.
+
+## D74 — Opravy plánu po ověření proti zdrojům (2026-11-06)
+Vlastník požádal o ověření plánu proti článkům a dokumentaci na webu. Výsledek je v [OVERENI.md](OVERENI.md). Žádné rozhodnutí nepadlo. Tyto opravy sepsal Claude a vlastník je může změnit:
+- **D28:** zdůvodnění bylo mylné. Jolt bitově shodnou simulaci mezi OS umí a testuje ji. Jolt se staví s `CROSS_PLATFORM_DETERMINISTIC` od začátku. Úroveň B se dělí na B1 (fyzika, cíl 3 OS) a B2 (animace, zvuk). Brána M4 zůstává „stejná platforma“, o zvednutí rozhodne měření 27.
+- **D27:** bez depth prepassu jen na GPU Apple. Na Vulkanu a D3D12 je prepass volitelný. Rozpočet je stovky skutečných světel v záběru.
+- **D35:** potvrzeno, že Command Line Tools stačí. Čas GPU po passech na Macu měřit nejde, engine dostane vlastní ladicí pohledy.
+- **D42:** uložení a obnovu stavu fyziky dopíšeme ve vlastním adaptéru, joltc ji nemá.
+- **D57:** `eng_ui` obsahuje i vlastní kreslení přes SDL_GPU, textový vstup a tabulky. Clay dává jen rozvržení.
+- **D59:** generuje se modelem v3. Uložený zvuk je jediný zdroj, znovu stejně ho vygenerovat nejde.
+- **Shadery:** kompilátor shaderů je první úkol fáze M1c. DXIL smí vznikat v CI.
+- **M6:** doplněno uspávání entit, služba hledání cest, silniční síť jako globální model a přísnější testovací scéna.
+
+Tři otázky čekají na vlastníka: hostovaný macOS v CI (mění D33), podmínky a efekty v datech (zpřesňuje D45) a posílání referenčních screenshotů AI službám.

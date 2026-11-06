@@ -3,6 +3,7 @@
 **Jediný platný plán enginu.** Nahrazuje roadmapy ve všech šesti rešeršních zprávách (D29, D72). Kde se tento soubor se zprávou rozchází, platí tento soubor.
 
 **Stav:** platí od 2026-11-06. Analýza je uzavřená (D36), první kód vznikne úkolem M0a.
+**Ověření proti zdrojům:** [OVERENI.md](OVERENI.md) (2026-11-06), závěry jsou zapracované níže.
 **Práce se sleduje v Linearu:** projekt [Wallhammer Zero](https://linear.app/nsoft/project/wallhammer-zero-3576c061ad78), tým Nsoft. Rozepsané jsou M0 a M1 (D22).
 
 ## Jak plán funguje
@@ -64,7 +65,8 @@ Pořadí M8 a M9 se přehodnotí po bráně M4 (D51).
 - SDL3 jako submodul. `wz` otevře okno a vyčistí ho barvou.
 - Clang na 3 OS, `-Werror`, ASan, UBSan a TSan (D24, D26).
 - Testy: utest a štítky CTest.
-- CI: Linux a Windows hostovaně při každém pushi, macOS lokálně skriptem `scripts/check`, hostovaný macOS jako noční běh (D33).
+- CI: Linux a Windows hostovaně při každém pushi, macOS lokálně skriptem `scripts/check` (D33). Hostovaný macOS čeká na rozhodnutí vlastníka, viz [OVERENI.md](OVERENI.md). Pokud poběží, tak na `macos-15`, ne na `macos-latest`.
+- Vlákna a atomics: vlákna z SDL3, ne `<threads.h>`. Atomics přes `<stdatomic.h>` clangu.
 - Vendorované knihovny pro zvuk: miniaudio a libebur128.
 - Hotovo, když: build a unit testy jsou zelené na 3 OS a `wz` na Macu otevře okno.
 
@@ -99,7 +101,7 @@ Pořadí M8 a M9 se přehodnotí po bráně M4 (D51).
 - Hotovo, když: paralelní generování 10 000 dlaždic dává stejný hash s 1 i 12 workery.
 
 **M1b Pozorování a ovládání**
-- `eng_prof`: obal nad Tracy, fázové časovače, čítače a `stats.json`.
+- `eng_prof`: obal nad Tracy, fázové časovače, čítače a `stats.json`. Tracy na Macu dává jen zóny CPU, zámky a paměť. Zóny GPU přes SDL_GPU nejdou.
 - `eng_debugsrv`: unix socket nebo pipe s tokenem. Metody `sim.pause`, `sim.step`, `sim.step_until`, `state.digest`, `log.tail`, `cvar.*` a `cmd.exec`.
 - Hodiny simulace v0: pauza, krok a rychlost (D47).
 - Nástroje `time_control`, `cvar_*`, `profile_snapshot`, `console_exec` a `project_build`.
@@ -107,7 +109,13 @@ Pořadí M8 a M9 se přehodnotí po bráně M4 (D51).
 
 **M1c RHI a cena drawu**
 - RHI v0 ze tří přenosných pojmů (D25). Backend SDL_GPU a null backend, který počítá volání.
-- Shadery: připnutý commit SDL_shadercross, DXC postavený jednou ze zdrojů do `.tools/`, hot reload a pilot Slangu. Pro Metal se dodává zdrojový text MSL (D35).
+- **Kompilátor shaderů jako první úkol fáze.** Je to největší technické riziko: SDL_shadercross nemá žádné vydání a Microsoft nevydává DXC pro macOS.
+  - SDL_shadercross připnutý na commit, DXC postavený jednou ze zdrojů do `.tools/` jen s Command Line Tools. Čas buildu se změří.
+  - Pro Metal se dodává zdrojový text MSL, který SDL_GPU překládá při startu (D35). Čas překladu při startu se změří.
+  - DXIL nemusí vznikat na Macu. Může ho vyrábět CI na Linuxu nebo Windows.
+  - Pilot Slangu jako záloha. Na Macu neumí DXIL a jeho výstup pro Metal je označený jako experimentální.
+- Hot reload shaderů.
+- Validace Metalu (`MTL_DEBUG_LAYER`, `MTL_SHADER_VALIDATION`) zapnutá při každém vývojovém běhu.
 - Trvalá měřicí scéna ceny drawu.
 - Měření 2, 4, 11 a 26.
 - Hotovo, když: výsledky jsou uložené v repu jako baseline a v sekci „Strop drawů“ níže je zapsaný strop a spouštěč nativního Metal backendu.
@@ -117,11 +125,16 @@ Pořadí M8 a M9 se přehodnotí po bráně M4 (D51).
 ## M2 Stylové osvětlení, studio v0 a zoo měřítek
 
 - **Renderer:** render graph se sloty pro passy modulů. Forward+ s clusterovanými světly (D27). Cluster culling a kompakce indexů v návrhu.
+  - Pořadí kreslení: neprůhledné, alpha test, průhledné.
+  - Depth prepass: na GPU Apple vypnutý, na Vulkanu a D3D12 volitelný přepínač.
+  - Rozpočet světel: stovky skutečných světel v záběru. Vzdálená světla se kreslí jako svítící body bez osvětlování.
+  - Textury materiálů v několika texture arrays se stejným rozměrem a formátem (SDL_GPU nemá bindless, limit je 16 samplerů na stage).
 - **Světlo ve stylu (D52):** rampy, hemisférický ambient, kaskádové stíny, mlha, paleta a LUT, volitelné obrysy.
 - **Souřadnice:** pozice v double, matice relativní ke kameře, hloubka D32F s reversed-Z a nekonečnou far plane.
-- **Rozlišení:** interně 1080p, vlastní upscale, UI nativně (D54).
+- **Rozlišení:** interně 1080p, vlastní upscale, UI nativně (D54). Výchozí cesta je MSAA 4× a prostorový upscale ve stylu FSR1. Poměr zvětšení na Retinu je za hranicí režimu Quality, takže interní rozlišení potvrdí měření 6 a brána vlastníka.
 - **Průhlednosti:** pass s premultiplied blendem, měkké částice, emisní MRT a bloom tlumený mlhou, ladicí pass overdraw. Pochodeň a neon z instancovaných spritů.
-- **Obraz pro stroje:** `--gpu=offscreen` a readback, nástroj `shot` (cesta a statistiky), `imgdiff` (FLIP), ladicí skupiny GPU, čas GPU z fence, textový overlay. Lavapipe job v Linux CI.
+- **Obraz pro stroje:** `--gpu=offscreen` a readback, nástroj `shot` (cesta a statistiky), `imgdiff` (FLIP), ladicí skupiny GPU, čas GPU z fence, textový overlay. Lavapipe job v Linux CI (balík `mesa-vulkan-drivers`).
+- **Ladění obrazu bez Xcode (D35):** vlastní ladicí pohledy v enginu (prohlížení render targetů, přepínání passů) a log Metal HUD pro čas GPU po snímcích. Čas po passech SDL_GPU nedává, dotazy mají přijít v SDL 3.6.
 - **Studio v0:** `wz_studio` na Dear ImGui, viewport, konzole, CVars, log a profiler.
 - **Měřítko (D53):** `style/scale.cfg`, `scale_derive()`, scale rig, lint měřítek v0 a lint literálů.
 - **Testovací scéna:** zoo měřítek (scale rig a jedna ulice z primitiv).
@@ -139,6 +152,7 @@ Pořadí M8 a M9 se přehodnotí po bráně M4 (D51).
 
 **M3b Textury, geometrie a první generátory**
 - `eng_gen_tex`: operátory, dlaždicovost, paleta a odvozené mapy. Import AI zdrojů s rozšířenou provenancí (D14, D55).
+- C2PA: původní soubor zůstává beze změny, uloží se jeho hash a výpis z `c2patool` (binárka v `.tools/`). Chybějící C2PA není chyba.
 - Half-edge operace a meshoptimizer.
 - Generátory: budova v0, silnice a chodník, props. Všechny nad tabulkou měřítek.
 - Měření 5, 9, 10 a první odečet 13.
@@ -154,6 +168,9 @@ Pořadí M8 a M9 se přehodnotí po bráně M4 (D51).
 **M3d Základ zvuku a zdroje efektů**
 - `eng_audio`: výstup přes `platform`, mixer miniaudio, sběrnice, pool a virtuální hlasy, 3D s Dopplerem a offline render (D65).
 - `eng_gen_audio`: zvuky UI, modální dopady a impulsní odezvy. Řetěz importu AI zvuků s provenancí (D58, D59).
+  - Zvuk z ElevenLabs nejde vygenerovat znovu stejně (API nemá seed). Uložený soubor je jediný zdroj.
+  - Generuje se modelem v3. Model v2 končí 1. 3. 2027.
+  - Před prvním použitím vlastník zvolí tarif. Komerční licence začíná tarifem Starter.
 - Linty zvuku včetně hlasitosti (D64), spektrogramy a stránka A/B.
 - `eng_gen_vfx`: SDF tvary, šumy, rampy a první flipbooky. Kontaktní archy a pravidla efektů v lintech (D66).
 - Měření 18.
@@ -171,11 +188,13 @@ Jedna buňka o hraně asi 256 m, bez streamingu.
 - Herní DLL s hot reloadem a stabilním C ABI `eng_api` (D45).
 - Aktéři s komponentami registrovanými hrou (D44).
 - Protokol extrakce do renderu ve třech kanálech.
-- Replay `.wzr` s hashi subsystémů, bug bundle a `--repro`.
+- Replay `.wzr` s hashi subsystémů, bug bundle a `--repro`. Replay nese otisk buildu (verze enginu, Joltu a překladače) a replay z jiného buildu se odmítne.
 - Pravidla úrovně A pro logiku simulace (D28).
 
 **M4b Fyzika a auto**
-- Jolt přes joltc (D42).
+- Jolt přes joltc (D42), připnutý na jeden commit pro všechny tři OS a od začátku stavěný s `CROSS_PLATFORM_DETERMINISTIC`.
+- Adaptér fyziky: tělesa dostávají ID od enginu, události kontaktů se před předáním hře řadí podle ID.
+- Uložení a obnova stavu fyziky v našem adaptéru. joltc to nemá a potřebuje to save (D40).
 - Generátor auta v0 a řiditelné auto.
 - Zvuk auta: smyčky podle otáček a zátěže, Doppler a nárazy z kontaktů.
 - Měření 19 a 27.
@@ -188,7 +207,7 @@ Jedna buňka o hraně asi 256 m, bez streamingu.
 - První kontrola D3D12 na testovacím Windows stroji.
 - Měření 21.
 
-**Hotovo, když:** pětiminutová jízda se přehraje bitově shodně na stejné platformě a buildu, na každém ze 3 OS. Hash logické simulace je shodný na všech 3 OS. První rozdílný tick se hlásí podle subsystému. Golden obrázek HUD prochází. Rozpočty čítačů bloku drží v CI. Scénář „auto 80 km/h kolem posluchače“ projde číselnými kontrolami zvuku.
+**Hotovo, když:** pětiminutová jízda se přehraje bitově shodně na stejné platformě a buildu, na každém ze 3 OS. Hash logické simulace je shodný na všech 3 OS. Měření 27 navíc porovná hash jízdy mezi OS. Když se shodne, brána se zvedne na „shodně na všech 3 OS“. První rozdílný tick se hlásí podle subsystému. Golden obrázek HUD prochází. Rozpočty čítačů bloku drží v CI. Scénář „auto 80 km/h kolem posluchače“ projde číselnými kontrolami zvuku.
 **Brána vlastníka:** pohled z ulice a auto vedle referencí GTA III.
 
 ## M5 Testovací scéna B: zárodek planety
@@ -207,18 +226,38 @@ Jedna buňka o hraně asi 256 m, bez streamingu.
 
 Nový milník kvůli strategiím (D23, D50).
 
-- **Simulace celého světa (D46):** globální data (silniční graf, tabulky budov a entit) jsou v paměti a tikají všude. Buňky slouží jen kreslení.
+- **Simulace celého světa (D46):** globální data (silniční graf, tabulky budov a entit) jsou v paměti a tikají všude. Buňky slouží jen kreslení. Simulace běží mimo kreslicí vlákno a kreslení čte interpolovaný snímek stavu.
 - **Hromadné entity (D44):** husté tabulky, vlastní 64bitová ID, bez fyziky. Kreslí se instancovaně s LOD.
+  - Spánek a buzení: nečinné entity se neprocházejí. Budí je událost nebo čas.
+  - Pohyb se tiká řidčeji než kreslení (například 10 Hz) a mezi tiky se interpoluje.
+  - Slučování do skupin jako doporučený vzor pro populace.
 - **Čas (D47):** pauza, násobky rychlosti, pomalé tiky ekonomiky a práce rozložená přes snímky.
-- **Svět stavěný hráčem (D39):** příkaz hráče (silnice, zóna, budova) je vstup generátoru. Dotčená buňka se přegeneruje za běhu.
+  - Když simulace nestíhá, zpomalí se herní čas. Kreslení drží snímky.
+  - Paralelně běží jen nezávislé skupiny tiků. Účinky přes hranici skupin se odkládají a provedou v pevném pořadí.
+- **Hledání cest:** služba s frontou požadavků, rozpočtem na snímek, výpočtem na více jádrech a cache. Po úpravě grafu se dotčené cesty zneplatní. Výchozí metoda je A*.
+- **Svět stavěný hráčem (D39):** příkaz hráče (silnice, zóna, budova) je vstup generátoru.
+  - Silniční síť je globální model: uzly, segmenty, pruhy a odbočky.
+  - Po zásahu se přegenerují jen změněné segmenty a křižovatky, a z nich dotčené buňky.
+  - Geometrie křižovatek má vlastní sadu těžkých případů: ostrý úhel, krátký segment, mnoho ramen, sklon.
 - **Ovládání (D49):** strategická kamera se zoomem od ulice po celou mapu, výběr myší a rámečkem, umisťování s přichytáváním.
 - **UI (D57):** widgety (tabulky, seznamy, tooltipy, okna), vazba na data a popis UI v textových souborech.
-- **Herní data (D45):** textové tabulky načítané přes registr typů.
-- **Více světů (D48):** dvě instance světa najednou, přehledová mapa a detail.
+  - Clay dává jen rozvržení. `eng_ui` proto obsahuje vlastní kreslení přes SDL_GPU, textový vstup a tabulku, která drží v paměti jen viditelné řádky.
+  - Formátovaný text s odkazy a ikonami, vnořené tooltipy, řazení a notifikace.
+  - Clay a SDL_ttf jsou připnuté na commit.
+- **Mapové režimy:** obarvení mapy podle sloupce simulace, jako funkce rendereru.
+- **Herní data (D45):** textové tabulky načítané přes registr typů. Jestli do dat patří i podmínky a efekty, čeká na vlastníka, viz [OVERENI.md](OVERENI.md).
+- **Více světů (D48):** dvě instance světa najednou, přehledová mapa a detail. Obě tikají současně.
 - **Projekt** `strategy` ze šablony.
-- **Testovací scéna:** kamera shora, 100 000 entit na silničním grafu, hráčem nakreslená silnice, zrychlení času a panel s tabulkou.
+- **Testovací scéna:** kamera shora, 100 000 entit na silničním grafu, silnice nakreslená hráčem během provozu, křižovatka se čtyřmi rameny a jedna s ostrým úhlem, zrychlení času, panel s tabulkou o 10 000 řádcích a jeden mapový režim.
 - **Měření:** 24 a 25.
-- **Hotovo, když:** tik 100 000 entit drží rozpočet při rychlosti 1× i při nejvyšší rychlosti (rozpočet určí měření 24). Hash logické simulace po přehrání příkazů hráče je shodný na 3 OS. Buňka se po zásahu hráče přegeneruje bez zaseknutí snímku. Golden obrázek panelu s tabulkou prochází a `ui_tree` tabulku vrací. Městský blok a zárodek planety běží beze změny. Všechny tři projekty jsou v CI.
+- **Hotovo, když:**
+  - tik drží rozpočet ve třech případech: všech 100 000 entit v pohybu, 20 % v pohybu a zbytek spí, a nejvyšší rychlost času (rozpočet určí měření 24),
+  - hash logické simulace po přehrání příkazů hráče je shodný na 3 OS a shodný s 1 i 12 vlákny,
+  - uložení uprostřed běhu, načtení a pokračování dá stejný hash jako běh bez uložení,
+  - po nakreslení silnice se cesty přes změněné místo přepočítají a buňka přegeneruje bez zaseknutí snímku,
+  - kreslení pohledu na celou mapu drží strop drawů,
+  - golden obrázek panelu s tabulkou prochází a `ui_tree` tabulku vrací,
+  - městský blok a zárodek planety běží beze změny a všechny tři projekty jsou v CI.
 - **Brána vlastníka:** čitelnost pohledu shora a panelu, pocit z kamery a kreslení silnice.
 - Před milníkem mají být hotové rešerše hromadné simulace a UI pro strategie (D71).
 
@@ -305,7 +344,7 @@ Každé měření vzniká jako trvalý test nebo měřicí scéna v repu. Výsle
 | 8 | kalibrace hodnotitele proti verdiktům vlastníka | M3 | váha hodnotitele |
 | 9 | materiály z kódu proti materiálům z AI | M3 | výchozí zdroj podle kategorie |
 | 10 | schopnost modelu podle kategorie assetu | M3 | harmonogram, šablony |
-| 11 | pipeline shaderů a hot reload | M1 | počet variant |
+| 11 | pipeline shaderů a hot reload, čas buildu kompilátoru a čas překladu MSL při startu | M1 | počet variant, volba kompilátoru |
 | 12 | Vulkan na testovacím Linux stroji a lavapipe v CI | M2 | pokrytí Vulkanu |
 | 13 | studená latence buňky 256 m (p50, p95) | M3, znovu M7 | předstih streamingu |
 | 14 | cena detailní kolize a navmeshe proti generování | M7 | co stavět jen na vyžádání |
@@ -318,15 +357,15 @@ Každé měření vzniká jako trvalý test nebo měřicí scéna v repu. Výsle
 | 21 | propustnost append a třídění částic přes SDL_GPU | M4 | velikost poolu |
 | 22 | 100 000 kapek deště s kolizí | M8 | rozsah deště |
 | 23 | cena kompozice v polovičním rozlišení a WBOIT | M8 | třídění, nebo WBOIT |
-| 24 | cena tiku 100 000 hromadných entit | M6 | rozpočet simulace strategií |
+| 24 | cena tiku 100 000 hromadných entit, frekvence tiku pohybu a rozpočet cest na snímek | M6 | rozpočet simulace strategií |
 | 25 | latence přegenerování buňky po zásahu hráče | M6 | plynulost stavění |
 | 26 | lze vytvořit nativní Metal vrstvu vedle okna SDL3 | M1 | zda je záložní backend proveditelný |
-| 27 | shoda replaye Joltu na stejné platformě, dvojitá přesnost v joltc | M4 | brána M4, fyzika na planetě |
+| 27 | shoda replaye jízdy na stejné platformě i mezi 3 OS (Jolt přes joltc a clang-cl), dvojitá přesnost v joltc | M4 | zvednutí brány M4, fyzika na planetě |
 | 28 | propustnost review vlastníka (rendery za hodinu) | od M2 | rozpočty bran |
 
 Měření 1–12 jsou ze zprávy 3 (původní č. 12 nahrazuje D20), 13–17 ze zprávy 4, 18–23 ze zprávy 6. Měření 24–28 přibyla při revizi.
 
-Na Macu se měří bez Xcode (D35): vlastní čítače a časy snímků, `powermetrics`, Metal HUD a Tracy.
+Na Macu se měří bez Xcode (D35): vlastní čítače a časy snímků, `powermetrics`, log Metal HUD (`MTL_HUD_ENABLED=1`) a Tracy. Čas GPU po jednotlivých passech takhle změřit nejde.
 
 ## Body k ověření
 
@@ -337,12 +376,12 @@ Předpoklady, které zprávy označily jako neověřené. Každý dostane úkol 
 | C11 atomics přes clang-cl na Windows | M0a |
 | Build DXC ze zdrojů na Macu a připnutý SDL_shadercross | M1c |
 | Režie Tracy na Apple Silicon | M1b |
-| WARP přes SDL_GPU pro goldeny D3D12 | M2 |
-| Programové zachycení snímku GPU na Metalu bez Xcode | M2 |
 | Hot reload do sekundy | M3a, M4a |
 | Bitová shoda Manifoldu, pokud se použije | M3b |
-| Dvojitá přesnost v joltc | M4b |
-| Renderer Clay pro SDL_GPU | M4c |
+| Dvojitá přesnost v joltc na Windows | M4b |
+| Determinismus Joltu přes clang-cl, u vozidel a přes joltc | M4b |
+| Běh D3D12 přes WARP na hostovaném Windows runneru | M2 |
+| Vlastní kreslení příkazů Clay přes SDL_GPU (hotové neexistuje) a stav GPU textu v SDL_ttf | M4c |
 
 ## Mezery, které čekají na rešerši
 
@@ -359,7 +398,7 @@ Předpoklady, které zprávy označily jako neověřené. Každý dostane úkol 
 
 ## Ověřování platforem
 
-- **Hostované CI (Linux, Windows):** od M0 při každém pushi build, unit testy, null GPU, replay, golden hashe a kompilace shaderů do všech formátů.
+- **Hostované CI (Linux, Windows):** od M0 při každém pushi build, unit testy, null GPU, replay, golden hashe a kompilace shaderů do všech formátů. GitHub účtuje v dolarech: plán Free má 12 USD měsíčně, což podle odhadu stačí asi na 150 pushů s Linuxem a Windows.
 - **Lavapipe v Linux CI:** od M2 obrazové goldeny Vulkanu.
 - **MacBook M4 Pro:** skript `scripts/check` před každým merge. Metal goldeny, časové rozpočty a rendery pro review.
 - **Testovací Linux stroj:** reálný Vulkan na konci M2, M7 a M10.

@@ -73,7 +73,10 @@ Varianta s lokálním indexem ze zprávy 2 neplatí.
 | Úroveň | Co tam patří | Záruka |
 |---|---|---|
 | **A** | generátory (`eng_gen_*`), logika simulace, převody souřadnic a ID | bitově shodné na macOS-ARM64, Linux-x64 a Windows-x64 |
-| **B** | fyzika, animace, mix zvuku | shodné na stejné platformě a buildu |
+| **B1** | fyzika (Jolt) | shodné na stejné platformě a buildu. Cílem je shoda na 3 OS, rozhodne měření 27. |
+| **B2** | animace, mix zvuku | shodné na stejné platformě a buildu |
+
+Jolt se od začátku staví s volbou `CROSS_PLATFORM_DETERMINISTIC`. Fyzika je mezi OS shodná jen tehdy, když jsou shodné i její vstupy. Co do fyziky posílá engine (síly, cílové pózy ragdollu), se proto počítá podle pravidel úrovně A.
 
 Pravidla úrovně A, hlídaná linty a golden hashi v CI:
 - Žádné `<math.h>`. Matematika jde přes `detmath`.
@@ -81,6 +84,10 @@ Pravidla úrovně A, hlídaná linty a golden hashi v CI:
 - Logika simulace počítá v celých číslech nebo ve fixed-pointu.
 - Náhoda jen ze seedovaných proudů pojmenovaných řetězcem.
 - Výsledek nesmí záviset na počtu vláken, na pořadí procházení hashovací tabulky, na čase ani na adrese v paměti.
+- Řazení jen vlastní funkcí se stabilním pořadím, ne `qsort`.
+- Převod floatu na celé číslo jen uvnitř rozsahu cílového typu. NaN se nesmí dostat do hashe.
+- Stav FPU (zaokrouhlování, denormály) je stejný na všech vláknech.
+- Verze clangu je připnutá. Na Windows se `-ffp-contract=off` zadává výslovně.
 
 Target se k úrovni hlásí vlastností v CMake. Target úrovně A nesmí linkovat target úrovně B.
 
@@ -90,6 +97,7 @@ Target se k úrovni hlásí vlastností v CMake. Target úrovně A nesmí linkov
 - `-Wall -Wextra -Werror`. V CI běží ASan, UBSan a TSan.
 - **C++ jen v adaptérech** knihoven (Jolt, Dear ImGui). Hlavičky adaptéru jsou čisté C.
 - Rozšíření překladače jen za makrem z `eng_base`.
+- Vlákna se berou z SDL3, ne z `<threads.h>`. Atomics přes `<stdatomic.h>`.
 - Dokumentace je česky. Kód, identifikátory, komentáře a zprávy commitů anglicky.
 - Komentář říká proč, ne co.
 
@@ -155,7 +163,11 @@ wallhammerzero/
 - **Log** je JSONL, jeden záznam na řádek.
 - **Běh** zapisuje do `runs/<id>/`: `log.jsonl`, `stats.json`, při pádu `crash.txt`.
 - **Replay** má příponu `.wzr` a nese hashe subsystémů po ticích.
-- **AI zdroje** (obrázky, zvuky) mají vedle sebe soubor s provenancí: model, verze, prompt, seed, datum, licence (D14, D55, D58).
+- **AI zdroje** (obrázky, zvuky) mají vedle sebe soubor s provenancí (D14, D55, D58):
+  - model a jeho verze, prompt, seed (pokud ho služba má), datum, licence a tarif služby v době generování,
+  - lidský podíl: kdo vybral variantu a co se ručně upravilo,
+  - u obrázků stav C2PA (přítomno, chybí) a výpis z `c2patool`.
+- **Uložený AI soubor je zdroj.** Zvuk z ElevenLabs nejde vygenerovat znovu stejně, proto se nikdy nemaže jako „odvozený“.
 - **Rozpočty** se vedou v počtech, které engine sám spočítá: drawy, fragmenty, částice, hlasy.
 
 ## 11. Tajné klíče a cizí obsah
@@ -163,10 +175,14 @@ wallhammerzero/
 - Klíče k API (například ElevenLabs) se do gitu nedávají. Čtou se z proměnných prostředí nebo z lokálního `.env`, který je v `.gitignore`. V CI jsou jako secrets.
 - Provenance ani log klíč nikdy neobsahují.
 - Referenční záběry z cizích her leží v `reference/`, které je v `.gitignore`. Do repa se necommitují.
+- Referenční záběry se nepoužijí ve hře, v marketingu ani ve veřejném srovnání.
+- Zvuky z ElevenLabs se nesmí šířit jako samostatné soubory. Repo proto zůstává privátní a hra je dodává zabalené v archivu.
+- Hra má soubor s licencemi knihoven třetích stran a obrazovku s nimi. FreeType se bere pod licencí FTL. Tracy se do vydané verze nepřekládá.
 
 ## 12. Git a CI (D33)
 
 - Hlavní větev je `main`.
 - Před merge do `main` projde na Macu `scripts/check`. Linux a Windows hlídá hostované CI.
+- Hostované runnery se zadávají s číslem verze (`macos-15`), ne jako `latest`.
 - Golden soubory se mění jen nástrojem `golden_accept`, který vyžaduje potvrzení vlastníka.
 - Položky v `milestones/*.json` přepíná jen úspěšný příkaz, položky s bránou jen vlastník.
