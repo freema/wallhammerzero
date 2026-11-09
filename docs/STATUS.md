@@ -86,6 +86,12 @@ Where we are, what is resolved, what is open and what comes next. Updated after 
   - one free camera with rigs as parameters, no camera research (D84),
   - the three open owner questions answered by delegation (D85),
   - results delivered as artifacts, and review pages in the engine from M2 (D86).
+- [x] **Guards (2026-11-09):** the owner chose option B (D87): CI computes `passes`, every lint has a known-bad input.
+- [x] **Research 9: the decisions of 2026-11-09 against practice.** Report: [research/decisions-d81-d87-vs-practice.md](research/decisions-d81-d87-vs-practice.md). No decision fell, four were too thin. Corrections written by Claude on the owner's delegation:
+  - D88: loosening a guard needs the owner; the second review gets repo access and a fixed script; review verdicts belong to an item and a content hash, have four states and say who really acted,
+  - D89: a camera rig is a definition and a stateful instance under a director; a composed corner in M2; character v0 on a skeleton in stress poses,
+  - D90: our own text format with a JSON view, uids minted by a tool, a richer type registry.
+  New measurements 37 and 38.
 - [x] **[EXAMPLES.md](EXAMPLES.md) (2026-11-09):** illustrative sketches of the main concepts and the options that are still open. Not engine code.
 
 ## Resolved (briefly; details in DECISIONS.md)
@@ -133,13 +139,14 @@ Where we are, what is resolved, what is open and what comes next. Updated after 
 | One free camera, rigs as parameters | ✅ | D84 |
 | Conditions and effects in data, references local only, no license for now | ✅ by delegation | D85 |
 | Results as artifacts, review pages in the engine | ✅ design by Claude | D86 |
+| Guards checked by the machine: CI computes `passes`, lints have known-bad inputs | ✅ | D87 |
+| Loosening a guard needs the owner, second review with repo access, review verdicts by hash and identity | ✅ by delegation | D88 |
+| Camera: rig definition and instance, director per view | ✅ by delegation | D89 |
+| Own text format with a JSON view, uids from a tool, richer type registry | ✅ by delegation, measurement 38 | D90 |
 
 ## Open questions
-The questions from checking the plan ([VERIFICATION.md](VERIFICATION.md)) are closed: hosted macOS in CI by D76, and the license, conditions and effects in data and the reference screenshots by D85. None of the open ones blocks M0.
-1. **Who may change the guards (proposal 4 of 2026-11-09, the owner has not decided).** Today Claude could loosen a lint or a budget, or switch `passes` in `milestones/*.json`, without anyone noticing. Golden files are already protected by the owner's confirmation. Options:
-   - **A, as today:** a written rule, no enforcement.
-   - **B, recommended:** CI computes `passes` itself, and every lint has a deliberately broken input on which it must fail.
-   - **C, B plus:** a change of a lint, threshold or budget is marked in the pull request and waits for the owner.
+The questions from checking the plan ([VERIFICATION.md](VERIFICATION.md)) are closed: hosted macOS in CI by D76, and the license, conditions and effects in data and the reference screenshots by D85. Who may change the guards is closed by D87. None of the open ones blocks M0.
+1. **A separate GitHub identity for the agent (D88, waits for the owner).** Without it no branch rule binds Claude and the owner cannot approve a pull request opened under his own account. About ten minutes, once. Until then the guard-change report is listed in every session artifact.
 2. Before M7 (D79): the default policy for orphaned edits, whether frozen domains keep old generator source, whether the two machines share a cache.
 3. D80 defaults for destruction (scope, persistence per mode, position of MD) may be changed by the owner; MD position is decided at gate M4.
 
@@ -164,10 +171,11 @@ Three Three.js repos and one technical analysis, recorded 2026-09-24. The in-dep
 - Shader compiler: SDL_shadercross has no release and DXC for macOS must be built from source. The first task of M1c will verify it.
 - Game UI is more work than expected: Clay gives only layout.
 - joltc cannot save physics state, it will be written in our own adapter.
+- AI agents weaken or bypass checks in a measurable share of sessions (research 9). The guards of D87 and D88 are the answer; a second model's review finds only about half.
+- A review page has no built-in proof of who approved. The channel that proves the owner's identity is designed in M2 (D88).
 - Strategy games (D23) add two large subsystems the plan did not count on so far: mass entity simulation and data-rich UI.
 
 ## Next step
 0. On the Windows PC: clone the repo, install Visual Studio Build Tools and Claude Code, add the graphics card model to D75 (task NSO-620 in Linear).
-1. The owner decides open question 1 (who may change the guards).
-2. On the owner's go, M0a starts (skeleton and CI). The tasks are in Linear. On 2026-11-09 the owner confirmed that coding has not started yet.
-3. In parallel, four gap research topics (D71). Light and sky must be done before M2.
+1. On the owner's go, M0a starts (skeleton and CI). The tasks are in Linear. On 2026-11-09 the owner confirmed that coding has not started yet.
+2. In parallel, four gap research topics (D71). Light and sky must be done before M2.

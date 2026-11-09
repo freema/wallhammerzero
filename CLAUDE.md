@@ -24,7 +24,10 @@ The analysis is closed (D36). Next is **implementation according to [docs/ROADMA
 The owner wants results as Claude Artifacts (private pages), written in Czech: session summaries, proposals, and later measurements and renders for approval. The repo stays the source of truth; an artifact is the way it is shown. Reference shots from other games never go into an artifact (D85).
 
 ## Code review (D83)
-A phase is done only after an OpenAI model (Codex CLI) reviewed its diff. Give the reviewer the diff and the docs, not your conclusions. Findings go to `review/code/<phase>.md`.
+A phase is done only after an OpenAI model (Codex CLI) reviewed it. Run it from `scripts/review`: a clean checkout, a fixed brief, no summary or commit messages from you, raw output saved. Findings go to `review/code/<phase>.md`. You do not close a finding alone: an unfixed one goes back to the reviewer once, then to the owner (D88).
+
+## Guards (D87, D88)
+You write the code and the guards that check it. Never make a check pass by weakening it. CI computes `passes`; you do not edit it. Loosening anything in the guard paths (thresholds, fixtures, milestone commands, CI workflows, `scripts/check`, the review brief, this file) needs the owner's approval. If something cannot pass, mark the milestone item `blocked` with the reason and tell the owner.
 
 ## Language
 Everything in the repository is in English: documentation, research, file and folder names, code, comments and commit messages (D78). Conversation with the owner may be in Czech.

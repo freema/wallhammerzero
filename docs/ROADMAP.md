@@ -9,11 +9,13 @@
 ## How the plan works
 
 - **Lasting code.** Each milestone builds code in its final module with tests. Throwaway prototypes are not made.
-- **Machine check.** Each milestone has a file `milestones/Mx.json`. An agent may switch an item to `passes: true` only after the command written next to it succeeds.
+- **Machine check.** Each milestone has a file `milestones/Mx.json`. CI runs the command of every item and computes `passes` itself. The value in the file is only a record of the last CI result, and an agent cannot close an item by editing it (D87). An item may be `blocked` with a reason shown to the owner (D88).
+- **Guards have their own tests (D87).** Every lint ships a deliberately broken input on which it must fail and a valid input on which it must pass. CI runs both.
+- **Loosening a guard needs the owner (D88).** A CI job lists every change in the guard paths in plain language. Tightening passes by itself; loosening or removing waits for the owner's approval of the pull request.
 - **Owner gate.** Items with `owner_gate: true` are switched only by the owner. Gates are grouped and each milestone has a budget of review hours (D34).
 - **Phases.** Large milestones are split into phases (M0a, M0b…) with their own check. The phases of later milestones are decided when their tasks are broken down.
-- **Independent code review (D83).** A phase is done only after an OpenAI model (Codex CLI) reviewed its diff and every finding is fixed or answered. Each milestone file carries an item `Mx.code_review` per phase. Findings are kept in `review/code/<phase>.md`.
-- **Review pages (D86).** From M2, owner gates with an image run through a review page: `wzctl review export` writes one static HTML page with the renders, the owner approves or rejects on it, and `wzctl review import` writes the verdicts into `review/decisions.jsonl`.
+- **Independent code review (D83).** A phase is done only after an OpenAI model (Codex CLI) reviewed its diff and every finding is fixed or answered. Each milestone file carries an item `Mx.code_review` per phase. Findings are kept in `review/code/<phase>.md`. The reviewer works in a clean checkout from a fixed script and may build and run tests; a finding Claude does not fix goes back to the reviewer once and then to the owner (D88).
+- **Review pages (D86).** From M2, owner gates with an image run through a review page: `wzctl review export` writes one static HTML page with the renders, the owner approves or rejects on it, and `wzctl review import` writes the verdicts into `review/decisions.jsonl`. A verdict belongs to an item and the hash of the exact render (D88).
 - **Three test scenes.** The city block (M4), the planet seed (M5) and the strategy cutout (M6) run in CI the whole time. They guard that the engine stays general-purpose (D15, D19, D23). They are not games.
 
 ```json
@@ -65,6 +67,7 @@ The order of M8 and M9 is reconsidered after gate M4 (D51). The position of MD i
 - Monorepo: `engine/`, `projects/sandbox/`, `external/`, `scripts/` (D32).
 - A script that downloads cmake and ninja into `.tools/` (D6). Nothing is installed into the system.
 - CMake targets by layer: `eng_base`, `eng_platform`, `eng_gpu`. A dependency lint between layers.
+- Lint harness (D87): a lint is registered with a known-bad and a valid input, and CI fails a lint that has none. The dependency lint is the first one.
 - SDL3 as a submodule. `wz` opens a window and clears it with a color.
 - Clang on 3 OS, `-Werror`, ASan, UBSan and TSan (D24, D26).
 - Windows development machine (D75): Visual Studio Build Tools, clang-cl, bootstrap and `scripts/check` as CMake scripts, `.gitattributes`.
@@ -73,7 +76,9 @@ The order of M8 and M9 is reconsidered after gate M4 (D51). The position of MD i
 - gitleaks in `.tools/` as a check before a commit and in CI (D76).
 - Threads and atomics: threads from SDL3, not `<threads.h>`. Atomics through clang's `<stdatomic.h>`.
 - Vendored audio libraries: miniaudio and libebur128.
-- The Codex CLI for the phase code review is verified on both machines, with nothing new installed into the system (D83, D6).
+- The Codex CLI for the phase code review is verified on both machines, with nothing new installed into the system (D83, D6). `scripts/review` runs it in a clean checkout with a fixed brief and saves the raw output (D88).
+- Guard-change report (D88): the guard paths are listed in one file, and a CI job run from the base branch reports every change in them and marks loosening. Boundary inputs for numeric thresholds.
+- A separate GitHub identity for the agent and branch protection without bypass. The owner sets it up (D88).
 - Done when: the build and unit tests are green on 3 OS and `wz` opens a window on the Mac and on the Windows machine.
 
 **M0b Determinism**
@@ -89,10 +94,12 @@ The order of M8 and M9 is reconsidered after gate M4 (D51). The position of MD i
 - `eng_cvar` and `eng_cmd`.
 - Run modes `--gpu=null --frames --fixed-dt --seed --script --dump`, output to `runs/<id>/`.
 - `eng_project` and the project `projects/sandbox`.
-- Type registry v0: name, version, fields and JSON Schema export (D43). The `uid64` type and the `ref` field kind (uid + target type), so the dependency graph of a schema is derived without hand-written code (D79).
+- Text format (D90): a written grammar, a conformance corpus, one strict parser and one canonical writer that keeps comments. A lossless JSON view of every file. An unknown key is an error.
+- Uids (D90): `wzctl uid new` and `wzctl duplicate`, a hard error on a duplicate uid, readable hints next to references.
+- Type registry v0: name, version, fields and JSON Schema export (D43). Field metadata from the start: rename aliases, tombstones, defaults, ranges, units, descriptions and usage flags. The registry dump is committed and CI checks it for drift (D90). The `uid64` type and the `ref` field kind (uid + target type), so the dependency graph of a schema is derived without hand-written code (D79).
 - `eng_tools`: the tool registry and two transports, `wzmcp` (MCP) and `wzctl` (CLI). The first three tools: `wz_status`, `golden_check` and `log_tail` (D30).
 - A lint against a hard-coded "up" (D31).
-- `milestones/*.json` and a progress file.
+- `milestones/*.json` and a progress file. A CI job runs every item's command and fails when the stored `passes` differs from the result (D87).
 - The golden manifest stores the domain version of each hash. `golden_check` reports a changed hash without a version bump (D79).
 - Done when: `wz --gpu=null --frames 600 --dump` has 0 errors in `log.jsonl` on 3 OS. A deliberate assert creates `crash.txt` with the scope stack. Claude Code reads the result of `golden_check` as structured JSON through both `wzmcp` and `wzctl`.
 
@@ -143,14 +150,14 @@ The order of M8 and M9 is reconsidered after gate M4 (D51). The position of MD i
 - **Image for machines:** `--gpu=offscreen` and readback, the tool `shot` (path and statistics), `imgdiff` (FLIP), GPU debug groups, GPU time from a fence, a text overlay. A lavapipe job in Linux CI (package `mesa-vulkan-drivers`).
 - **Image debugging without Xcode (D35):** our own debug views in the engine (browsing render targets, switching passes) and a Metal HUD log for GPU time per frame. SDL_GPU does not give time per pass, queries are due in SDL 3.6.
 - **Studio v0:** `wz_studio` on Dear ImGui, a viewport, console, CVars, log and profiler.
-- **Camera (D84):** one free camera with no game type built in. The rigs free fly and orbit as parameter sets on top of it.
+- **Camera (D84, D89):** one free camera per view with no game type built in. A rig is a definition (data) and an instance (state). A camera director per view with priorities, cut and blend. The rigs free fly and orbit. Collision and shake layers after the blend.
 - **Materials v0 (D81):** `eng_gen_tex` v0 in its final module: operators, tileability and palette mapping for four to five materials (brick, plaster, asphalt, sidewalk concrete, wood). One more material from an AI image with a minimal provenance file. Generated at startup, no cache yet.
-- **Review page v0 (D86):** `wzctl review export` and `wzctl review import` for a set of renders, with Approve, Reject and a note per item and a local-only slot for a reference image.
+- **Review page v0 (D86, D88):** `wzctl review export` and `wzctl review import` for a set of renders. Verdicts keyed by item and content hash, four states, a note that can be pinned to the image, the actor and transport in every row, a named return path with a set id and nonce, and a local-only slot for a reference image. The design of a channel that proves the owner's identity.
 - **Scale (D53):** `style/scale.cfg`, `scale_derive()`, the scale rig, scale lint v0 and a literal lint.
-- **Test scene:** the scale zoo (the scale rig and one street of primitives, textured with the M2 materials).
-- **Measurements:** 1, 6, 12, 20, 28 and the first reading of 9.
+- **Test scene:** the scale zoo (the scale rig and one street of primitives, textured with the M2 materials) and one small composed corner seen from the game camera (D89).
+- **Measurements:** 1, 6, 12, 20, 28, 37 and the first reading of 9.
 - **Done when:** the zoo image golden passes FLIP on lavapipe in CI and on Metal locally. The scale lints pass on the zoo. `wzctl shot` returns the path and statistics. An object 10,000 km from the origin is drawn without jitter. A scene with fire and neon passes headless to a PNG and an overdraw histogram. The M2 materials have identical hashes on 3 OS. A verdict given on the review page arrives in `review/decisions.jsonl`.
-- **Owner gate:** stylized lighting and the painted materials together, next to the GTA III and WoW references, on the review page. Freezing the scale table. The owner supplies the reference shots; they stay on his disk (D85).
+- **Owner gate:** the first style approval (D89): stylized lighting and the painted materials together, next to the GTA III and WoW references, on the review page. The second approval is at gate M3 with the character in the scene. Freezing the scale table. The owner supplies the reference shots; they stay on his disk (D85).
 
 ## M3 Assets as programs and a studio for the art director
 
@@ -175,7 +182,7 @@ The order of M8 and M9 is reconsidered after gate M4 (D51). The position of MD i
 - C2PA: the original file stays unchanged, its hash and the output of `c2patool` (binary in `.tools/`) are stored. Missing C2PA is not an error.
 - Half-edge operations and meshoptimizer.
 - Generators: building v0, road and sidewalk, props. All on top of the scale table. The road generator also emits the lane graph format for `eng_sim` (D79).
-- **Character v0 (D82):** `eng_gen_char` v0 with proportions from the scale table, a smooth-min body from capsules and a flat painted face. No animation. It replaces the primitive mannequin in the scale rig and in every preview.
+- **Character v0 (D82, D89):** `eng_gen_char` v0 with proportions from the scale table, a smooth-min body from capsules and a flat painted face, built on a skeleton with skin weights and shown in five to six stress poses. No animation system. It replaces the primitive mannequin in the scale rig and in every preview.
 - Output contract lint: every archetype declares its LOD chain, impostor distance, shadow-caster flag and separately cullable parts (D79).
 - **Preparation for destruction (D80):**
   - The building generator gives every part a stable `uid64` from the building anchor and the grammar path. Inserting a rule upstream changes no existing part uid.
@@ -206,7 +213,7 @@ The order of M8 and M9 is reconsidered after gate M4 (D51). The position of MD i
 - Measurement 18.
 
 **Done when:** a change of a recipe or of generator code shows up in the running studio without a restart. 10–20 materials from both sources pass the lints. Golden hashes match on 3 OS. The LAYOUT dump of a cell is identical on 3 OS. `decisions.jsonl` has at least 30 decisions and the judge's agreement is measured. 20 generated sounds pass the lints with identical hashes on 3 OS.
-**Owner gate:** approval of materials and presets, a sheet of static characters (D82), the judge's rubric and the fire and smoke flipbooks.
+**Owner gate:** approval of materials and presets, a sheet of characters in stress poses (D82, D89), the second style approval with the character standing in the M2 scene (D89), the judge's rubric and the fire and smoke flipbooks.
 
 ## M4 Test scene A: city block
 
@@ -227,7 +234,7 @@ One cell with an edge of about 256 m, no streaming.
 - The physics adapter: bodies get IDs from the engine, contact events are sorted by ID before they are passed to the game. Bodies are created in sorted `uid64` order. A cosmetic object layer that gameplay never reads; the simulation hash is identical with it on and off (D80).
 - Saving and restoring physics state in our adapter. joltc does not have it and a save needs it (D40).
 - Car generator v0 and a drivable car.
-- The follow camera rig, configured by the sandbox project on top of the free camera (D84).
+- The follow camera rig, configured by the sandbox project on top of the free camera (D84). A tuning pass against the real handling, with the checklist from research 9; it is the acceptance test of rig state, occlusion and shake (D89).
 - Car sound: loops by RPM and load, Doppler and impacts from contacts.
 - Measurements 19 and 27.
 - Before this phase the research on driving physics should be done (D71).
@@ -435,8 +442,10 @@ Each measurement is created as a permanent test or measurement scene in the repo
 | 34 | latency of regenerating a building after a part state change, including fracture, mesh and HLOD (p50, p95) | MD | fracture at impact or pre-generated |
 | 35 | size of the destruction delta and replay time of a cell after "destroy all" | MD | compaction, edit budget per cell |
 | 36 | throughput and 3-OS hash of convex clipping in `detmath` | M3b (spike), MD | whether fracture is tier A or cached data |
+| 37 | the FLIP value at which the owner sees a difference, between runs and between platforms | M2 | the threshold for automatic acceptance of goldens on other platforms |
+| 38 | validator failures when the agent writes and edits 50 recipes in the own line format and in JSON with comments | M0c | the own format, or the TOML fallback |
 
-Measurements 1–12 are from report 3 (the original no. 12 is replaced by D20), 13–17 from report 4, 18–23 from report 6. Measurements 24–28 were added during the review, 29 and 30 by research 7 (D79), 31–36 by research 8 (D80).
+Measurements 1–12 are from report 3 (the original no. 12 is replaced by D20), 13–17 from report 4, 18–23 from report 6. Measurements 24–28 were added during the review, 29 and 30 by research 7 (D79), 31–36 by research 8 (D80), 37 and 38 by research 9 (D88, D90).
 
 On the Mac, measurement is done without Xcode (D35): our own counters and frame times, `powermetrics`, the Metal HUD log (`MTL_HUD_ENABLED=1`) and Tracy. GPU time per pass cannot be measured this way.
 

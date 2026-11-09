@@ -116,19 +116,47 @@ render:                                   ▼
 - **Threads:** the main thread owns the window and GPU submission. Jobs (`jobs_run`, `jobs_wait`) do generation, streaming and simulation batches. Audio has its own thread. Full work-stealing and running simulation N+1 in parallel with rendering N come in M10.
 - **Streaming:** 256 m cells, six cell states, tickets by distance and speed, cancelling stale work by epoch. The parent LOD stays visible until the children arrive.
 
-## Camera (D84)
+## Camera (D84, D89)
 
-The engine has one free camera: a position in double, an orientation and a projection. No game type is built into it. Rigs (free fly, orbit, follow, strategy) are parameter sets that end in the same free camera. The project chooses and tunes its rigs, and the studio uses the same ones. The module that holds the camera is settled with the code in M2.
+One free camera per view: a position in double, an orientation and a projection. No game type is built into it.
 
-## Review pages (D86)
+- **Rig definition and rig instance.** The definition is text data with the numbers. The instance holds state between frames (damped angles, occlusion timers, recentering). An instance can be reset, and is told when the target teleports or the origin shifts.
+- **Rig types are engine code** (free fly, orbit, follow, strategy); data only tunes them. A project that needs another kind writes it in C against the same interface.
+- **A camera director per view** holds the live rigs with priorities, cuts or blends between them, and takes an override for cinematics. Blending happens on target, yaw, pitch, distance and field of view.
+- **Layers after the blend:** collision and occlusion, then shake. Shake never feeds back into rig state.
+- **Inputs of a rig:** the target (position, velocity, orientation, local up, ground state), shaped player input and scene queries. Rig state is relative to the target and the projection is a rig output, so the same rigs work on a planet and in double precision.
+- The studio uses the same mechanism with its own parameter sets. The module that holds the camera is settled with the code in M2.
+
+## Review pages (D86, D88)
 
 The owner approves visual results in two places that write the same record, `review/decisions.jsonl`: the studio (live tuning) and a review page (a phone, the second machine, a headless run).
 
-- `wzctl review export` writes one self-contained static HTML page from a review set: renders, contact sheets, A/B pairs, lint results and the recipe trace, with Approve, Reject and a note per item.
-- `wzctl review import` reads the verdicts back. A verdict stores who gave it, through what and when. An approval on a page counts as the owner's confirmation for `golden_accept` and for owner gates.
+- `wzctl review export` writes one self-contained static HTML page from a review set: renders, contact sheets, A/B pairs with the FLIP value, lint results and the recipe trace.
+- **A verdict belongs to an item and the content hash of the exact render.** It has four states: `untriaged`, `approved`, `changes_requested`, `rejected`. A note can be pinned to a rectangle on the image.
+- `wzctl review import` reads the verdicts back from a named return path (a verdict file or the host's stored state) that carries the review set id and a nonce. It refuses a verdict whose hash no longer matches the current render. `golden_accept` accepts only the approved hash.
+- **Every row says who really acted:** the actor kind (owner, agent, automatic rule), the transport, and whether the transport proved the identity. A verdict that opens an owner gate or accepts a golden must come through a channel the agent cannot fill in alone; that channel is designed in M2, and until then such verdicts are listed back to the owner.
+- **Platforms:** the owner approves the look on one reference configuration. Other platforms' goldens are accepted automatically within the calibrated FLIP threshold and recorded as automatic rows.
+- **The log only grows.** The last row per item and hash wins, and a withdrawal is a new row.
 - The engine knows only export and import. How the page reaches the owner (a file on disk, a Claude Artifact published by the agent, a static host) is outside the engine.
 - The page is a report format. The engine and the game contain no JavaScript and no web runtime (D21).
 - References from other games never go on the page. It has a slot that shows a file from the owner's disk without uploading it (D85).
+
+## Guards (D87, D88)
+
+Claude writes the code and the guards that check it, so the guards are protected from their author.
+
+- **CI is the judge.** It computes `passes` of every milestone item, and runs every lint on a known-bad and a valid input.
+- **Guard paths** are listed in one file: milestone items with their commands, thresholds and fixtures, budgets and baselines, CI workflows, `scripts/check`, the lint harness, the review script and brief, `CLAUDE.md`.
+- **A ratchet.** A CI job run from the base branch reports every change in the guard paths. Tightening passes by itself; loosening or removing waits for the owner.
+- **The second review (D83)** is one more filter, not a judge, and never a reason to relax a guard.
+
+## Data files and the type registry (D90)
+
+- **On disk:** our own line format with a written grammar, one strict parser and one canonical writer that keeps comments. Every file has a lossless JSON view for tools, JSON Schema and agents.
+- **Strict reading:** an unknown key, a dangling reference and a duplicate uid are errors.
+- **Three versions:** file syntax, type schema, generator (domain).
+- **Uids are minted by a tool.** A reference carries the uid and a readable hint. Table rows are keyed by a readable name with a rename map.
+- **The registry describes more than fields:** rename aliases, tombstones, converters, defaults, ranges, units, descriptions and usage flags. A changed default is a version bump with a migration. The registry dump is committed and CI checks it for drift.
 
 ## The seam for the game
 

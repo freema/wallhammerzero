@@ -67,6 +67,9 @@ The variant `face = 0` for a flat world from report 5 does not apply.
 - **Changes in the save** are keyed by the pair `(owner cell, id)`.
 - **Runtime handles** (index and generation) are never stored or sent outside the process.
 - **Recipes, presets and authored inputs** have a 64-bit `uid`. References are by uid; a path is only for display. A content hash is a cache key, never an identity (D79).
+- **Uids are minted by a tool** (`wzctl uid new`), never typed by hand or by an agent. Copying a file goes through `wzctl duplicate`, which mints a new uid. A duplicate uid is a hard error that names both files. A retired uid is never reused. 0 means "none" (D90).
+- **A reference is written with a readable hint** next to the uid. The uid decides; a lint warns when the hint is stale (D90).
+- **Rows of data tables** are keyed by a readable name, with a rename map in the table's manifest. They have no uid (D90).
 
 The local index variant from report 2 does not apply.
 
@@ -161,6 +164,10 @@ wallhammerzero/
 ## 10. Files and formats
 
 - **Configuration, recipes and game data** are text. Game data are tables loaded through the type registry (D45).
+- **The text format** is our own line format with a written grammar and a conformance corpus. One strict parser reads it and one canonical writer writes it: fixed key order, one item per line, a float form that round-trips exactly, comments kept. Every file has a lossless JSON view (`wzctl show --json`), which the JSON Schema from the registry describes (D90).
+- **An unknown key is an error** with a nearest-name suggestion. A dangling reference is an error (D90).
+- **Three versions are kept apart:** the file syntax version in the first line, the schema version of the type, and the generator (domain) version (D90).
+- **A changed default value** is a schema version bump with a migration that writes the old value into existing files (D90).
 - **Every stored type** has a name and a version in the registry.
 - **The log** is JSONL, one record per line.
 - **A run** writes to `runs/<id>/`: `log.jsonl`, `stats.json`, and `crash.txt` on a crash.
@@ -200,5 +207,9 @@ wallhammerzero/
 - Hosted CI runs on Linux, Windows and macOS (D76). Runners are given with a version number (`macos-15`), not as `latest`.
 - The `main` branch cannot be deleted or overwritten by a force push (the rule `protect-main`). Actions in CI only from GitHub and verified publishers, pinned to a commit.
 - Golden files change only with the tool `golden_accept`, which requires the owner's confirmation. An approval on a review page counts as that confirmation (D86).
-- A phase is closed only after its diff was reviewed by an OpenAI model (Codex CLI). The reviewer gets the diff and the docs, not Claude's conclusions. Findings are kept in `review/code/<phase>.md` and each one is fixed or answered (D83).
-- Items in `milestones/*.json` are switched only by a successful command, and items with a gate only by the owner.
+- A phase is closed only after its diff was reviewed by an OpenAI model (Codex CLI). The reviewer gets the diff and the docs, not Claude's conclusions. Findings are kept in `review/code/<phase>.md` and each one is fixed or answered (D83). The review runs from `scripts/review` in a clean checkout, the reviewer may build and run tests, and the raw output is saved unedited. A finding Claude does not fix goes back to the reviewer once and then to the owner (D88).
+- Items in `milestones/*.json` are computed by CI: it runs each item's command and fails when the stored `passes` differs. Items with a gate are switched only by the owner (D87).
+- Every lint ships a known-bad input on which it must fail and a valid input on which it must pass. CI fails a lint without them (D87). A numeric threshold also has an input just over it and one just under it (D88).
+- **Guard paths** are listed in `guards.cfg`: `milestones/*.json`, lint thresholds and fixtures, budgets and baselines, `.github/workflows/`, `scripts/check`, the lint harness, `scripts/review` and its brief, and `CLAUDE.md`. A CI job run from the base branch reports every change in them. Tightening passes by itself; loosening or removing needs the owner's approval of the pull request (D88).
+- The agent commits under its own GitHub identity without admin rights. `main` has required checks and no bypass (D88, set up by the owner).
+- A milestone item may be `blocked` with a reason. Results of local checks are tied to the commit hash (D88).

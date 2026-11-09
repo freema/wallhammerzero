@@ -2,7 +2,7 @@
 
 What we decided, when and why. A new decision is added at the end with a date. When something changes, the old decision is not deleted but marked as superseded and linked to the new one.
 
-Status: **D1–D86 recorded.** D24–D71 are the confirmed proposals from [DECISION-PROPOSALS.md](DECISION-PROPOSALS.md) (decision number = proposal number + 23). The only change against the proposals: D35 (Xcode is not installed). The plan is in [ROADMAP.md](ROADMAP.md), the conventions in [CONVENTIONS.md](CONVENTIONS.md).
+Status: **D1–D90 recorded.** D24–D71 are the confirmed proposals from [DECISION-PROPOSALS.md](DECISION-PROPOSALS.md) (decision number = proposal number + 23). The only change against the proposals: D35 (Xcode is not installed). The plan is in [ROADMAP.md](ROADMAP.md), the conventions in [CONVENTIONS.md](CONVENTIONS.md).
 
 ---
 
@@ -416,7 +416,7 @@ Rules: [ARCHITECTURE.md](ARCHITECTURE.md), section "Destruction: state, not geom
 
 # Improvements after the analysis (2026-11-09)
 
-Claude reviewed the whole plan at the owner's request and proposed six improvements. The owner answered each one. Proposal 4 (who may change lints, budgets and milestone items) is still open, see [STATUS.md](STATUS.md). Coding has not started: the owner confirmed "we are not coding yet".
+Claude reviewed the whole plan at the owner's request and proposed six improvements. The owner answered each one. Proposal 4 (who may change lints, budgets and milestone items) was decided the same day as D87. Coding has not started: the owner confirmed "we are not coding yet".
 
 ## D81 — The painted style is judged in M2 on real textures (2026-11-09)
 Gate M2 confirms the art style (D52), and that style includes painted textures. But the M2 scene was a street of primitives and the texture generator arrived only in M3b. "Nobody has yet shown a WoW-style painted look with pure code" is a known risk, so its first check must not wait for M3.
@@ -471,3 +471,70 @@ The owner likes working with Claude Artifacts (private web pages). He asked for 
 - **Plan:** review page v0 in M2 (the first gate with an image), the full version together with the studio in M3c.
 
 Claude wrote the design from the owner's idea. The owner may change it.
+
+## D87 — Guards are checked by the machine (2026-11-09)
+Closes proposal 4. Claude writes both the code and the guards that check it: lints, budgets and milestone items. Nothing stopped Claude from loosening a lint or switching `passes` by hand. The owner chose option B, which Claude recommended.
+- **CI computes `passes`.** For every item in `milestones/*.json`, CI runs the command and compares the result with `expect`. The value stored in the file is only a record of the last CI result, and a mismatch fails CI. An agent cannot close an item by editing the file. Items with an owner gate are still switched only by the owner.
+- **Every lint has a known-bad input.** A lint is registered together with at least one deliberately broken input on which it must fail and one valid input on which it must pass. CI runs both. A lint without them fails CI.
+- **Not chosen: option C** (every change of a lint, threshold or budget waits for the owner). It would add review work for the owner. The comparison with practice (research 9) checks whether B leaves a hole.
+
+> Extended in D88: loosening a guard needs the owner.
+
+---
+
+# Corrections after research 9 (2026-11-09)
+
+The owner asked for D81–D87 to be compared with other engines and for the tasks to be updated, and left the conclusions to Claude. Report: [research/decisions-d81-d87-vs-practice.md](research/decisions-d81-d87-vs-practice.md). No decision fell; four were written too thin. Claude wrote D88–D90 on that delegation. The owner may change any of them.
+
+## D88 — Guards, second review and review pages after research 9 (2026-11-09)
+Extends D83, D86 and D87.
+
+**Guards (D87).** Option B stops Claude from switching `passes`, but not from swapping an item's command, loosening a threshold, editing a fixture or changing the CI workflow.
+- **Guard paths:** `milestones/*.json` (including `cmd` and `expect`), lint thresholds and fixtures, budgets and baselines, `.github/workflows/`, `scripts/check`, the lint harness, the code review script and its brief, and `CLAUDE.md`.
+- **Guard-change report.** A CI job, run from the base branch, lists every change in the guard paths in plain language. Tightening and adding pass by themselves. **Loosening or removing waits for the owner's approval of the pull request**, one tap in GitHub, also from a phone. This is the part of option C that practice keeps (a ratchet); the rest of C stays rejected.
+- **Boundary inputs.** Every numeric threshold has an input just over it that must fail and one just under it that must pass. The counts of lints, fixtures, tests and milestone items may only grow without an approval.
+- **A `blocked` state** for a milestone item, with a reason shown to the owner, so that an honest "this cannot pass yet" exists.
+- **Local checks** on the Mac (Metal goldens, time budgets) are produced by a script in a guard path and tied to the commit hash.
+- **A separate identity for the agent on GitHub.** Without it no server-side rule binds Claude, and the owner cannot approve a pull request opened under his own account. The owner sets it up once; until then the guard-change report is listed in every session artifact instead. Open task for the owner.
+
+**Second review (D83).**
+- The reviewer works in a clean checkout and may build and run tests, not only read the diff. It still gets no summary, commit messages or conclusions from Claude.
+- The review runs from a fixed script with a fixed brief, both in guard paths. The raw output is saved unedited next to the findings.
+- Every brief asks one fixed extra question: is any test, lint, budget or fixture in this diff weaker than before, and is any code special-cased for a test?
+- A finding that Claude does not fix goes back to the reviewer once with Claude's reason. What stays disputed goes to the owner as plain-language lines. Claude does not close a finding alone, and does not iterate against the reviewer in a loop.
+- It is a second filter that finds roughly half, not an independent judge. It is never a reason to relax a mechanical guard.
+
+**Review pages (D86).**
+- **A verdict belongs to an item and the content hash** of the exact render. `review import` refuses a verdict whose hash no longer matches, and `golden_accept` accepts only the approved hash.
+- **Four states:** `untriaged` (the default, a missing row), `approved`, `changes_requested` (with a note, the item comes back) and `rejected` (this exact image is wrong; kept by hash).
+- **Who really approved.** Every row stores the actor kind (owner, agent, automatic rule), the transport, and whether the transport proved the identity. A verdict that opens an owner gate or accepts a golden must come through a channel Claude cannot fill in alone. Until M2 designs that channel, every such verdict is listed back to the owner in the next report.
+- **The return path is named:** a verdict file or the host's stored state, with the review set id and a nonce, so an import matches exactly one export.
+- **Notes can be pinned** to a rectangle on the image.
+- **One approval, three platforms:** the owner approves the look on one named reference configuration. The goldens of the other platforms are accepted automatically when they are within the FLIP threshold of the approved image, and recorded as automatic rows that point to the owner's row.
+- **The log only grows:** the last row per item and hash wins, a withdrawal is a new row, and "approve all" writes one row per item.
+- **The FLIP threshold is calibrated by us** (measurement 37); no shipped tool publishes one.
+
+## D89 — Camera, style gate and character after research 9 (2026-11-09)
+Extends D81, D82 and D84. "One free camera plus rigs" holds; the interface sketched in D84 does not.
+- **A rig is a definition and an instance.** The definition is text data. The instance holds state between frames: damped angles, occlusion timers, recentering. There are calls to reset an instance and to report that the target teleported or the origin shifted.
+- **Rig types are engine code, data holds the numbers.** A rig is not a data-defined graph of behaviour blocks; a project that needs a new kind of rig writes it in C against the same interface.
+- **A camera director per view** holds the live rigs with priorities, cuts or blends between them and takes an override for cinematics. Blending happens on target, yaw, pitch, distance and field of view, not on finished transforms.
+- **After the blend:** collision and occlusion, then shake, which never feeds back into rig state and has a user intensity setting.
+- **A rig's inputs** are the target (position, velocity, orientation, local up, ground state), shaped player input and scene queries (ray, sweep, terrain height). Rig state is target-relative and the projection is a rig output, which the planet and the strategy camera need.
+- **The studio shares the mechanism,** with its own parameter sets.
+- **The car camera gets a tuning pass in M4b,** not a research. It is the acceptance test of rig state, occlusion and shake.
+- **D81:** the M2 scene adds one small composed corner next to the zoo. Gate M2 is the first style approval, not a lock. The second comes at gate M3, when the character stands in the same scene and light.
+- **D82:** character v0 is built on a skeleton with skin weights and is shown in five to six stress poses (crouch, arms up, twist, stride). There is still no animation system before M9.
+
+## D90 — Data files, identity and the type registry after research 9 (2026-11-09)
+Settles the options left open in [EXAMPLES.md](EXAMPLES.md) and extends D43 and D79.
+- **Text format: our own line format on disk, plus a lossless JSON view** of every file for tools, JSON Schema and agents. Conditions: a written grammar, a conformance corpus, one strict parser and one canonical writer that keeps comments. Measurement 38 checks how reliably the agent writes it. If the conditions are not met, the fallback is a TOML subset, never an unspecified own format.
+- **An unknown key is an error** with a nearest-name suggestion. A dangling reference is an error.
+- **Three separate versions:** file syntax, type schema, generator (domain).
+- **Uids are minted by a tool** (`wzctl uid new`), never typed by the agent. A duplicate uid is a hard error that names both files, and `wzctl duplicate` mints a new one. Retired uids are never reused, and 0 means "none". The uid-to-path index is a cache outside git.
+- **Every reference carries a readable hint** next to the uid. The hint is for readers; a lint warns when it is stale.
+- **Table rows are keyed by a readable name** with a rename map, as in data-heavy games. Per-row uids are not used.
+- **Type registry:** macros next to the struct stay. Before the first type they also carry rename aliases, tombstones for removed fields, converters, defaults, ranges, units and descriptions, and usage flags (stored, editor-only, derived, affects generated output).
+- **A changed default is a version bump** with a migration that writes the old value, because it would silently change generated output.
+- **Schema drift check:** the registry is dumped to JSON and committed. CI fails on an incompatible change without a version bump or migration.
+- **Migrations are run across the repository and committed,** so old load paths can be deleted.
