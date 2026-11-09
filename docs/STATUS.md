@@ -2,7 +2,7 @@
 
 Where we are, what is resolved, what is open and what comes next. Updated after every session and every decision.
 
-**Last updated:** 2026-11-06
+**Last updated:** 2026-11-09
 **Phase:** the analysis is closed (D36). Next is the implementation of milestone M0. The first code will be written as task M0a on the owner's go.
 **Plan:** [ROADMAP.md](ROADMAP.md), work in Linear: [Wallhammer Zero](https://linear.app/nsoft/project/wallhammer-zero-3576c061ad78).
 
@@ -80,6 +80,13 @@ Where we are, what is resolved, what is open and what comes next. Updated after 
 - [x] **Research 7: procedural pipeline and modern engines (2026-11-06).** Report: [research/procedural-pipeline-and-modern-engines.md](research/procedural-pipeline-and-modern-engines.md). The procedural core holds up. Gaps are in the machinery around it: stable recipe and rule identity, an explicit generator input contract, a dependency registry, cache lifecycle and hand edits that survive a generator version change. Accepted as D79 and written into ARCHITECTURE, CONVENTIONS and ROADMAP.
 - [x] **Repo translated to English (D78).**
 - [x] **Research 8: environment destruction (2026-11-06).** Report: [research/environment-destruction.md](research/environment-destruction.md). Accepted as D80: destruction is stored as part states, tier A decides, debris is cosmetic. Early work in M3b–M8, the milestone MD and measurements 31–36.
+- [x] **Plan review with improvements (2026-11-09).** Claude went through the whole plan and proposed six improvements; the owner answered them. Recorded as D81–D86:
+  - painted materials already in M2 (D81) and a static character v0 in M3b (D82), so the two riskiest looks get an early gate,
+  - a code review by an OpenAI model as a condition of every phase (D83),
+  - one free camera with rigs as parameters, no camera research (D84),
+  - the three open owner questions answered by delegation (D85),
+  - results delivered as artifacts, and review pages in the engine from M2 (D86).
+- [x] **[EXAMPLES.md](EXAMPLES.md) (2026-11-09):** illustrative sketches of the main concepts and the options that are still open. Not engine code.
 
 ## Resolved (briefly; details in DECISIONS.md)
 | Topic | State | Decision |
@@ -119,16 +126,22 @@ Where we are, what is resolved, what is open and what comes next. Updated after 
 | Art style: stylized painted 3D | ✅ confirmed by gate M2 | D52 |
 | Resolution, AI sources, judge, UI | ✅ | D54–D57 |
 | Audio and effects | ✅ | D58–D68 |
+| Identity, cache and edits of generated content | ✅ | D79 |
+| Destruction as part states | ✅ defaults, the owner may change them | D80 |
+| Painted materials in M2, static character v0 in M3b | ✅ | D81, D82 |
+| Code review by an OpenAI model as a phase condition | ✅ | D83 |
+| One free camera, rigs as parameters | ✅ | D84 |
+| Conditions and effects in data, references local only, no license for now | ✅ by delegation | D85 |
+| Results as artifacts, review pages in the engine | ✅ design by Claude | D86 |
 
 ## Open questions
-Three questions for the owner from checking the plan, in detail in [VERIFICATION.md](VERIFICATION.md). None blocks M0.
-1. ~~Hosted macOS in CI~~: resolved in D76, the repo is public and CI is free.
-4. License of the public repo (D76). None yet, so "all rights reserved".
-2. May game data assemble conditions and effects from parts programmed in C? Recommendation: yes.
-3. May the GTA III and WoW reference screenshots be sent to AI services? Recommendation: no, only locally.
-
-5. Before M7 (D79): the default policy for orphaned edits, whether frozen domains keep old generator source, whether the two machines share a cache.
-6. D80 defaults for destruction (scope, persistence per mode, position of MD) may be changed by the owner; MD position is decided at gate M4.
+The questions from checking the plan ([VERIFICATION.md](VERIFICATION.md)) are closed: hosted macOS in CI by D76, and the license, conditions and effects in data and the reference screenshots by D85. None of the open ones blocks M0.
+1. **Who may change the guards (proposal 4 of 2026-11-09, the owner has not decided).** Today Claude could loosen a lint or a budget, or switch `passes` in `milestones/*.json`, without anyone noticing. Golden files are already protected by the owner's confirmation. Options:
+   - **A, as today:** a written rule, no enforcement.
+   - **B, recommended:** CI computes `passes` itself, and every lint has a deliberately broken input on which it must fail.
+   - **C, B plus:** a change of a lint, threshold or budget is marked in the pull request and waits for the owner.
+2. Before M7 (D79): the default policy for orphaned edits, whether frozen domains keep old generator source, whether the two machines share a cache.
+3. D80 defaults for destruction (scope, persistence per mode, position of MD) may be changed by the owner; MD position is decided at gate M4.
 
 The rest will be decided by a measurement or a milestone gate.
 
@@ -155,6 +168,6 @@ Three Three.js repos and one technical analysis, recorded 2026-09-24. The in-dep
 
 ## Next step
 0. On the Windows PC: clone the repo, install Visual Studio Build Tools and Claude Code, add the graphics card model to D75 (task NSO-620 in Linear).
-1. The owner answers the three questions above.
-2. On the owner's go, M0a starts (skeleton and CI). The tasks are in Linear.
+1. The owner decides open question 1 (who may change the guards).
+2. On the owner's go, M0a starts (skeleton and CI). The tasks are in Linear. On 2026-11-09 the owner confirmed that coding has not started yet.
 3. In parallel, four gap research topics (D71). Light and sky must be done before M2.

@@ -8,6 +8,7 @@ Wallhammer Zero is a custom 3D open-world engine in C17 in which code generates 
 5. [docs/CONVENTIONS.md](docs/CONVENTIONS.md): axes, units, IDs, names.
 6. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): layers, modules and their rules.
 7. [docs/SETUP.md](docs/SETUP.md): machine setup (Mac, Windows).
+8. [docs/EXAMPLES.md](docs/EXAMPLES.md): illustrative sketches of the main concepts. Not binding, not engine code.
 
 ## Write everything down, continuously
 The owner wants everything written down: what we want to do, what we decided and what is already resolved.
@@ -18,6 +19,12 @@ The owner wants everything written down: what we want to do, what we decided and
 
 ## Phase
 The analysis is closed (D36). Next is **implementation according to [docs/ROADMAP.md](docs/ROADMAP.md)**. The first code is written on the owner's go, as task M0a. Work is tracked in Linear (project Wallhammer Zero, team Nsoft). Throwaway prototypes are not made.
+
+## Results for the owner (D86)
+The owner wants results as Claude Artifacts (private pages), written in Czech: session summaries, proposals, and later measurements and renders for approval. The repo stays the source of truth; an artifact is the way it is shown. Reference shots from other games never go into an artifact (D85).
+
+## Code review (D83)
+A phase is done only after an OpenAI model (Codex CLI) reviewed its diff. Give the reviewer the diff and the docs, not your conclusions. Findings go to `review/code/<phase>.md`.
 
 ## Language
 Everything in the repository is in English: documentation, research, file and folder names, code, comments and commit messages (D78). Conversation with the owner may be in Czech.

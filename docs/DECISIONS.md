@@ -2,7 +2,7 @@
 
 What we decided, when and why. A new decision is added at the end with a date. When something changes, the old decision is not deleted but marked as superseded and linked to the new one.
 
-Status: **D1–D80 recorded.** D24–D71 are the confirmed proposals from [DECISION-PROPOSALS.md](DECISION-PROPOSALS.md) (decision number = proposal number + 23). The only change against the proposals: D35 (Xcode is not installed). The plan is in [ROADMAP.md](ROADMAP.md), the conventions in [CONVENTIONS.md](CONVENTIONS.md).
+Status: **D1–D86 recorded.** D24–D71 are the confirmed proposals from [DECISION-PROPOSALS.md](DECISION-PROPOSALS.md) (decision number = proposal number + 23). The only change against the proposals: D35 (Xcode is not installed). The plan is in [ROADMAP.md](ROADMAP.md), the conventions in [CONVENTIONS.md](CONVENTIONS.md).
 
 ---
 
@@ -104,9 +104,9 @@ Consequences:
 - The recommendation "an engine for one game" is not reopened.
 - The reference scenes (a city block, a planet seed) in the milestone proposals serve only as engine test scenes, not as narrowing to one game.
 
+## D20 — Platform testing: Mac primarily, Windows later and separately, no macOS upgrade (2026-11-05)
 > Refined in D75: the Windows machine is the second development machine from M0, not just a test machine.
 
-## D20 — Platform testing: Mac primarily, Windows later and separately, no macOS upgrade (2026-11-05)
 - **Development Mac:** the engine is developed and debugged on the MacBook M4 Pro (Metal). By the analysis this is not a problem for development or as the primary platform.
 - **Windows and D3D12:** they will be tested later and separately, on a Windows machine.
 - **macOS:** an upgrade to macOS 26 will not be done because of Vulkan. The Vulkan backend (KosmicKrisp) is therefore not tested on the Mac.
@@ -411,3 +411,63 @@ The owner wants environment destruction and asked for it to be analysed and buil
   - interiors on breach: back faces only in MD; full interiors later.
 
 Rules: [ARCHITECTURE.md](ARCHITECTURE.md), section "Destruction: state, not geometry". Plan: [ROADMAP.md](ROADMAP.md), MD and the destruction items in M3b, M3d, M4b, M6, M7 and M8.
+
+---
+
+# Improvements after the analysis (2026-11-09)
+
+Claude reviewed the whole plan at the owner's request and proposed six improvements. The owner answered each one. Proposal 4 (who may change lints, budgets and milestone items) is still open, see [STATUS.md](STATUS.md). Coding has not started: the owner confirmed "we are not coding yet".
+
+## D81 — The painted style is judged in M2 on real textures (2026-11-09)
+Gate M2 confirms the art style (D52), and that style includes painted textures. But the M2 scene was a street of primitives and the texture generator arrived only in M3b. "Nobody has yet shown a WoW-style painted look with pure code" is a known risk, so its first check must not wait for M3.
+- **`eng_gen_tex` v0 moves into M2:** operators, tileability and palette mapping for four to five materials (brick, plaster, asphalt, sidewalk concrete, wood). Final module, golden hashes on 3 OS.
+- **One material from an AI image** with a minimal provenance file, so the gate compares both sources of D14. The full import chain (C2PA, lints, extended provenance) stays in M3b.
+- **No cache yet:** the textures are generated at startup. The Merkle cache stays in M3a.
+- **Gate M2** judges lighting and materials together. Measurement 9 gets its first reading in M2.
+
+Proposed by Claude, accepted by the owner.
+
+## D82 — A static character v0 in M3b (2026-11-09)
+Characters are the weakest category for AI (research 3) and their first signal was M9, the second to last milestone.
+- **`eng_gen_char` v0 is one of the first generators in M3b:** proportions from the scale table, a smooth-min body from capsules, a flat painted face. No animation.
+- It replaces the primitive mannequin in the scale rig and in every preview.
+- **Gate M3** adds a sheet of static characters. Measurement 10 covers the character category.
+- The order of M8 and M9 does not change (D51). Skeleton animation, clothing and crowds stay in M9.
+
+Accepted by the owner, who left the details to Claude.
+
+## D83 — An OpenAI model reviews the code of every phase (2026-11-09)
+Claude writes both the code and its tests. Image review already has a second judge from another vendor (D56); code gets the same.
+- **A condition, not an option:** a phase is done only after an independent code review by an OpenAI model (Codex CLI). It is an item `Mx.code_review` in `milestones/Mx.json`.
+- **The reviewer gets the phase diff and the docs,** not Claude's summary or conclusions.
+- **Findings** go to `review/code/<phase>.md`. Each one is fixed, or answered with a reason. The owner decides disputes.
+- **What leaves the machine:** the code is sent to OpenAI. The repo is public (D76), so nothing leaves that is not already published. `.env`, `reference/` and AI sounds are never part of the diff.
+- **To verify in M0a:** the Codex CLI on both machines. On the Mac it is already present; nothing new is installed into the system (D6).
+
+## D84 — The camera is free and general (2026-11-09)
+Claude proposed a research on the car camera and controls before gate M4. The owner's answer: the camera is free. The engine serves several game types, and a camera built for one of them makes no sense.
+- The engine has one free camera (position in double, orientation, projection) with no game type built in.
+- Rigs (free fly, orbit, follow, strategy from D49) are parameter sets on top of it. The project chooses and tunes them, and the studio uses the same ones.
+- No separate camera research. Scene M4 uses the follow rig configured by the sandbox project.
+- Input mapping and menus stay in the table of gaps.
+
+The split into "one free camera plus rigs" is Claude's reading of the owner's answer. The owner may change it.
+
+## D85 — Three open questions answered (2026-11-09)
+The owner left the answers to Claude. They follow the recommendations in [VERIFICATION.md](VERIFICATION.md), and the owner may change them.
+- **Conditions and effects in data: yes.** Game data may assemble conditions and effects from parts programmed in C. It is not a scripting language (refines D45).
+- **Reference screenshots are not sent to AI services.** They stay local in `reference/` and the owner judges them next to the render. The second judge (D56) gets only our renders.
+- **License: none for now.** "All rights reserved" stays (D76). It is the only choice that can be changed later without consequences: an open license cannot be taken back. Reconsidered before the first release, or when outside contributions are wanted.
+
+## D86 — Results as artifacts, review pages in the engine (2026-11-09)
+The owner likes working with Claude Artifacts (private web pages). He asked for results to be delivered as artifacts, and whether the engine should have something similar: a model codes the game and the owner approves visual things on such a page.
+- **Now:** Claude delivers session results (summaries, proposals, later measurements and renders) as artifacts, in Czech. Artifacts are not on GitHub, so D78 does not apply to them. `docs/` stays the source of truth.
+- **In the engine: review pages.** `wzctl review export` builds one self-contained static HTML page from a review set: renders, contact sheets, A/B pairs, lint results and the recipe trace, with Approve, Reject and a note per item.
+- **Decisions come back** through `wzctl review import` into `review/decisions.jsonl`, the same record the studio writes (M3c). An approval on a page counts as the owner's confirmation for `golden_accept` and for owner gates. The record stores who, through what and when.
+- **Transport is not part of the engine.** The page can be opened from disk, published by the agent as a Claude Artifact (the agent then reads the decisions back), or put on any static host. The engine knows only export and import, so it does not depend on one AI vendor.
+- **D21 holds.** The page is a report format written by a tool. The engine and the game still contain no JavaScript and no web runtime. The page carries only a small inline script for A/B and the buttons.
+- **References stay local (D85).** The page has a slot that shows a file from the owner's disk in the browser without uploading it. Renders published as an artifact leave the machine, as they do with the second judge (D56).
+- **Why next to the studio:** a page works on a phone and from the second machine, needs no build, and an agent can produce it from a headless run. The studio stays the place for live tuning.
+- **Plan:** review page v0 in M2 (the first gate with an image), the full version together with the studio in M3c.
+
+Claude wrote the design from the owner's idea. The owner may change it.

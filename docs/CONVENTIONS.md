@@ -199,5 +199,6 @@ wallhammerzero/
   - Scripts are CMake scripts (`cmake -P`), not bash or PowerShell.
 - Hosted CI runs on Linux, Windows and macOS (D76). Runners are given with a version number (`macos-15`), not as `latest`.
 - The `main` branch cannot be deleted or overwritten by a force push (the rule `protect-main`). Actions in CI only from GitHub and verified publishers, pinned to a commit.
-- Golden files change only with the tool `golden_accept`, which requires the owner's confirmation.
+- Golden files change only with the tool `golden_accept`, which requires the owner's confirmation. An approval on a review page counts as that confirmation (D86).
+- A phase is closed only after its diff was reviewed by an OpenAI model (Codex CLI). The reviewer gets the diff and the docs, not Claude's conclusions. Findings are kept in `review/code/<phase>.md` and each one is fixed or answered (D83).
 - Items in `milestones/*.json` are switched only by a successful command, and items with a gate only by the owner.

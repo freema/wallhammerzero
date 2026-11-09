@@ -22,7 +22,7 @@ Each module is one CMake target `eng_<module>` with the folders `include/eng/` (
 | | `eng_types` | type registry: name, version, fields, serialization, JSON Schema (D43), `uid64` and the `ref` field kind (D79) | M0c, M1a |
 | | `eng_prof` | Tracy, phase timers, counters, `stats.json` | M1b |
 | | `eng_gen_core` | **tier A:** `detmath`, RNG, noise, `eng_cell_id`, world shape math | M0b |
-| **3 Generators** | `eng_gen_tex`, `eng_gen_mesh`, `eng_gen_arch`, `eng_gen_world`, `eng_gen_char`, `eng_gen_audio`, `eng_gen_vfx` | **tier A:** pure functions `(recipe, seed) → data`. CPU only, no GPU or files. `eng_gen_arch` also emits the part graph `destruct_desc` (D80). | M3, M7–M9 |
+| **3 Generators** | `eng_gen_tex`, `eng_gen_mesh`, `eng_gen_arch`, `eng_gen_world`, `eng_gen_char`, `eng_gen_audio`, `eng_gen_vfx` | **tier A:** pure functions `(recipe, seed) → data`. CPU only, no GPU or files. `eng_gen_arch` also emits the part graph `destruct_desc` (D80). | M2 (textures v0, D81), M3, M7–M9 |
 | **4 Resources and GPU** (seam) | `eng_asset` | VFS, resource DB, refcounted graph, IO queue, ports `asset_provider` and `gen_provider`, Merkle cache, uid registry and reverse dependencies, cache GC, bake and pack (D79) | M3a |
 | | `eng_gpu` | RHI built from three portable concepts (D25), SDL_GPU backend and null | M1c |
 | **5 Subsystems** | `eng_render` | render graph, forward+ with clusters (D27), passes, materials | M2 |
@@ -115,6 +115,20 @@ render:                                   ▼
 - **Input** to the simulation is only player commands (`player_cmd`). Replay, the AI agent and the future network use the same channel.
 - **Threads:** the main thread owns the window and GPU submission. Jobs (`jobs_run`, `jobs_wait`) do generation, streaming and simulation batches. Audio has its own thread. Full work-stealing and running simulation N+1 in parallel with rendering N come in M10.
 - **Streaming:** 256 m cells, six cell states, tickets by distance and speed, cancelling stale work by epoch. The parent LOD stays visible until the children arrive.
+
+## Camera (D84)
+
+The engine has one free camera: a position in double, an orientation and a projection. No game type is built into it. Rigs (free fly, orbit, follow, strategy) are parameter sets that end in the same free camera. The project chooses and tunes its rigs, and the studio uses the same ones. The module that holds the camera is settled with the code in M2.
+
+## Review pages (D86)
+
+The owner approves visual results in two places that write the same record, `review/decisions.jsonl`: the studio (live tuning) and a review page (a phone, the second machine, a headless run).
+
+- `wzctl review export` writes one self-contained static HTML page from a review set: renders, contact sheets, A/B pairs, lint results and the recipe trace, with Approve, Reject and a note per item.
+- `wzctl review import` reads the verdicts back. A verdict stores who gave it, through what and when. An approval on a page counts as the owner's confirmation for `golden_accept` and for owner gates.
+- The engine knows only export and import. How the page reaches the owner (a file on disk, a Claude Artifact published by the agent, a static host) is outside the engine.
+- The page is a report format. The engine and the game contain no JavaScript and no web runtime (D21).
+- References from other games never go on the page. It has a slot that shows a file from the owner's disk without uploading it (D85).
 
 ## The seam for the game
 

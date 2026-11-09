@@ -15,6 +15,7 @@ Status (2026-11-06): the analysis is closed and the plan is written. No code exi
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Architecture: layers, modules, dependency rules, frame flow |
 | [docs/CONVENTIONS.md](docs/CONVENTIONS.md) | Conventions: axes, units, cell IDs, names, repo structure |
 | [docs/SETUP.md](docs/SETUP.md) | Setting up a development machine (Mac, Windows) and working on two machines |
+| [docs/EXAMPLES.md](docs/EXAMPLES.md) | Illustrative sketches of the main concepts as code and data, with open options |
 | [docs/VERIFICATION.md](docs/VERIFICATION.md) | Checking the plan against web sources and questions for the owner |
 | [docs/DECISION-PROPOSALS.md](docs/DECISION-PROPOSALS.md) | Record of 48 proposals with options and reasons (confirmed as D24–D71) |
 | [docs/REVIEW.md](docs/REVIEW.md) | Documentation review from 2026-11-06: weak spots that the plan addresses |

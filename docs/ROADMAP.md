@@ -12,6 +12,8 @@
 - **Machine check.** Each milestone has a file `milestones/Mx.json`. An agent may switch an item to `passes: true` only after the command written next to it succeeds.
 - **Owner gate.** Items with `owner_gate: true` are switched only by the owner. Gates are grouped and each milestone has a budget of review hours (D34).
 - **Phases.** Large milestones are split into phases (M0a, M0b…) with their own check. The phases of later milestones are decided when their tasks are broken down.
+- **Independent code review (D83).** A phase is done only after an OpenAI model (Codex CLI) reviewed its diff and every finding is fixed or answered. Each milestone file carries an item `Mx.code_review` per phase. Findings are kept in `review/code/<phase>.md`.
+- **Review pages (D86).** From M2, owner gates with an image run through a review page: `wzctl review export` writes one static HTML page with the renders, the owner approves or rejects on it, and `wzctl review import` writes the verdicts into `review/decisions.jsonl`.
 - **Three test scenes.** The city block (M4), the planet seed (M5) and the strategy cutout (M6) run in CI the whole time. They guard that the engine stays general-purpose (D15, D19, D23). They are not games.
 
 ```json
@@ -29,8 +31,8 @@
 |---|---|---|
 | **M0** | Skeleton, determinism and the agent loop | build and tests on 3 OS, a deterministic generator core, logs, tools for AI |
 | **M1** | Core, profiler, debug server and draw cost | memory and jobs, time stepping, RHI and a measured draw cap |
-| **M2** | Stylized lighting, studio v0 and the scale zoo | the first image in the style, a studio with a viewport, a frozen scale table |
-| **M3** | Assets as programs and a studio for the art director | texture, building and road generators, approval in the studio, audio basics |
+| **M2** | Stylized lighting, studio v0 and the scale zoo | the first image in the style with painted materials, a studio with a viewport, a review page, a frozen scale table |
+| **M3** | Assets as programs and a studio for the art director | texture, building, road and static character generators, approval in the studio, audio basics |
 | **M4** | Test scene A: city block | a playable block with a drivable car, game DLL, replay |
 | **M5** | Test scene B: planet seed | the world shape port with two implementations, a flight from orbit |
 | **M6** | Test scene C: strategy cutout | 100,000 entities, a player-built world, time acceleration, UI with a table |
@@ -71,6 +73,7 @@ The order of M8 and M9 is reconsidered after gate M4 (D51). The position of MD i
 - gitleaks in `.tools/` as a check before a commit and in CI (D76).
 - Threads and atomics: threads from SDL3, not `<threads.h>`. Atomics through clang's `<stdatomic.h>`.
 - Vendored audio libraries: miniaudio and libebur128.
+- The Codex CLI for the phase code review is verified on both machines, with nothing new installed into the system (D83, D6).
 - Done when: the build and unit tests are green on 3 OS and `wz` opens a window on the Mac and on the Windows machine.
 
 **M0b Determinism**
@@ -140,11 +143,14 @@ The order of M8 and M9 is reconsidered after gate M4 (D51). The position of MD i
 - **Image for machines:** `--gpu=offscreen` and readback, the tool `shot` (path and statistics), `imgdiff` (FLIP), GPU debug groups, GPU time from a fence, a text overlay. A lavapipe job in Linux CI (package `mesa-vulkan-drivers`).
 - **Image debugging without Xcode (D35):** our own debug views in the engine (browsing render targets, switching passes) and a Metal HUD log for GPU time per frame. SDL_GPU does not give time per pass, queries are due in SDL 3.6.
 - **Studio v0:** `wz_studio` on Dear ImGui, a viewport, console, CVars, log and profiler.
+- **Camera (D84):** one free camera with no game type built in. The rigs free fly and orbit as parameter sets on top of it.
+- **Materials v0 (D81):** `eng_gen_tex` v0 in its final module: operators, tileability and palette mapping for four to five materials (brick, plaster, asphalt, sidewalk concrete, wood). One more material from an AI image with a minimal provenance file. Generated at startup, no cache yet.
+- **Review page v0 (D86):** `wzctl review export` and `wzctl review import` for a set of renders, with Approve, Reject and a note per item and a local-only slot for a reference image.
 - **Scale (D53):** `style/scale.cfg`, `scale_derive()`, the scale rig, scale lint v0 and a literal lint.
-- **Test scene:** the scale zoo (the scale rig and one street of primitives).
-- **Measurements:** 1, 6, 12, 20 and 28.
-- **Done when:** the zoo image golden passes FLIP on lavapipe in CI and on Metal locally. The scale lints pass on the zoo. `wzctl shot` returns the path and statistics. An object 10,000 km from the origin is drawn without jitter. A scene with fire and neon passes headless to a PNG and an overdraw histogram.
-- **Owner gate:** stylized lighting next to the GTA III and WoW references. Freezing the scale table. The owner supplies the reference shots.
+- **Test scene:** the scale zoo (the scale rig and one street of primitives, textured with the M2 materials).
+- **Measurements:** 1, 6, 12, 20, 28 and the first reading of 9.
+- **Done when:** the zoo image golden passes FLIP on lavapipe in CI and on Metal locally. The scale lints pass on the zoo. `wzctl shot` returns the path and statistics. An object 10,000 km from the origin is drawn without jitter. A scene with fire and neon passes headless to a PNG and an overdraw histogram. The M2 materials have identical hashes on 3 OS. A verdict given on the review page arrives in `review/decisions.jsonl`.
+- **Owner gate:** stylized lighting and the painted materials together, next to the GTA III and WoW references, on the review page. Freezing the scale table. The owner supplies the reference shots; they stay on his disk (D85).
 
 ## M3 Assets as programs and a studio for the art director
 
@@ -165,10 +171,11 @@ The order of M8 and M9 is reconsidered after gate M4 (D51). The position of MD i
   - Done when: moving or renaming a recipe file or a rule breaks no reference and changes no object ID, killing the process during a cache write leaves no readable truncated file, and a deliberately changed generator without a version bump fails CI.
 
 **M3b Textures, geometry and the first generators**
-- `eng_gen_tex`: operators, tileability, palette and derived maps. Import of AI sources with extended provenance (D14, D55).
+- `eng_gen_tex`: the full operator set on top of v0 from M2 (D81), derived maps. Import of AI sources with extended provenance (D14, D55).
 - C2PA: the original file stays unchanged, its hash and the output of `c2patool` (binary in `.tools/`) are stored. Missing C2PA is not an error.
 - Half-edge operations and meshoptimizer.
 - Generators: building v0, road and sidewalk, props. All on top of the scale table. The road generator also emits the lane graph format for `eng_sim` (D79).
+- **Character v0 (D82):** `eng_gen_char` v0 with proportions from the scale table, a smooth-min body from capsules and a flat painted face. No animation. It replaces the primitive mannequin in the scale rig and in every preview.
 - Output contract lint: every archetype declares its LOD chain, impostor distance, shadow-caster flag and separately cullable parts (D79).
 - **Preparation for destruction (D80):**
   - The building generator gives every part a stable `uid64` from the building anchor and the grammar path. Inserting a rule upstream changes no existing part uid.
@@ -181,6 +188,7 @@ The order of M8 and M9 is reconsidered after gate M4 (D51). The position of MD i
 
 **M3c Studio for the art director**
 - Recipe document, undo with an author, a browser, A/B, Approve and Reject (writing to `review/` and golden), notes in the viewport and a lint panel.
+- Review pages, full version (D86): contact sheets, A/B pairs, lint results and the recipe trace on the page. The studio and the page write the same `review/decisions.jsonl`.
 - Tools `gen_*`, `recipe_*`, `lint_run`, `golden_accept`, `review_*` and `project_reload`.
 - `review/decisions.jsonl` and `acceptance.md` for asset families.
 - A second judge from another vendor for risky categories (D56).
@@ -198,7 +206,7 @@ The order of M8 and M9 is reconsidered after gate M4 (D51). The position of MD i
 - Measurement 18.
 
 **Done when:** a change of a recipe or of generator code shows up in the running studio without a restart. 10–20 materials from both sources pass the lints. Golden hashes match on 3 OS. The LAYOUT dump of a cell is identical on 3 OS. `decisions.jsonl` has at least 30 decisions and the judge's agreement is measured. 20 generated sounds pass the lints with identical hashes on 3 OS.
-**Owner gate:** approval of materials and presets, the judge's rubric and the fire and smoke flipbooks.
+**Owner gate:** approval of materials and presets, a sheet of static characters (D82), the judge's rubric and the fire and smoke flipbooks.
 
 ## M4 Test scene A: city block
 
@@ -219,6 +227,7 @@ One cell with an edge of about 256 m, no streaming.
 - The physics adapter: bodies get IDs from the engine, contact events are sorted by ID before they are passed to the game. Bodies are created in sorted `uid64` order. A cosmetic object layer that gameplay never reads; the simulation hash is identical with it on and off (D80).
 - Saving and restoring physics state in our adapter. joltc does not have it and a save needs it (D40).
 - Car generator v0 and a drivable car.
+- The follow camera rig, configured by the sandbox project on top of the free camera (D84).
 - Car sound: loops by RPM and load, Doppler and impacts from contacts.
 - Measurements 19 and 27.
 - Before this phase the research on driving physics should be done (D71).
@@ -352,7 +361,7 @@ Position decided at gate M4 together with the M8/M9 order (D51, D80); by default
 
 ## M9 Characters and animation
 
-- `eng_gen_char`: skeleton, a smooth-min body, clothing and a painted face.
+- `eng_gen_char` on top of v0 from M3b (D82): skeleton, clothing and a detailed painted face.
 - Walking, IK, springs, inertialization, getting into a car, GPU skinning, crowd LOD and active ragdoll.
 - Audio: footsteps by surface, body impacts and vocal expressions.
 - Effects: hits, dust from steps and weapon traces.
@@ -398,8 +407,8 @@ Each measurement is created as a permanent test or measurement scene in the repo
 | 6 | cost of the upscaler | M2 | image quality on Retina |
 | 7 | determinism of generators on 3 OS | M0 | whether regeneration can be relied on |
 | 8 | calibration of the judge against the owner's verdicts | M3 | the judge's weight |
-| 9 | materials from code versus materials from AI | M3 | default source by category |
-| 10 | model ability by asset category | M3 | schedule, templates |
+| 9 | materials from code versus materials from AI | M2 (first reading), M3 | default source by category |
+| 10 | model ability by asset category, including characters (D82) | M3 | schedule, templates |
 | 11 | shader pipeline and hot reload, compiler build time and MSL translation time at startup | M1 | number of variants, compiler choice |
 | 12 | Vulkan on the Linux test machine and lavapipe in CI | M2 | Vulkan coverage |
 | 13 | cold latency of a 256 m cell (p50, p95) | M3, again M7 | streaming lead time |
@@ -456,7 +465,7 @@ Assumptions that the reports marked as unverified. Each gets a "verify" task in 
 | Mass entity simulation, traffic and pedestrians | before M6 and M8 | research D71 |
 | UI for strategy games and data-driven content | before M6 | research D71 |
 | Water and vegetation at scale | before M8 | no research yet |
-| Game layer: input mapping, third-person camera, menus | M4, M10 | no research yet |
+| Game layer: input mapping and menus. The camera is settled by D84. | M4, M10 | no research yet |
 | Building and releasing the game for 3 OS | before the first released game | no research yet |
 | Interiors | M10 | no research yet |
 
